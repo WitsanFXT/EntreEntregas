@@ -1,0 +1,297 @@
+const supabase = require("../config/supabase");
+
+
+// ======================================
+// FICAR ONLINE
+// POST /api/entregador/online
+// ======================================
+
+exports.online = async(req,res)=>{
+
+
+    try{
+
+
+        const usuarioId = req.usuario.id;
+
+
+
+        const {data,error}=
+
+            await supabase
+            .from("entregadores")
+            .update({
+
+                online:true
+
+            })
+            .eq(
+                "usuario_id",
+                usuarioId
+            )
+            .select()
+            .single();
+
+
+
+        if(error){
+
+            return res.status(400).json({
+
+                message:"Erro ao ficar online."
+
+            });
+
+        }
+
+
+
+        res.json({
+
+            message:
+            "Entregador online.",
+
+            entregador:data
+
+        });
+
+
+
+    }catch(error){
+
+        console.log(error);
+
+        res.status(500).json({
+
+            message:"Erro interno."
+
+        });
+
+    }
+
+};
+
+
+
+
+// ======================================
+// FICAR OFFLINE
+// POST /api/entregador/offline
+// ======================================
+
+exports.offline = async(req,res)=>{
+
+
+    try{
+
+
+        const usuarioId=req.usuario.id;
+
+
+
+        const {data,error}=
+
+            await supabase
+            .from("entregadores")
+            .update({
+
+                online:false
+
+            })
+            .eq(
+                "usuario_id",
+                usuarioId
+            )
+            .select()
+            .single();
+
+
+
+        if(error){
+
+            return res.status(400).json({
+
+                message:"Erro ao ficar offline."
+
+            });
+
+        }
+
+
+
+        res.json({
+
+            message:
+            "Entregador offline.",
+
+            entregador:data
+
+        });
+
+
+
+    }catch(error){
+
+
+        console.log(error);
+
+
+        res.status(500).json({
+
+            message:"Erro interno."
+
+        });
+
+    }
+
+};
+
+
+
+
+// ======================================
+// ATUALIZAR LOCALIZAÇÃO
+// PUT /api/entregador/localizacao
+// ======================================
+
+exports.localizacao = async(req,res)=>{
+
+
+    try{
+
+
+        const usuarioId=req.usuario.id;
+
+
+        const {
+
+            latitude,
+            longitude
+
+        } = req.body;
+
+
+
+
+        const {data,error}=
+
+            await supabase
+            .from("entregadores")
+            .update({
+
+                latitude,
+
+                longitude,
+
+                ultima_localizacao:
+                new Date()
+
+            })
+            .eq(
+                "usuario_id",
+                usuarioId
+            )
+            .select()
+            .single();
+
+
+
+        if(error){
+
+            return res.status(400).json({
+
+                message:
+                "Erro ao atualizar localização."
+
+            });
+
+        }
+
+
+
+        res.json({
+
+            message:
+            "Localização atualizada.",
+
+            entregador:data
+
+        });
+
+
+
+    }catch(error){
+
+
+        console.log(error);
+
+
+        res.status(500).json({
+
+            message:"Erro interno."
+
+        });
+
+    }
+
+};
+
+// ======================================
+// ATUALIZAR PERFIL
+// ======================================
+
+
+exports.me = async(req,res)=>{
+
+
+try{
+
+
+const usuarioId =
+req.usuario.id;
+
+
+
+const {data,error}=await supabase
+.from("entregadores")
+.select("*")
+.eq(
+"usuario_id",
+usuarioId
+)
+.single();
+
+
+
+if(error){
+
+return res.status(404).json({
+
+message:"Entregador não encontrado."
+
+});
+
+}
+
+
+
+res.json(data);
+
+
+
+}catch(error){
+
+console.log(error);
+
+
+res.status(500).json({
+
+message:"Erro interno"
+
+});
+
+
+}
+
+
+};

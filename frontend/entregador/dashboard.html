@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Painel Entregador</title>
+
+
+<link rel="stylesheet" href="entregador.css">
+
+
+<!-- MAPA LEAFLET -->
+
+<link 
+rel="stylesheet" 
+href="https://unpkg.com/leaflet/dist/leaflet.css"
+/>
+
+
+</head>
+
+
+<body>
+
+
+<div class="dashboard">
+
+
+
+<header>
+
+
+<h1>
+🚴 Entre Corridas
+</h1>
+
+
+<button id="logout">
+Sair
+</button>
+
+
+</header>
+
+
+
+
+
+<!-- PERFIL -->
+
+<section class="perfil">
+
+
+<h2 id="nomeUsuario">
+Carregando...
+</h2>
+
+
+
+<div class="status-box">
+
+
+<p>
+Status
+</p>
+
+
+<h3 id="status">
+🔴 Offline
+</h3>
+
+
+</div>
+
+
+
+
+
+<div class="botoes-status">
+
+
+<button id="btnOnline">
+🟢 Ficar Online
+</button>
+
+
+
+<button id="btnOffline">
+🔴 Ficar Offline
+</button>
+
+
+</div>
+
+
+
+</section>
+
+
+
+
+
+
+
+<!-- VEICULO -->
+
+<section class="card">
+
+
+<h3>
+🏍️ Veículo
+</h3>
+
+
+
+<p>
+Tipo:
+
+<span id="veiculo">
+-
+</span>
+
+</p>
+
+
+
+<p>
+Placa:
+
+<span id="placa">
+-
+</span>
+
+</p>
+
+
+
+</section>
+
+
+
+
+
+
+
+<!-- LOCALIZAÇÃO -->
+
+<section class="card">
+
+
+<h3>
+📍 Minha localização
+</h3>
+
+
+
+<p id="localizacao">
+Aguardando GPS...
+</p>
+
+
+
+<!-- MAPA -->
+
+<div id="mapa"></div>
+
+
+
+</section>
+
+
+
+
+
+
+
+<!-- ENTREGAS -->
+
+<section class="card">
+
+
+<h3>
+📦 Entregas disponíveis
+</h3>
+
+
+
+<div id="entregas">
+
+
+<p>
+Nenhuma entrega disponível.
+</p>
+
+
+</div>
+
+
+
+</section>
+
+
+
+
+
+</div>
+
+
+
+
+
+<!-- LEAFLET JS -->
+
+<script 
+src="https://unpkg.com/leaflet/dist/leaflet.js">
+</script>
+
+
+<script src="entregador.js"></script>
+
+
+
+</body>
+
+</html>
