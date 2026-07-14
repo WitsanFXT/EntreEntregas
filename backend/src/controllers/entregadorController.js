@@ -295,3 +295,64 @@ message:"Erro interno"
 
 
 };
+
+exports.minhasEntregas = async (req,res)=>{
+
+try{
+
+    const usuarioId = req.usuario.id;
+
+    const { data:entregador } = await supabase
+
+    .from("entregadores")
+
+    .select("id")
+
+    .eq("usuario_id",usuarioId)
+
+    .single();
+
+
+    const { data,error } = await supabase
+
+    .from("entregas")
+
+    .select(`
+        *,
+        empresas (
+            id,
+            nome_fantasia,
+            latitude,
+            longitude
+        )
+    `)
+
+    .eq("entregador_id",entregador.id)
+
+    .in("status",[
+        "aceita",
+        "retirada"
+    ])
+
+    .order("created_at",{ascending:false});
+
+
+    if(error){
+
+        return res.status(400).json(error);
+
+    }
+
+    return res.json(data);
+
+}catch(error){
+
+    console.log(error);
+
+    return res.status(500).json({
+        message:"Erro interno"
+    });
+
+}
+
+};

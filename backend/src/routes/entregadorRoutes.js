@@ -16,7 +16,8 @@ const {
     online,
     offline,
     localizacao,
-    me
+    me,
+    minhasEntregas
 
 } = require("../controllers/entregadorController");
 
@@ -76,6 +77,13 @@ router.get(
     me
 );
 
+
+router.get(
+    "/minhas-entregas",
+    auth,
+    permissao("entregador"),
+    minhasEntregas
+);
 
 
 module.exports = router;

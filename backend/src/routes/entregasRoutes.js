@@ -17,7 +17,11 @@ const {
 criarEntrega,
 listarEntregasEmpresa,
 listarEntregasEntregador,
-aceitarEntrega
+aceitarEntrega,
+coletarEntrega,
+retirarEntrega,
+finalizarEntrega
+
 
 } = require("../controllers/entregasController");
 
@@ -110,6 +114,43 @@ auth,
 permissao("entregador"),
 
 aceitarEntrega
+
+);
+
+router.put(
+
+"/:id/coletar",
+
+auth,
+
+permissao("entregador"),
+
+coletarEntrega
+
+);
+
+
+router.put(
+
+"/:id/retirar",
+
+auth,
+
+permissao("entregador"),
+
+retirarEntrega
+
+);
+
+router.put(
+
+"/:id/finalizar",
+
+auth,
+
+permissao("entregador"),
+
+finalizarEntrega
 
 );
 

@@ -20,6 +20,9 @@ require("./routes/entregadorRoutes");
 const entregasRoutes =
 require("./routes/entregasRoutes");
 
+const financeiroRoutes =
+require("./routes/financeiroRoutes");
+
 app.use(cors({
     origin: "*"
 }));
@@ -49,6 +52,11 @@ entregadorRoutes
 app.use(
 "/api/entregas",
 entregasRoutes
+);
+
+app.use(
+"/api/financeiro",
+financeiroRoutes
 );
 
 app.listen(
