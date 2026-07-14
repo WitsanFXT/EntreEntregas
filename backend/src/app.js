@@ -67,3 +67,5 @@ app.listen(
         );
     }
 );
+
+module.exports = app; // <-- ESSENCIAL para a Vercel funcionar
