@@ -1,7 +1,26 @@
 // ======================================
+// CONFIGURAÇÃO DA API DINÂMICA
+// ======================================
+const getApiUrl = () => {
+    const hostname = window.location.hostname;
+
+    // Se estiver rodando localmente
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+        // Altere a porta 3001 se o seu backend rodar em outra porta local
+        return "http://localhost:3001"; 
+    }
+
+    // Se estiver no Vercel (ou produção), assume que a API está no mesmo domínio
+    // Exemplo: se o frontend tá em site.vercel.app, a API será chamada no mesmo domínio.
+    // Caso sua API esteja em outro subdomínio (ex: api.meusite.com), substitua pelo link dela aqui.
+    return window.location.origin; 
+};
+
+const API_BASE_URL = getApiUrl();
+
+// ======================================
 // LOGIN - ENTRE CORRIDAS
 // ======================================
-
 const loginForm = document.getElementById("loginForm");
 
 loginForm.addEventListener("submit", async (e) => {
@@ -10,15 +29,9 @@ loginForm.addEventListener("submit", async (e) => {
     const email = document.getElementById("email").value.trim();
     const senha = document.getElementById("senha").value;
 
-    // 🚀 DETECTA SE VOCÊ ESTÁ NO LOCALHOST OU NA VERCEL
-    // Se estiver no PC, aponta para a porta 3001. Na Vercel, usa a URL do próprio site.
-    const URL_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-        ? "http://localhost:3001"
-        : ""; // Deixar vazio faz o navegador usar a URL atual da Vercel automaticamente
-
     try {
-        // Agora o fetch usa a variável dinâmica combinada com a sua rota
-        const response = await fetch(`${URL_BASE}/api/auth/login`, {
+        // Agora a URL é dinâmica utilizando a constante definida acima
+        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
