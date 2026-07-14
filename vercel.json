@@ -2,7 +2,7 @@
   "redirects": [
     {
       "source": "/",
-      "destination": "/EntreCorridas/frontend/login/login.html",
+      "destination": "/frontend/login/login.html",
       "permanent": true
     }
   ]
