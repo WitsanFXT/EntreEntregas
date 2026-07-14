@@ -29,13 +29,19 @@ href="https://unpkg.com/leaflet/dist/leaflet.css"
 <div class="dashboard">
 
 
+<header class="topo">
 
-<header>
-
+<div>
 
 <h1>
 🚴 Entre Corridas
 </h1>
+
+<p id="nomeUsuario">
+Carregando...
+</p>
+
+</div>
 
 
 <button id="logout">
@@ -45,19 +51,7 @@ Sair
 
 </header>
 
-
-
-
-
-<!-- PERFIL -->
-
 <section class="perfil">
-
-
-<h2 id="nomeUsuario">
-Carregando...
-</h2>
-
 
 
 <div class="status-box">
@@ -74,8 +68,6 @@ Status
 
 
 </div>
-
-
 
 
 
@@ -99,21 +91,92 @@ Status
 
 </section>
 
+<section class="financeiro">
+
+
+<div class="card-financeiro">
+
+<h3>
+💰 Ganhos hoje
+</h3>
+
+<strong id="ganhosHoje">
+R$ 0,00
+</strong>
+
+</div>
+
+
+
+<div class="card-financeiro">
+
+<h3>
+📅 Últimos 7 dias
+</h3>
+
+<strong id="ganhosSemana">
+R$ 0,00
+</strong>
+
+</div>
 
 
 
 
+<div class="card-financeiro">
+
+<h3>
+📆 Últimos 30 dias
+</h3>
+
+<strong id="ganhosMes">
+R$ 0,00
+</strong>
+
+</div>
 
 
-<!-- VEICULO -->
+
+
+<div class="card-financeiro">
+
+<h3>
+👛 Carteira
+</h3>
+
+<strong id="saldoCarteira">
+R$ 0,00
+</strong>
+
+</div>
+
+
+</section>
 
 <section class="card">
 
+<h3>
+📍 Minha localização
+</h3>
+
+
+<p id="localizacao">
+Aguardando GPS...
+</p>
+
+
+<div id="mapa"></div>
+
+
+</section>
+
+<!-- VEÍCULO -->
+
+<section class="card">
 
 <h3>
 🏍️ Veículo
 </h3>
-
 
 
 <p>
@@ -126,7 +189,6 @@ Tipo:
 </p>
 
 
-
 <p>
 Placa:
 
@@ -137,76 +199,149 @@ Placa:
 </p>
 
 
-
 </section>
 
+<!-- ENTREGA ATUAL -->
 
-
-
-
-
-
-<!-- LOCALIZAÇÃO -->
 
 <section class="card">
 
-
 <h3>
-📍 Minha localização
+📦 Chamados disponíveis
 </h3>
-
-
-
-<p id="localizacao">
-Aguardando GPS...
-</p>
-
-
-
-<!-- MAPA -->
-
-<div id="mapa"></div>
-
-
-
-</section>
-
-
-
-
-
-
-
-<!-- ENTREGAS -->
-
-<section class="card">
-
-
-<h3>
-📦 Entregas disponíveis
-</h3>
-
 
 
 <div id="entregas">
-
 
 <p>
 Nenhuma entrega disponível.
 </p>
 
-
 </div>
-
 
 
 </section>
 
 
 
+<section class="card entrega-status">
+    
 
+
+<h3>
+🚚 Minha entrega
+</h3>
+
+
+<div id="entregaAtual">
+
+<div class="sem-entrega">
+
+Nenhuma entrega em andamento.
 
 </div>
+
+</div>
+
+
+</section>
+
+
+<div id="modalEntrega" class="modal">
+
+    <div class="modal-content">
+
+        <h2>📦 Nova Entrega</h2>
+
+        <p id="modalCliente"></p>
+
+        <p id="modalEndereco"></p>
+
+        <p id="modalBairro"></p>
+
+        <p id="modalValor"></p>
+
+        <p id="modalDistancia"></p>
+
+        <p id="modalTempo"></p>
+
+        <p id="modalDescricao"></p>
+
+        <h3 id="contadorEntrega">
+            30
+        </h3>
+
+        <div class="modal-botoes">
+
+            <button id="btnAceitarModal">
+                Aceitar
+            </button>
+
+            <button id="btnRecusarModal">
+                Recusar
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+
+<nav class="menu-inferior">
+
+<button id="menuInicio">
+
+🏠
+
+<span>
+Início
+</span>
+
+</button>
+
+
+<button id="menuEntregas">
+
+📦
+
+<span>
+Entregas
+</span>
+
+</button>
+
+
+<button id="menuGanhos">
+
+💰
+
+<span>
+Ganhos
+</span>
+
+</button>
+
+
+<button id="menuPerfil">
+
+👤
+
+<span>
+Perfil
+</span>
+
+</button>
+
+
+</nav>
+
+
+
+
+
 
 
 

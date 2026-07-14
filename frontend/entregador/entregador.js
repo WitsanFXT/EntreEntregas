@@ -2,6 +2,64 @@ const API = "http://localhost:3001";
 
 const token = localStorage.getItem("token");
 
+let ultimaLista = [];
+
+let ultimoPedidoNotificado = null;
+
+let rotaAtual = null;
+
+let ultimaQuantidade = 0;
+
+let entregaAtual = null;
+
+let contadorInterval = null;
+
+const somNovaEntrega =
+new Audio("../assets/nova-entrega.mp3");
+
+somNovaEntrega.volume = 1;
+
+let alertaSonoro = null;
+
+function iniciarAlertaEntrega(){
+
+    somNovaEntrega.currentTime = 0;
+
+    somNovaEntrega.play()
+    .catch(()=>{});
+
+    alertaSonoro = setInterval(() => {
+
+        somNovaEntrega.currentTime = 0;
+
+        somNovaEntrega.play()
+        .catch(()=>{});
+
+    }, 3000);
+
+
+    setTimeout(() => {
+
+        pararAlertaEntrega();
+
+    }, 30000);
+
+}
+
+
+
+function pararAlertaEntrega(){
+
+    if(alertaSonoro){
+
+        clearInterval(alertaSonoro);
+
+        alertaSonoro = null;
+
+    }
+
+}
+
 
 if(!token){
 
@@ -36,13 +94,36 @@ let mapa;
 
 let marcador;
 
+let linhaRota = null;
+
+
+// ícone customizado: pontinho pulsante estilo "localização ao vivo"
+const gpsIcon = L.divIcon({
+
+    className: "gps-marker",
+
+    html: `
+        <div class="gps-marker-pulse"></div>
+        <div class="gps-marker-dot"></div>
+    `,
+
+    iconSize: [22, 22],
+
+    iconAnchor: [11, 11]
+
+});
+
 
 
 function iniciarMapa(){
 
 
     mapa =
-    L.map("mapa")
+    L.map("mapa", {
+
+        zoomControl: false
+
+    })
     .setView(
         [-16.359,-46.906],
         15
@@ -55,11 +136,21 @@ function iniciarMapa(){
         {
 
             attribution:
-            "&copy; OpenStreetMap"
+            "&copy; OpenStreetMap",
+
+            maxZoom: 19
 
         }
 
     ).addTo(mapa);
+
+
+    // zoom reposicionado, estilo app de entrega (canto inferior direito)
+    L.control.zoom({
+
+        position: "bottomright"
+
+    }).addTo(mapa);
 
 
 
@@ -96,12 +187,23 @@ function atualizarMapa(latitude,longitude){
 
         marcador =
 
-        L.marker(posicao)
+        L.marker(posicao, {
+
+            icon: gpsIcon
+
+        })
 
         .addTo(mapa)
 
         .bindPopup(
-            "🚴 Você está aqui"
+            "🚴 Você está aqui",
+            {
+
+                className: "popup-entregador",
+
+                closeButton: false
+
+            }
         )
 
         .openPopup();
@@ -126,6 +228,30 @@ function atualizarMapa(latitude,longitude){
         16
     );
 
+
+}
+
+function desenharRota(origem,destino){
+
+    if(rotaAtual){
+
+        mapa.removeLayer(rotaAtual);
+
+    }
+
+    rotaAtual = L.polyline(
+        [
+            origem,
+            destino
+        ]
+    ).addTo(mapa);
+
+}
+if(rotaAtual){
+
+    mapa.removeLayer(rotaAtual);
+
+    rotaAtual = null;
 
 }
 
@@ -415,18 +541,46 @@ headers
 
 
 
-const entregas =
-await response.json();
+const entregas = await response.json();
+
+const idsAtuais =
+entregas.map(e => e.id);
+
+const existemNovas =
+
+idsAtuais.some(
+    id => !ultimaLista.some(
+        antiga => antiga.id === id
+    )
+);
+
+if(existemNovas){
+
+    abrirModalEntrega(
+        entregas[0]
+    );
+
+}
+
+if(
+    JSON.stringify(entregas) ===
+    JSON.stringify(ultimaLista)
+){
+    return;
+}
+
+ultimaLista = [...entregas];
+
+ultimaQuantidade =
+entregas.length;
 
 
 
 const container =
-
 document.getElementById("entregas");
 
+container.innerHTML = "";
 
-
-container.innerHTML="";
 
 
 
@@ -467,43 +621,47 @@ div.innerHTML =
 
 `
 
-<h3>
-📦 Entrega
+<div class="entrega-card-header">
+    <span class="entrega-card-badge">📦 Nova corrida</span>
+    <span class="entrega-card-valor">R$ ${entrega.valor}</span>
+</div>
+
+
+<h3 class="entrega-cliente-label">
+Cliente
 </h3>
 
 
-<p>
-Cliente:
+<p class="entrega-cliente">
 ${entrega.cliente_nome}
 </p>
 
 
-<p>
+<p class="entrega-endereco">
 📍 ${entrega.endereco}
 </p>
 
 
-<p>
-Bairro:
-${entrega.bairro}
+<p class="entrega-bairro">
+🏘️ ${entrega.bairro}
 </p>
 
 
-<p>
-${entrega.descricao || ""}
+${entrega.descricao ? `
+<p class="entrega-descricao">
+${entrega.descricao}
 </p>
+` : ""}
 
 
 
-<button onclick="aceitarEntrega('${entrega.id}')">
+<button class="btn-aceitar-corrida" onclick="aceitarEntrega('${entrega.id}')">
 
 Aceitar entrega
 
 </button>
 
-
 `;
-
 
 
 container.appendChild(div);
@@ -521,7 +679,6 @@ console.log(error);
 
 
 }
-
 
 
 }
@@ -587,8 +744,248 @@ console.log(error);
 
 }
 
+async function carregarEntregaAtual(){
+
+try{
+
+    const response = await fetch(
+
+        `${API}/api/entregador/minhas-entregas`,
+
+        {
+            headers
+        }
+
+    );
+
+    const entregas =
+    await response.json();
+
+    const container =
+    document.getElementById("entregaAtual");
 
 
+
+    const ativas = entregas.filter(e=>
+
+        e.status === "aceita" ||
+        e.status === "retirada"
+
+    );
+
+
+
+    if(!ativas.length){
+
+        container.innerHTML =
+
+        `
+        <div class="sem-entrega">
+            Nenhuma entrega em andamento.
+        </div>
+        `;
+
+        return;
+
+    }
+
+
+
+    container.innerHTML = ativas.map(entrega => {
+
+        const emRota =
+        entrega.status === "retirada";
+
+        return `
+
+        <div class="entrega-atual">
+
+            <div class="entrega-atual-topo">
+
+                <span class="entrega-atual-status">
+
+                    ${
+                        emRota
+                        ? "🟢 Em rota"
+                        : "🟡 Aguardando coleta"
+                    }
+
+                </span>
+
+            </div>
+
+            <h3>
+                ${entrega.cliente_nome}
+            </h3>
+
+            <p>
+                📍 ${entrega.endereco}
+            </p>
+
+            <p>
+                🏘️ ${entrega.bairro}
+            </p>
+
+            <p>
+                💰 R$ ${Number(entrega.valor).toFixed(2)}
+            </p>
+
+            <div class="entrega-atual-botoes">
+
+                ${
+                    entrega.status === "aceita"
+
+                    ?
+
+                    `
+                    <button
+                    class="btn-retirar"
+                    onclick="retirarEntrega('${entrega.id}')"
+                    >
+                    📦 Retirei pedido
+                    </button>
+                    `
+
+                    :
+
+                    `
+                    <button
+                    class="btn-finalizar"
+                    onclick="finalizarEntrega('${entrega.id}')"
+                    >
+                    ✅ Finalizar
+                    </button>
+                    `
+                }
+
+            </div>
+
+        </div>
+
+        `;
+
+    }).join("");
+
+
+}catch(error){
+
+    console.log(error);
+
+}
+
+}
+
+
+function abrirModalEntrega(entrega){
+
+    entregaAtual = entrega;
+
+    document
+    .getElementById("modalCliente")
+    .innerHTML =
+    `Cliente: ${entrega.cliente_nome}`;
+
+
+    document
+    .getElementById("modalEndereco")
+    .innerHTML =
+    `📍 ${entrega.endereco}`;
+
+    document
+    .getElementById("modalBairro")
+    .innerHTML =
+    `🏘️ ${entrega.bairro}`;
+
+
+    document
+    .getElementById("modalValor")
+    .innerHTML =
+    `💰 R$ ${entrega.valor}`;
+
+
+    document
+    .getElementById("modalDescricao")
+    .innerHTML =
+    entrega.descricao || "";
+
+
+    iniciarAlertaEntrega();
+
+
+    document
+    .getElementById("modalEntrega")
+    .classList.add("ativo");
+
+
+    let tempo = 30;
+
+
+    document
+    .getElementById("contadorEntrega")
+    .innerHTML = tempo;
+
+
+    clearInterval(contadorInterval);
+
+
+    contadorInterval = setInterval(()=>{
+
+        tempo--;
+
+        document
+        .getElementById("contadorEntrega")
+        .innerHTML = tempo;
+
+
+        if(tempo <= 0){
+
+            fecharModalEntrega();
+
+        }
+
+    },1000);
+
+}
+
+function fecharModalEntrega(){
+
+    pararAlertaEntrega();
+
+    clearInterval(
+        contadorInterval
+    );
+
+    document
+    .getElementById("modalEntrega")
+    .classList.remove("ativo");
+
+}
+
+document
+.getElementById("btnAceitarModal")
+.onclick = async()=>{
+
+    if(!entregaAtual){
+
+        return;
+
+    }
+
+    await aceitarEntrega(
+        entregaAtual.id
+    );
+
+    fecharModalEntrega();
+
+};
+
+document
+.getElementById("btnRecusarModal")
+.onclick = ()=>{
+
+    fecharModalEntrega();
+
+};
 
 
 
@@ -652,18 +1049,7 @@ document
 
 `
 
-Latitude:
-${latitude}
-
-<br>
-
-Longitude:
-${longitude}
-
-<br>
-
-Precisão:
-${Math.round(precisao)} metros
+GPS ativo · precisão de ${Math.round(precisao)}m
 
 `;
 
@@ -785,10 +1171,81 @@ window.location.href =
 };
 
 
+async function carregarFinanceiro(){
+
+    const response = await fetch(
+
+        `${API}/api/financeiro/resumo`,
+
+        { headers }
+
+    );
+
+    const data = await response.json();
+
+    document.getElementById("ganhosHoje").innerHTML =
+    `R$ ${data.hoje.toFixed(2)}`;
+
+    document.getElementById("ganhosSemana").innerHTML =
+    `R$ ${data.semana.toFixed(2)}`;
+
+    document.getElementById("ganhosMes").innerHTML =
+    `R$ ${data.mes.toFixed(2)}`;
+
+    document.getElementById("saldoCarteira").innerHTML =
+    `R$ ${data.saldo.toFixed(2)}`;
+}
 
 
 
+async function retirarEntrega(id){
 
+const response =
+await fetch(
+
+`${API}/api/entregas/${id}/retirar`,
+
+{
+method:"PUT",
+headers
+}
+
+);
+
+const data =
+await response.json();
+
+alert(data.message);
+
+carregarEntregas();
+carregarEntregaAtual();
+
+}
+
+async function finalizarEntrega(id){
+
+const response =
+await fetch(
+
+`${API}/api/entregas/${id}/finalizar`,
+
+{
+method:"PUT",
+headers
+}
+
+);
+
+const data =
+await response.json();
+
+alert(data.message);
+
+carregarEntregas();
+carregarEntregaAtual();
+carregarFinanceiro();
+
+}
 
 
 
@@ -800,14 +1257,18 @@ iniciarMapa();
 carregarPerfil();
 
 carregarEntregas();
+carregarEntregaAtual();
+carregarFinanceiro();
 
 iniciarGPS();
 
-
-// atualizar entregas automaticamente
 
 setInterval(()=>{
 
     carregarEntregas();
 
-},5000);
+    carregarEntregaAtual();
+
+    carregarFinanceiro();
+
+},3000);

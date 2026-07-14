@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/EntreCorridas/frontend/login/login.html",
+      "permanent": true
+    }
+  ]
+}
