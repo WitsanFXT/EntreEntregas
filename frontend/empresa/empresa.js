@@ -1,5 +1,7 @@
-const API =
-"http://localhost:3001";
+// Detecta automaticamente onde o site está rodando
+const API = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+  ? "http://localhost:3001"  // Se for no seu PC, aponta para a porta do backend
+  : "";                      // Se for na Vercel, usa rota relativa (o vercel.json resolve)
 
 
 const token =
