@@ -4,15 +4,12 @@
 const getApiUrl = () => {
     const hostname = window.location.hostname;
 
-    // Se estiver rodando localmente
+    // Se estiver rodando localmente no seu PC
     if (hostname === "localhost" || hostname === "127.0.0.1") {
-        // Altere a porta 3001 se o seu backend rodar em outra porta local
         return "http://localhost:3001"; 
     }
 
-    // Se estiver no Vercel (ou produção), assume que a API está no mesmo domínio
-    // Exemplo: se o frontend tá em site.vercel.app, a API será chamada no mesmo domínio.
-    // Caso sua API esteja em outro subdomínio (ex: api.meusite.com), substitua pelo link dela aqui.
+    // Se estiver no Vercel, a rota /api é redirecionada internamente
     return window.location.origin; 
 };
 
@@ -30,24 +27,26 @@ loginForm.addEventListener("submit", async (e) => {
     const senha = document.getElementById("senha").value;
 
     try {
-        // Agora a URL é dinâmica utilizando a constante definida acima
         const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                email,
-                senha
-            })
+            body: JSON.stringify({ email, senha })
         });
 
-        const data = await response.json();
+        // Evita o erro "Unexpected token T" validando o Content-Type
+        const contentType = response.headers.get("content-type");
+        let data = {};
+        
+        if (contentType && contentType.includes("application/json")) {
+            data = await response.json();
+        } else {
+            throw new Error(`Erro no servidor (${response.status}). Resposta inesperada.`);
+        }
 
         if (!response.ok) {
-            throw new Error(
-                data.message || "Erro ao realizar login."
-            );
+            throw new Error(data.message || "Erro ao realizar login.");
         }
 
         // ==================================
@@ -66,15 +65,12 @@ loginForm.addEventListener("submit", async (e) => {
             case "cliente":
                 window.location.href = "../cliente/dashboard.html";
                 break;
-
             case "empresa":
                 window.location.href = "../empresa/dashboard.html";
                 break;
-
             case "entregador":
                 window.location.href = "../entregador/dashboard.html";
                 break;
-
             default:
                 alert("Perfil não reconhecido.");
                 break;
