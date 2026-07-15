@@ -331,7 +331,8 @@ try{
 
     .in("status",[
         "aceita",
-        "retirada"
+        "retirada",
+        "finalizada"
     ])
 
     .order("created_at",{ascending:false});
@@ -356,3 +357,4 @@ try{
 }
 
 };
+

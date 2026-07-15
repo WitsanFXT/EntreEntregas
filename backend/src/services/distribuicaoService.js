@@ -172,9 +172,6 @@ await supabase
 entregador_id:
 entregadorEscolhido.id,
 
-status:
-"aguardando"
-
 })
 
 .eq(
