@@ -748,7 +748,7 @@ button {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.6);
   align-items: center;
   justify-content: center;
   padding: 16px;
@@ -762,11 +762,12 @@ button {
 .modal-content {
   position: relative;
   background: var(--cor-card);
-  border-radius: var(--raio);
-  padding: 24px 20px 20px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 20px;
+  padding: 10px 22px 22px;
   width: 100%;
-  max-width: 360px;
-  text-align: center;
+  max-width: 380px;
+  text-align: left;
   animation: entrarModal 0.2s ease-out;
   box-shadow: var(--sombra-forte);
 }
@@ -782,68 +783,254 @@ button {
   }
 }
 
-.modal-content h2 {
-  margin: 0 0 10px;
-  font-size: 1.1rem;
-}
-
-.modal-content p {
-  margin: 4px 0;
-  font-size: 0.9rem;
-  color: var(--cor-texto-suave);
-}
-
-.btn-minimizar {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 1px solid var(--cor-borda);
-  background: var(--cor-fundo);
-  color: var(--cor-texto-suave);
-  font-size: 0.9rem;
+/* alça de minimizar — barra arrastável no topo do modal */
+.modal-puxador {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 10px 0 14px;
+  margin: 0 0 6px;
   cursor: pointer;
+  color: var(--cor-texto-suave);
 }
 
-#contadorEntrega {
-  font-size: 2rem;
+.modal-puxador-linha {
+  width: 42px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--cor-borda);
+  transition: background 0.15s ease;
+}
+
+.modal-puxador:hover .modal-puxador-linha {
+  background: var(--cor-texto-suave);
+}
+
+.modal-puxador-texto {
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.modal-puxador-seta {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+/* cabeçalho: tag + valor em destaque */
+.modal-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.modal-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cor-primaria);
+  background: var(--cor-primaria-clara);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.modal-valor {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--cor-primaria);
+}
+
+.modal-cliente {
+  margin: 12px 0 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--cor-texto);
+}
+
+/* bloco de endereço com ícone */
+.modal-bloco-endereco {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--cor-card-alt);
+  border-radius: 12px;
+  border: 1px solid var(--cor-borda);
+}
+
+.modal-bloco-icone {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.modal-endereco-linha {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--cor-texto);
+  line-height: 1.35;
+}
+
+.modal-bairro-linha {
+  margin: 3px 0 0;
+  font-size: 0.78rem;
+  color: var(--cor-texto-suave);
+}
+
+/* distância / tempo estimado */
+.modal-metricas {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.modal-metrica {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  background: var(--cor-card-alt);
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+}
+
+.modal-metrica-icone {
+  font-size: 0.95rem;
+}
+
+.modal-metrica-valor {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--cor-texto);
+}
+
+.modal-metrica-label {
+  font-size: 0.66rem;
+  color: var(--cor-texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.modal-descricao {
+  margin: 12px 2px 0;
+  font-size: 0.85rem;
+  color: var(--cor-texto-suave);
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* contador regressivo */
+.modal-contador-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 18px 0 6px;
+}
+
+.modal-contador {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cor-primaria-clara);
+  border: 3px solid var(--cor-primaria);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.modal-contador h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--cor-primaria);
+}
+
+.modal-contador.urgente {
+  background: var(--cor-perigo-clara, rgba(239, 68, 68, 0.16));
+  border-color: var(--cor-perigo);
+  animation: pulsoContador 1s infinite;
+}
+
+.modal-contador.urgente h3 {
   color: var(--cor-perigo);
-  margin: 14px 0;
+}
+
+@keyframes pulsoContador {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+.modal-contador-label {
+  font-size: 0.7rem;
+  color: var(--cor-texto-suave);
 }
 
 .modal-botoes {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .modal-botoes button {
   border: none;
   border-radius: 999px;
-  padding: 12px 10px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  padding: 13px 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
   cursor: pointer;
   color: #fff;
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease;
+}
+
+.modal-botoes button:active {
+  transform: scale(0.96);
 }
 
 #btnAceitarModal {
-  background: var(--cor-primaria);
+  background: linear-gradient(
+    135deg,
+    var(--cor-primaria),
+    var(--cor-primaria-escura)
+  );
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.32);
 }
 
 #btnAceitarModal:hover {
-  background: var(--cor-primaria-escura);
+  filter: brightness(1.05);
 }
 
 #btnRecusarModal {
-  background: var(--cor-perigo);
+  background: var(--cor-card-alt);
+  border: 1px solid var(--cor-perigo);
+  color: var(--cor-perigo);
+  box-shadow: none;
 }
 
 #btnRecusarModal:hover {
-  background: var(--cor-perigo-escura);
+  background: rgba(239, 68, 68, 0.12);
 }
 
 /* barra minimizada do modal, fica colada no rodapé acima do menu */

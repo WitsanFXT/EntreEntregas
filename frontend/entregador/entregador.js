@@ -676,19 +676,51 @@ function abrirModalEntrega(entrega) {
   entregaAtual = entrega;
 
   document.getElementById("modalCliente").innerHTML =
-    `Cliente: ${entrega.cliente_nome}`;
+    entrega.cliente_nome || "Cliente";
 
-  document.getElementById("modalEndereco").innerHTML = `📍 ${entrega.endereco}`;
+  document.getElementById("modalEndereco").innerHTML = entrega.endereco || "-";
 
-  document.getElementById("modalBairro").innerHTML = `🏘️ ${entrega.bairro}`;
+  document.getElementById("modalBairro").innerHTML = entrega.bairro
+    ? `🏘️ ${entrega.bairro}`
+    : "";
 
-  document.getElementById("modalValor").innerHTML = `💰 R$ ${entrega.valor}`;
+  document.getElementById("modalValor").innerHTML =
+    `R$ ${Number(entrega.valor).toFixed(2)}`;
+
+  const temDescricao = Boolean(entrega.descricao);
 
   document.getElementById("modalDescricao").innerHTML = entrega.descricao || "";
+
+  document.getElementById("modalDescricao").style.display = temDescricao
+    ? "block"
+    : "none";
+
+  // distância / tempo são opcionais — o bloco some sozinho se a API não mandar
+  const temDistancia =
+    entrega.distancia !== undefined && entrega.distancia !== null;
+
+  const temTempo =
+    entrega.tempo_estimado !== undefined && entrega.tempo_estimado !== null;
+
+  document.getElementById("modalDistancia").innerHTML = temDistancia
+    ? `${entrega.distancia} km`
+    : "-";
+
+  document.getElementById("modalTempo").innerHTML = temTempo
+    ? `${entrega.tempo_estimado} min`
+    : "-";
+
+  document.getElementById("modalMetricas").style.display =
+    temDistancia || temTempo ? "flex" : "none";
 
   iniciarAlertaEntrega();
 
   document.getElementById("modalEntrega").classList.add("ativo");
+
+  document.getElementById("modalEntrega").classList.remove("minimizado");
+
+  // mostra no mapa: onde estou, onde é a coleta e onde é a entrega final
+  mostrarMarcadoresEntrega(entrega);
 
   let tempo = 30;
 
@@ -700,6 +732,10 @@ function abrirModalEntrega(entrega) {
     tempo--;
 
     document.getElementById("contadorEntrega").innerHTML = tempo;
+
+    if (tempo <= 10) {
+      document.getElementById("contadorWrap").classList.add("urgente");
+    }
 
     if (tempo <= 0) {
       fecharModalEntrega();
@@ -715,6 +751,8 @@ function fecharModalEntrega() {
   document.getElementById("modalEntrega").classList.remove("ativo");
 
   document.getElementById("modalEntrega").classList.remove("minimizado");
+
+  document.getElementById("contadorWrap").classList.remove("urgente");
 
   removerMarcadoresEntrega();
 }
@@ -739,14 +777,10 @@ document.getElementById("btnRecusarModal").onclick = () => {
 
 document.getElementById("minimizarModal").onclick = () => {
   document.getElementById("modalEntrega").classList.add("minimizado");
-
-  mostrarMarcadoresEntrega(entregaAtual);
 };
 
 document.getElementById("expandirModal").onclick = () => {
   document.getElementById("modalEntrega").classList.remove("minimizado");
-
-  removerMarcadoresEntrega();
 };
 
 // mantém o contador da barra minimizada sincronizado com o contador do modal
@@ -766,6 +800,58 @@ setInterval(sincronizarContadorMinimizado, 1000);
 
 let marcadoresEntregaAtiva = [];
 
+// tenta achar as coordenadas de coleta em vários formatos possíveis da API
+function obterCoordenadasColeta(entrega) {
+  const objetos = [
+    entrega.empresas,
+    entrega.empresa,
+    entrega.loja,
+    entrega.coleta,
+    entrega.origem,
+  ];
+
+  for (const obj of objetos) {
+    if (obj && obj.latitude && obj.longitude) {
+      return { lat: obj.latitude, lng: obj.longitude };
+    }
+  }
+
+  const pares = [
+    ["coleta_latitude", "coleta_longitude"],
+    ["latitude_coleta", "longitude_coleta"],
+    ["origem_latitude", "origem_longitude"],
+  ];
+
+  for (const [chaveLat, chaveLng] of pares) {
+    if (entrega[chaveLat] && entrega[chaveLng]) {
+      return { lat: entrega[chaveLat], lng: entrega[chaveLng] };
+    }
+  }
+
+  return null;
+}
+
+// tenta achar as coordenadas de entrega final em vários formatos possíveis da API
+function obterCoordenadasEntregaFinal(entrega) {
+  if (entrega.latitude && entrega.longitude) {
+    return { lat: entrega.latitude, lng: entrega.longitude };
+  }
+
+  const pares = [
+    ["cliente_latitude", "cliente_longitude"],
+    ["destino_latitude", "destino_longitude"],
+    ["entrega_latitude", "entrega_longitude"],
+  ];
+
+  for (const [chaveLat, chaveLng] of pares) {
+    if (entrega[chaveLat] && entrega[chaveLng]) {
+      return { lat: entrega[chaveLat], lng: entrega[chaveLng] };
+    }
+  }
+
+  return null;
+}
+
 function mostrarMarcadoresEntrega(entrega) {
   if (!mapa || !entrega) return;
 
@@ -773,26 +859,16 @@ function mostrarMarcadoresEntrega(entrega) {
 
   const pontos = [];
 
-  if (
-    entrega.empresas &&
-    entrega.empresas.latitude &&
-    entrega.empresas.longitude
-  ) {
-    pontos.push({
-      lat: entrega.empresas.latitude,
-      lng: entrega.empresas.longitude,
-      tipo: "coleta",
-      label: "Coleta",
-    });
+  const coleta = obterCoordenadasColeta(entrega);
+
+  if (coleta) {
+    pontos.push({ ...coleta, tipo: "coleta", label: "🏪 Coleta" });
   }
 
-  if (entrega.latitude && entrega.longitude) {
-    pontos.push({
-      lat: entrega.latitude,
-      lng: entrega.longitude,
-      tipo: "entrega",
-      label: "Entrega",
-    });
+  const destino = obterCoordenadasEntregaFinal(entrega);
+
+  if (destino) {
+    pontos.push({ ...destino, tipo: "entrega", label: "🏠 Entrega" });
   }
 
   pontos.forEach((ponto) => {
@@ -811,6 +887,19 @@ function mostrarMarcadoresEntrega(entrega) {
 
     marcadoresEntregaAtiva.push(m);
   });
+
+  // enquadra o mapa para mostrar entregador + coleta + entrega juntos
+  const pontosMapa = pontos.map((p) => [p.lat, p.lng]);
+
+  if (marcador) {
+    pontosMapa.push(marcador.getLatLng());
+  }
+
+  if (pontosMapa.length > 1) {
+    mapa.fitBounds(pontosMapa, { padding: [60, 60] });
+  } else if (pontosMapa.length === 1) {
+    mapa.setView(pontosMapa[0], 16);
+  }
 }
 
 function removerMarcadoresEntrega() {

@@ -131,32 +131,64 @@
 
     <div id="modalEntrega" class="modal">
       <div class="modal-content">
-        <button id="minimizarModal" class="btn-minimizar" title="Minimizar">
-          ⬇
+        <button id="minimizarModal" class="modal-puxador" title="Minimizar">
+          <span class="modal-puxador-linha"></span>
+
+          <span class="modal-puxador-texto"
+            >Minimizar <span class="modal-puxador-seta">⌄</span></span
+          >
         </button>
 
-        <h2>📦 Nova Entrega</h2>
+        <div class="modal-topo">
+          <span class="modal-tag">📦 Nova corrida</span>
 
-        <p id="modalCliente"></p>
+          <span class="modal-valor" id="modalValor">R$ 0,00</span>
+        </div>
 
-        <p id="modalEndereco"></p>
+        <h2 class="modal-cliente" id="modalCliente">Cliente</h2>
 
-        <p id="modalBairro"></p>
+        <div class="modal-bloco-endereco">
+          <span class="modal-bloco-icone">📍</span>
 
-        <p id="modalValor"></p>
+          <div class="modal-bloco-texto">
+            <p class="modal-endereco-linha" id="modalEndereco">Endereço</p>
 
-        <p id="modalDistancia"></p>
+            <p class="modal-bairro-linha" id="modalBairro">Bairro</p>
+          </div>
+        </div>
 
-        <p id="modalTempo"></p>
+        <div class="modal-metricas" id="modalMetricas">
+          <div class="modal-metrica">
+            <span class="modal-metrica-icone">📏</span>
 
-        <p id="modalDescricao"></p>
+            <span class="modal-metrica-valor" id="modalDistancia">-</span>
 
-        <h3 id="contadorEntrega">30</h3>
+            <span class="modal-metrica-label">distância</span>
+          </div>
+
+          <div class="modal-metrica">
+            <span class="modal-metrica-icone">⏱️</span>
+
+            <span class="modal-metrica-valor" id="modalTempo">-</span>
+
+            <span class="modal-metrica-label">tempo est.</span>
+          </div>
+        </div>
+
+        <p class="modal-descricao" id="modalDescricao"></p>
+
+        <div class="modal-contador-wrap">
+          <div class="modal-contador" id="contadorWrap">
+            <h3 id="contadorEntrega">30</h3>
+          </div>
+
+          <span class="modal-contador-label">segundos para decidir</span>
+        </div>
 
         <div class="modal-botoes">
-          <button id="btnAceitarModal">Aceitar</button>
+          <button id="btnAceitarModal">✔ Aceitar</button>
 
-          <button id="btnRecusarModal">Recusar</button>
+          <button id="btnRecusarModal">✕ Recusar</button>
         </div>
       </div>
 
