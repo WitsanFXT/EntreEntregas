@@ -1,255 +1,139 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
 
-<head>
+    <title>Painel Entregador</title>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="entregador.css" />
 
-<title>Painel Entregador</title>
+    <!-- MAPA LEAFLET -->
 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  </head>
 
-<link rel="stylesheet" href="entregador.css">
+  <body>
+    <!-- =========================================================
+     MAPA — TELA CHEIA, FICA ATRÁS DE TUDO
+     ========================================================= -->
 
+    <div id="mapa"></div>
 
-<!-- MAPA LEAFLET -->
+    <!-- =========================================================
+     PAINEL SUPERIOR — status + saudação, flutuante sobre o mapa
+     ========================================================= -->
 
-<link 
-rel="stylesheet" 
-href="https://unpkg.com/leaflet/dist/leaflet.css"
-/>
+    <div class="painel-superior" id="painelSuperior">
+      <div class="painel-superior-linha">
+        <div class="identidade">
+          <h1 id="nomeUsuario">Carregando...</h1>
 
+          <p id="localizacao">Aguardando GPS...</p>
+        </div>
+      </div>
 
-</head>
+      <div class="status-barra">
+        <button
+          id="toggleDetalhesStatus"
+          class="status-info"
+          aria-expanded="false"
+        >
+          <span id="status">🔴 Offline</span>
 
+          <span class="seta-detalhes">▾</span>
+        </button>
 
-<body>
+        <div class="status-acoes">
+          <button id="btnOnline">ON</button>
 
+          <button id="btnOffline">OFF</button>
+        </div>
+      </div>
 
-<div class="dashboard">
+      <div class="status-detalhes" id="statusDetalhes">
+        <p>🏍️ Veículo: <span id="veiculo">-</span></p>
 
+        <p>🔖 Placa: <span id="placa">-</span></p>
+      </div>
+    </div>
 
-<header class="topo">
+    <!-- =========================================================
+     CARD FLUTUANTE DE GANHOS — clicável, expande
+     ========================================================= -->
 
-<div>
+    <div class="card-resumo" id="cardResumo">
+      <div class="resumo-fechado">
+        <h2 id="ganhosHoje">R$ 0,00</h2>
 
-<h1>
-🚴 Entre Corridas
-</h1>
+        <p>Hoje <span class="seta-resumo">▴</span></p>
+      </div>
 
-<p id="nomeUsuario">
-Carregando...
-</p>
+      <div class="resumo-aberto">
+        <div class="resumo-item">
+          <span class="resumo-label">Ganhos hoje</span>
 
-</div>
+          <strong id="ganhosHojeExpandido">R$ 0,00</strong>
+        </div>
 
+        <div class="resumo-item">
+          <span class="resumo-label">Últimos 7 dias</span>
 
-<button id="logout">
-Sair
-</button>
+          <strong id="ganhosSemana">R$ 0,00</strong>
+        </div>
 
+        <div class="resumo-item">
+          <span class="resumo-label">Últimos 30 dias</span>
 
-</header>
+          <strong id="ganhosMes">R$ 0,00</strong>
+        </div>
 
-<section class="perfil">
+        <div class="resumo-item">
+          <span class="resumo-label">Carteira</span>
 
+          <strong id="saldoCarteira">R$ 0,00</strong>
+        </div>
+      </div>
+    </div>
 
-<div class="status-box">
-
-
-<p>
-Status
-</p>
-
-
-<h3 id="status">
-🔴 Offline
-</h3>
-
-
-</div>
-
-
-
-<div class="botoes-status">
-
-
-<button id="btnOnline">
-🟢 Ficar Online
-</button>
-
-
-
-<button id="btnOffline">
-🔴 Ficar Offline
-</button>
-
-
-</div>
-
-
-
-</section>
-
-<section class="financeiro">
-
-
-<div class="card-financeiro">
-
-<h3>
-💰 Ganhos hoje
-</h3>
-
-<strong id="ganhosHoje">
-R$ 0,00
-</strong>
-
-</div>
-
-
-
-<div class="card-financeiro">
-
-<h3>
-📅 Últimos 7 dias
-</h3>
-
-<strong id="ganhosSemana">
-R$ 0,00
-</strong>
-
-</div>
-
-
-
-
-<div class="card-financeiro">
-
-<h3>
-📆 Últimos 30 dias
-</h3>
-
-<strong id="ganhosMes">
-R$ 0,00
-</strong>
-
-</div>
-
-
-
-
-<div class="card-financeiro">
-
-<h3>
-👛 Carteira
-</h3>
-
-<strong id="saldoCarteira">
-R$ 0,00
-</strong>
-
-</div>
-
-
-</section>
-
-<section class="card">
-
-<h3>
-📍 Minha localização
-</h3>
-
-
-<p id="localizacao">
-Aguardando GPS...
-</p>
-
-
-<div id="mapa"></div>
-
-
-</section>
-
-<!-- VEÍCULO -->
-
-<section class="card">
-
-<h3>
-🏍️ Veículo
-</h3>
-
-
-<p>
-Tipo:
-
-<span id="veiculo">
--
-</span>
-
-</p>
-
-
-<p>
-Placa:
-
-<span id="placa">
--
-</span>
-
-</p>
-
-
-</section>
-
-<!-- ENTREGA ATUAL -->
-
-
-<section class="card">
-
-<h3>
-📦 Chamados disponíveis
-</h3>
-
-
-<div id="entregas">
-
-<p>
-Nenhuma entrega disponível.
-</p>
-
-</div>
-
-
-</section>
-
-
-
-<section class="card entrega-status">
-    
-
-
-<h3>
-🚚 Minha entrega
-</h3>
-
-
-<div id="entregaAtual">
-
-<div class="sem-entrega">
-
-Nenhuma entrega em andamento.
-
-</div>
-
-</div>
-
-
-</section>
-
-
-<div id="modalEntrega" class="modal">
-
-    <div class="modal-content">
+    <!-- =========================================================
+     PAINEL DE ENTREGAS — bottom sheet arrastável
+     ========================================================= -->
+
+    <div class="painel-entregas" id="painelEntregas">
+      <div class="painel-entregas-alca" id="alcaEntregas">
+        <div class="alca-linha"></div>
+
+        <h3 id="tituloPainelEntregas">📦 Chamados disponíveis</h3>
+      </div>
+
+      <div class="painel-entregas-conteudo">
+        <!-- ENTREGA EM ANDAMENTO -->
+
+        <div id="entregaAtual">
+          <div class="sem-entrega">Nenhuma entrega em andamento.</div>
+        </div>
+
+        <!-- CHAMADOS DISPONÍVEIS -->
+
+        <div id="entregas">
+          <p>Nenhuma entrega disponível.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+     MODAL — nova entrega (minimizável)
+     ========================================================= -->
+
+    <div id="modalEntrega" class="modal">
+      <div class="modal-content">
+        <button id="minimizarModal" class="btn-minimizar" title="Minimizar">
+          ⬇
+        </button>
 
         <h2>📦 Nova Entrega</h2>
 
@@ -267,97 +151,64 @@ Nenhuma entrega em andamento.
 
         <p id="modalDescricao"></p>
 
-        <h3 id="contadorEntrega">
-            30
-        </h3>
+        <h3 id="contadorEntrega">30</h3>
 
         <div class="modal-botoes">
+          <button id="btnAceitarModal">Aceitar</button>
 
-            <button id="btnAceitarModal">
-                Aceitar
-            </button>
-
-            <button id="btnRecusarModal">
-                Recusar
-            </button>
-
+          <button id="btnRecusarModal">Recusar</button>
         </div>
+      </div>
 
+      <!-- barra minimizada, aparece quando o modal é reduzido -->
+      <div class="modal-minimizado" id="modalMinimizado">
+        <span>📦 Nova entrega · <span id="contadorEntregaMin">30</span>s</span>
+
+        <button id="expandirModal">⬆</button>
+      </div>
     </div>
 
-</div>
+    <!-- =========================================================
+     TOASTS — notificações não bloqueantes
+     ========================================================= -->
 
-</div>
+    <div class="toast-container" id="toastContainer"></div>
 
+    <!-- =========================================================
+     MENU INFERIOR
+     ========================================================= -->
 
-<nav class="menu-inferior">
+    <nav class="menu-inferior">
+      <button id="menuInicio">
+        🏠
+        <span>Início</span>
+      </button>
 
-<button id="menuInicio">
+      <button id="menuEntregas">
+        📦
+        <span>Entregas</span>
+      </button>
 
-🏠
+      <button id="menuGanhos">
+        💰
+        <span>Ganhos</span>
+      </button>
 
-<span>
-Início
-</span>
+      <button id="menuPerfil">
+        👤
+        <span>Perfil</span>
+      </button>
 
-</button>
+      <button id="menuSair">
+        🚪
+        <span>Sair</span>
+      </button>
+    </nav>
 
+    <!-- LEAFLET JS -->
 
-<button id="menuEntregas">
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-📦
-
-<span>
-Entregas
-</span>
-
-</button>
-
-
-<button id="menuGanhos">
-
-💰
-
-<span>
-Ganhos
-</span>
-
-</button>
-
-
-<button id="menuPerfil">
-
-👤
-
-<span>
-Perfil
-</span>
-
-</button>
-
-
-</nav>
-
-
-
-
-
-
-
-
-
-
-<!-- LEAFLET JS -->
-
-<script 
-src="https://unpkg.com/leaflet/dist/leaflet.js">
-</script>
-
-
-<script src="entregador.js"></script>
-
-
-
-</body>
-
+    <script src="entregador.js"></script>
+  </body>
 </html>

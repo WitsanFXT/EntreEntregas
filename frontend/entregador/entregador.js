@@ -60,6 +60,32 @@ const headers = {
 };
 
 // =======================
+// TOASTS — feedback não bloqueante
+// =======================
+
+function toast(mensagem, tipo = "sucesso") {
+  const container = document.getElementById("toastContainer");
+
+  if (!container) return;
+
+  const el = document.createElement("div");
+
+  el.className = `toast ${tipo}`;
+
+  el.textContent = mensagem;
+
+  container.appendChild(el);
+
+  requestAnimationFrame(() => el.classList.add("mostrar"));
+
+  setTimeout(() => {
+    el.classList.remove("mostrar");
+
+    setTimeout(() => el.remove(), 250);
+  }, 2500);
+}
+
+// =======================
 // MAPA
 // =======================
 
@@ -191,6 +217,132 @@ function atualizarStatus(online) {
 }
 
 // =======================
+// PAINEL SUPERIOR — expandir detalhes (veículo/placa)
+// =======================
+
+document.getElementById("toggleDetalhesStatus").onclick = () => {
+  const painel = document.getElementById("painelSuperior");
+  const aberto = painel.classList.toggle("aberto");
+  document
+    .getElementById("toggleDetalhesStatus")
+    .setAttribute("aria-expanded", aberto);
+};
+
+// =======================
+// CARD DE GANHOS — expandir/recolher
+// =======================
+
+document.getElementById("cardResumo").onclick = () => {
+  document.getElementById("cardResumo").classList.toggle("aberto");
+};
+
+// =======================
+// PAINEL DE ENTREGAS — bottom sheet (clicável e arrastável)
+// =======================
+
+const painelEntregas = document.getElementById("painelEntregas");
+const alcaEntregas = document.getElementById("alcaEntregas");
+const cardResumo = document.getElementById("cardResumo");
+
+function sincronizarCardResumo() {
+  cardResumo.classList.toggle(
+    "oculto",
+    painelEntregas.classList.contains("aberto"),
+  );
+}
+
+alcaEntregas.onclick = () => {
+  painelEntregas.classList.toggle("aberto");
+  sincronizarCardResumo();
+};
+
+(function habilitarArrasto() {
+  let arrastando = false;
+  let inicioY = 0;
+
+  const iniciar = (y) => {
+    arrastando = true;
+    inicioY = y;
+  };
+
+  const mover = (y) => {
+    if (!arrastando) return;
+    const delta = inicioY - y;
+    if (delta > 40) {
+      painelEntregas.classList.add("aberto");
+      sincronizarCardResumo();
+      arrastando = false;
+    } else if (delta < -40) {
+      painelEntregas.classList.remove("aberto");
+      sincronizarCardResumo();
+      arrastando = false;
+    }
+  };
+
+  const soltar = () => {
+    arrastando = false;
+  };
+
+  alcaEntregas.addEventListener("pointerdown", (e) => iniciar(e.clientY));
+  alcaEntregas.addEventListener("pointermove", (e) => mover(e.clientY));
+  window.addEventListener("pointerup", soltar);
+
+  alcaEntregas.addEventListener(
+    "touchstart",
+    (e) => iniciar(e.touches[0].clientY),
+    { passive: true },
+  );
+  alcaEntregas.addEventListener(
+    "touchmove",
+    (e) => mover(e.touches[0].clientY),
+    { passive: true },
+  );
+  alcaEntregas.addEventListener("touchend", soltar);
+})();
+
+// =======================
+// MENU INFERIOR
+// =======================
+
+function marcarMenuAtivo(botao) {
+  document
+    .querySelectorAll(".menu-inferior button")
+    .forEach((b) => b.classList.remove("ativo"));
+  botao.classList.add("ativo");
+}
+
+document.getElementById("menuInicio").onclick = (e) => {
+  marcarMenuAtivo(e.currentTarget);
+  document.getElementById("painelSuperior").classList.remove("aberto");
+  document.getElementById("cardResumo").classList.remove("aberto");
+  painelEntregas.classList.remove("aberto");
+  sincronizarCardResumo();
+};
+
+document.getElementById("menuEntregas").onclick = (e) => {
+  marcarMenuAtivo(e.currentTarget);
+  painelEntregas.classList.add("aberto");
+  sincronizarCardResumo();
+};
+
+document.getElementById("menuGanhos").onclick = (e) => {
+  marcarMenuAtivo(e.currentTarget);
+  painelEntregas.classList.remove("aberto");
+  sincronizarCardResumo();
+  document.getElementById("cardResumo").classList.add("aberto");
+};
+
+document.getElementById("menuPerfil").onclick = (e) => {
+  marcarMenuAtivo(e.currentTarget);
+  document.getElementById("painelSuperior").classList.add("aberto");
+};
+
+document.getElementById("menuSair").onclick = (e) => {
+  marcarMenuAtivo(e.currentTarget);
+  fazerLogout();
+};
+
+// =======================
 // ONLINE
 // =======================
 
@@ -210,11 +362,15 @@ document.getElementById("btnOnline").onclick = async () => {
 
     if (response.ok) {
       atualizarStatus(true);
-    }
 
-    alert(data.message);
+      toast(data.message || "Você está online", "sucesso");
+    } else {
+      toast(data.message || "Não foi possível ficar online", "erro");
+    }
   } catch (error) {
     console.log(error);
+
+    toast("Erro ao conectar com o servidor", "erro");
   }
 };
 
@@ -238,11 +394,15 @@ document.getElementById("btnOffline").onclick = async () => {
 
     if (response.ok) {
       atualizarStatus(false);
-    }
 
-    alert(data.message);
+      toast(data.message || "Você está offline", "sucesso");
+    } else {
+      toast(data.message || "Não foi possível ficar offline", "erro");
+    }
   } catch (error) {
     console.log(error);
+
+    toast("Erro ao conectar com o servidor", "erro");
   }
 };
 
@@ -279,6 +439,8 @@ async function carregarEntregas() {
     ultimaLista = [...entregas];
 
     ultimaQuantidade = entregas.length;
+
+    atualizarTituloPainelEntregas(entregas.length);
 
     const container = document.getElementById("entregas");
 
@@ -372,11 +534,25 @@ async function aceitarEntrega(id) {
 
     const data = await response.json();
 
-    alert(data.message);
+    toast(data.message || "Entrega aceita", "sucesso");
 
     carregarEntregas();
   } catch (error) {
     console.log(error);
+  }
+}
+
+let quantidadeEntregasAtivas = 0;
+
+function atualizarTituloPainelEntregas(quantidadeDisponiveis) {
+  const titulo = document.getElementById("tituloPainelEntregas");
+
+  if (quantidadeEntregasAtivas > 0) {
+    titulo.innerHTML = `🚚 Minhas Entregas (${quantidadeEntregasAtivas})`;
+  } else if (quantidadeDisponiveis > 0) {
+    titulo.innerHTML = `📦 Chamados disponíveis (${quantidadeDisponiveis})`;
+  } else {
+    titulo.innerHTML = "📦 Chamados disponíveis";
   }
 }
 
@@ -398,6 +574,10 @@ async function carregarEntregaAtual() {
       (e) => e.status === "aceita" || e.status === "retirada",
     );
 
+    quantidadeEntregasAtivas = ativas.length;
+
+    atualizarTituloPainelEntregas(ultimaLista.length);
+
     if (!ativas.length) {
       container.innerHTML = `
         <div class="sem-entrega">
@@ -413,86 +593,78 @@ async function carregarEntregaAtual() {
         const emRota = entrega.status === "retirada";
 
         return `
-
         <div class="entrega-atual">
-
             <div class="entrega-atual-topo">
-
                 <span class="entrega-atual-status">
-
                     ${emRota ? "🟢 Em rota" : "🟡 Aguardando coleta"}
-
                 </span>
-
             </div>
-
             <h3>
                 ${entrega.cliente_nome}
             </h3>
-
             <p>
                 📍 ${entrega.endereco}
             </p>
-
             <p>
                 🏘️ ${entrega.bairro}
             </p>
-
             <p>
                 💰 R$ ${Number(entrega.valor).toFixed(2)}
             </p>
-
-           <div class="entrega-atual-botoes">
-
+            <div class="entrega-atual-botoes">
 ${
   entrega.status === "aceita"
     ? `
-
+<div class="acoes-principais">
 <button
 class="btn-retirar"
 onclick="retirarEntrega('${entrega.id}')"
 >
 📦 Retirei pedido
 </button>
+</div>
 
+<div class="acoes-navegacao">
 <button
 class="btn-mapa"
-onclick="navegarColeta(
-'${entrega.empresas.latitude}',
-'${entrega.empresas.longitude}'
+onclick="abrirSeletorMapa(
+${entrega.empresas.latitude},
+${entrega.empresas.longitude},
+'coleta'
 )"
 >
-🧭 Ir para coleta
+🧭 Navegar
 </button>
 
+</div>
 `
     : `
-
+<div class="acoes-principais">
 <button
 class="btn-finalizar"
 onclick="finalizarEntrega('${entrega.id}')"
 >
 ✅ Finalizar
 </button>
-
-<button
-class="btn-mapa"
-onclick="navegarCliente(
-'${entrega.latitude}',
-'${entrega.longitude}'
-)"
->
-🧭 Ir para cliente
-</button>
-
-`
-}
-
 </div>
 
+<div class="acoes-navegacao">
+<button
+class="btn-mapa"
+onclick="abrirSeletorMapa(
+${entrega.latitude},
+${entrega.longitude},
+'cliente'
+)"
+>
+🧭 Navegar
+</button>
+</div>
+`
+}
+            </div>
         </div>
-
-        `;
+`;
       })
       .join("");
   } catch (error) {
@@ -541,6 +713,10 @@ function fecharModalEntrega() {
   clearInterval(contadorInterval);
 
   document.getElementById("modalEntrega").classList.remove("ativo");
+
+  document.getElementById("modalEntrega").classList.remove("minimizado");
+
+  removerMarcadoresEntrega();
 }
 
 document.getElementById("btnAceitarModal").onclick = async () => {
@@ -558,6 +734,92 @@ document.getElementById("btnRecusarModal").onclick = () => {
 };
 
 // =======================
+// MODAL — minimizar / expandir
+// =======================
+
+document.getElementById("minimizarModal").onclick = () => {
+  document.getElementById("modalEntrega").classList.add("minimizado");
+
+  mostrarMarcadoresEntrega(entregaAtual);
+};
+
+document.getElementById("expandirModal").onclick = () => {
+  document.getElementById("modalEntrega").classList.remove("minimizado");
+
+  removerMarcadoresEntrega();
+};
+
+// mantém o contador da barra minimizada sincronizado com o contador do modal
+function sincronizarContadorMinimizado() {
+  const min = document.getElementById("contadorEntregaMin");
+
+  if (min) {
+    min.innerHTML = document.getElementById("contadorEntrega").innerHTML;
+  }
+}
+
+setInterval(sincronizarContadorMinimizado, 1000);
+
+// =======================
+// MARCADORES DE COLETA / ENTREGA (quando modal está minimizado)
+// =======================
+
+let marcadoresEntregaAtiva = [];
+
+function mostrarMarcadoresEntrega(entrega) {
+  if (!mapa || !entrega) return;
+
+  removerMarcadoresEntrega();
+
+  const pontos = [];
+
+  if (
+    entrega.empresas &&
+    entrega.empresas.latitude &&
+    entrega.empresas.longitude
+  ) {
+    pontos.push({
+      lat: entrega.empresas.latitude,
+      lng: entrega.empresas.longitude,
+      tipo: "coleta",
+      label: "Coleta",
+    });
+  }
+
+  if (entrega.latitude && entrega.longitude) {
+    pontos.push({
+      lat: entrega.latitude,
+      lng: entrega.longitude,
+      tipo: "entrega",
+      label: "Entrega",
+    });
+  }
+
+  pontos.forEach((ponto) => {
+    const icone = L.divIcon({
+      className: "",
+      html: `<div class="marcador-ponto marcador-${ponto.tipo}"><span>${
+        ponto.tipo === "coleta" ? "🏪" : "🏠"
+      }</span></div>`,
+      iconSize: [30, 30],
+      iconAnchor: [15, 30],
+    });
+
+    const m = L.marker([ponto.lat, ponto.lng], { icon: icone })
+      .addTo(mapa)
+      .bindPopup(ponto.label, { closeButton: false });
+
+    marcadoresEntregaAtiva.push(m);
+  });
+}
+
+function removerMarcadoresEntrega() {
+  marcadoresEntregaAtiva.forEach((m) => mapa && mapa.removeLayer(m));
+
+  marcadoresEntregaAtiva = [];
+}
+
+// =======================
 // GPS
 // =======================
 
@@ -565,7 +827,7 @@ let watchId;
 
 function iniciarGPS() {
   if (!navigator.geolocation) {
-    alert("GPS não disponível");
+    toast("GPS não disponível neste dispositivo", "erro");
 
     return;
   }
@@ -629,17 +891,31 @@ GPS ativo · precisão de ${Math.round(precisao)}m
   );
 }
 
+function abrirGoogleMaps(lat, lng) {
+  window.open(
+    `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
+    "_blank",
+  );
+}
+
+function abrirWaze(lat, lng) {
+  window.open(`https://waze.com/ul?ll=${lat},${lng}&navigate=yes`, "_blank");
+}
+
+function abrirAppleMaps(lat, lng) {
+  window.open(`https://maps.apple.com/?daddr=${lat},${lng}`, "_blank");
+}
 // =======================
 // LOGOUT
 // =======================
 
-document.getElementById("logout").onclick = () => {
+function fazerLogout() {
   localStorage.removeItem("token");
 
   localStorage.removeItem("usuario");
 
   window.location.href = "../login/login.html";
-};
+}
 
 async function carregarFinanceiro() {
   const response = await fetch(
@@ -651,6 +927,9 @@ async function carregarFinanceiro() {
   const data = await response.json();
 
   document.getElementById("ganhosHoje").innerHTML =
+    `R$ ${data.hoje.toFixed(2)}`;
+
+  document.getElementById("ganhosHojeExpandido").innerHTML =
     `R$ ${data.hoje.toFixed(2)}`;
 
   document.getElementById("ganhosSemana").innerHTML =
@@ -674,7 +953,7 @@ async function retirarEntrega(id) {
 
   const data = await response.json();
 
-  alert(data.message);
+  toast(data.message || "Pedido retirado", "sucesso");
 
   carregarEntregas();
   carregarEntregaAtual();
@@ -692,11 +971,94 @@ async function finalizarEntrega(id) {
 
   const data = await response.json();
 
-  alert(data.message);
+  toast(data.message || "Entrega finalizada", "sucesso");
 
   carregarEntregas();
   carregarEntregaAtual();
   carregarFinanceiro();
+}
+
+function abrirSeletorMapa(lat, lng, tipo) {
+  const modal = document.createElement("div");
+
+  modal.className = "modal-seletor-mapa";
+
+  modal.innerHTML = `
+  
+    <div class="modal-seletor-mapa-conteudo">
+
+      <h3>
+      Escolha o aplicativo de navegação
+      </h3>
+
+      <div class="opcoes-mapa">
+
+        <button onclick="navegarCom('google', ${lat}, ${lng}, '${tipo}')">
+          🗺 Google Maps
+        </button>
+
+        <button onclick="navegarCom('waze', ${lat}, ${lng}, '${tipo}')">
+          📍 Waze
+        </button>
+
+        <button onclick="navegarCom('apple', ${lat}, ${lng}, '${tipo}')">
+          🍎 Apple Maps
+        </button>
+
+      </div>
+
+      <button
+      class="btn-fechar-modal"
+      onclick="this.closest('.modal-seletor-mapa').remove()"
+      >
+        Cancelar
+      </button>
+
+    </div>
+
+  `;
+
+  document.body.appendChild(modal);
+}
+
+function navegarCom(app, lat, lng) {
+  if (app === "google") {
+    abrirGoogleMaps(lat, lng);
+  }
+
+  if (app === "waze") {
+    abrirWaze(lat, lng);
+  }
+
+  if (app === "apple") {
+    abrirAppleMaps(lat, lng);
+  }
+
+  document.querySelector(".modal-seletor-mapa")?.remove();
+}
+
+function abrirGoogleMaps(lat, lng) {
+  window.open(
+    `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
+
+    "_blank",
+  );
+}
+
+function abrirWaze(lat, lng) {
+  window.open(
+    `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`,
+
+    "_blank",
+  );
+}
+
+function abrirAppleMaps(lat, lng) {
+  window.open(
+    `https://maps.apple.com/?daddr=${lat},${lng}`,
+
+    "_blank",
+  );
 }
 
 function navegarColeta(lat, lng) {
@@ -715,6 +1077,8 @@ function navegarCliente(lat, lng) {
 // INICIAR SISTEMA
 // =======================
 iniciarMapa();
+
+document.getElementById("menuInicio").classList.add("ativo");
 
 carregarPerfil();
 
