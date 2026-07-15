@@ -112,16 +112,53 @@
 
       <div class="painel-entregas-conteudo">
         <!-- ENTREGA EM ANDAMENTO -->
+         <div class="tabs-entregas">
+
+    <button
+        id="tabDisponiveis"
+        class="tab-entrega ativa"
+        data-tab="disponiveis"
+    >
+        Disponíveis
+        <span id="badgeDisponiveis">0</span>
+    </button>
+
+    <button
+        id="tabColetas"
+        class="tab-entrega"
+        data-tab="coletas"
+    >
+        Coletas
+        <span id="badgeColetas">0</span>
+    </button>
+
+    <button
+        id="tabRota"
+        class="tab-entrega"
+        data-tab="rota"
+    >
+        Em rota
+        <span id="badgeRota">0</span>
+    </button>
+
+    <button
+        id="tabHistorico"
+        class="tab-entrega"
+        data-tab="historico"
+    >
+        Histórico
+        <span id="badgeHistorico">0</span>
+    </button>
+
+</div>
 
         <div id="entregaAtual">
           <div class="sem-entrega">Nenhuma entrega em andamento.</div>
         </div>
 
         <!-- CHAMADOS DISPONÍVEIS -->
-
-        <div id="entregas">
-          <p>Nenhuma entrega disponível.</p>
-        </div>
+        <div id="chamadosDisponiveis">
+          <div class="sem-entrega">Nenhum chamado disponível.</div>
       </div>
     </div>
 

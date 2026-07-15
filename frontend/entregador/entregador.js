@@ -17,6 +17,8 @@ let ultimaQuantidade = 0;
 
 let entregaAtual = null;
 
+let abaAtual = "disponiveis";
+
 let contadorInterval = null;
 
 const somNovaEntrega = new Audio("../assets/nova-entrega.mp3");
@@ -406,109 +408,183 @@ document.getElementById("btnOffline").onclick = async () => {
   }
 };
 
+
+// =======================
+// Disponiveis
+// =======================
+document.getElementById("tabDisponiveis").onclick = () => {
+    abaAtual = "disponiveis";
+    atualizarTabs();
+    carregarEntregas();
+    carregarEntregaAtual();
+};
+
+document.getElementById("tabColetas").onclick = () => {
+    abaAtual = "aceita";
+    atualizarTabs();
+    carregarEntregas();
+    carregarEntregaAtual();
+};
+
+document.getElementById("tabRota").onclick = () => {
+    abaAtual = "retirada";
+    atualizarTabs();
+    carregarEntregas();
+    carregarEntregaAtual();
+};
+
+document.getElementById("tabHistorico").onclick = () => {
+    abaAtual = "finalizada";
+    atualizarTabs();
+    carregarEntregas();
+    carregarEntregaAtual();
+};
+
+function atualizarTabs() {
+
+    document
+    .querySelectorAll(".tab-entrega")
+    .forEach(tab => tab.classList.remove("ativa"));
+
+    if (abaAtual === "disponiveis") {
+        document
+        .getElementById("tabDisponiveis")
+        .classList.add("ativa");
+    }
+
+    if (abaAtual === "aceita") {
+        document
+        .getElementById("tabColetas")
+        .classList.add("ativa");
+    }
+
+    if (abaAtual === "retirada") {
+        document
+        .getElementById("tabRota")
+        .classList.add("ativa");
+    }
+
+    if (abaAtual === "finalizada") {
+        document
+        .getElementById("tabHistorico")
+        .classList.add("ativa");
+    }
+
+}
+
 // =======================
 // ENTREGAS DISPONÍVEIS
 // =======================
 
 async function carregarEntregas() {
   try {
-    const response = await fetch(
-      `${API}/api/entregas/disponiveis`,
+    const disponiveisReq = await fetch(`${API}/api/entregas/disponiveis`, { headers });
+    const minhasReq = await fetch(`${API}/api/entregas/minhas`, { headers });
 
-      {
-        headers,
-      },
+    const disponiveis = await disponiveisReq.json();
+    const minhas = await minhasReq.json();
+
+    // combina listas (disponíveis + minhas) e remove duplicatas
+    const mapa = new Map();
+    (Array.isArray(disponiveis) ? disponiveis : disponiveis.entregas || []).forEach(e => mapa.set(e.id, e));
+    (Array.isArray(minhas) ? minhas : minhas.entregas || []).forEach(e => mapa.set(e.id, e));
+    const entregas = Array.from(mapa.values());
+
+    // atualiza badges uma única vez com filtros eficientes
+    const contadores = {
+      pendente: 0,
+      aceita: 0,
+      retirada: 0,
+      finalizada: 0
+    };
+
+    entregas.forEach(e => {
+      if (contadores.hasOwnProperty(e.status)) {
+        contadores[e.status]++;
+      }
+    });
+
+    document.getElementById("badgeDisponiveis").innerHTML = contadores.pendente;
+    document.getElementById("badgeColetas").innerHTML = contadores.aceita;
+    document.getElementById("badgeRota").innerHTML = contadores.retirada;
+    document.getElementById("badgeHistorico").innerHTML = contadores.finalizada;
+
+    // mapa de status para filtragem
+    const statusMap = {
+      disponiveis: "pendente",
+      aceita: "aceita",
+      retirada: "retirada",
+      finalizada: "finalizada"
+    };
+
+    console.log("ABA ATUAL:", abaAtual);
+    console.log(
+      "STATUS RECEBIDOS:",
+      entregas.map(e => ({
+        id: e.id,
+        status: e.status,
+      })),
     );
 
-    const entregas = await response.json();
+    const statusAtual = statusMap[abaAtual] || "pendente";
+    const entregasFiltradas = entregas.filter(e => e.status === statusAtual);
 
-    const idsAtuais = entregas.map((e) => e.id);
+    console.log("STATUS ATUAL:", statusAtual);
+    console.log("ENTREGAS FILTRADAS:", entregasFiltradas);
+    console.log("CONTAINER:", document.getElementById("entregas"));
 
-    const existemNovas = idsAtuais.some(
-      (id) => !ultimaLista.some((antiga) => antiga.id === id),
+    // detecta novas entregas comparando IDs e evita repetir notificações
+    const idsAntigos = new Set(ultimaLista.map((e) => String(e.id)));
+    const novasEntregas = entregas.filter(
+      (e) => !idsAntigos.has(String(e.id)),
     );
 
-    if (existemNovas) {
-      abrirModalEntrega(entregas[0]);
+    if (novasEntregas.length > 0 && ultimaLista.length > 0) {
+      const novaPendentes = novasEntregas.find((e) => e.status === "pendente");
+      const entregaParaNotificar = novaPendentes || novasEntregas[0];
+
+      if (
+        entregaParaNotificar &&
+        String(entregaParaNotificar.id) !== String(ultimoPedidoNotificado)
+      ) {
+        abrirModalEntrega(entregaParaNotificar);
+        ultimoPedidoNotificado = String(entregaParaNotificar.id);
+      }
     }
 
-    if (JSON.stringify(entregas) === JSON.stringify(ultimaLista)) {
-      return;
-    }
-
-    ultimaLista = [...entregas];
-
+    // atualiza cache
+    ultimaLista = entregas.map(e => ({ ...e }));
     ultimaQuantidade = entregas.length;
-
     atualizarTituloPainelEntregas(entregas.length);
 
+    // renderiza entregas filtradas
     const container = document.getElementById("entregas");
-
     container.innerHTML = "";
 
-    if (!entregas.length) {
-      container.innerHTML = `
-<p>
-Nenhuma entrega disponível.
-</p>
-`;
-
+    if (!entregasFiltradas.length) {
+      container.innerHTML = `<p>Nenhuma entrega encontrada.</p>`;
       return;
     }
 
-    entregas.forEach((entrega) => {
+    entregasFiltradas.forEach(entrega => {
       const div = document.createElement("div");
-
       div.className = "entrega-card";
-
       div.innerHTML = `
-
-<div class="entrega-card-header">
-    <span class="entrega-card-badge">📦 Nova corrida</span>
-    <span class="entrega-card-valor">R$ ${entrega.valor}</span>
-</div>
-
-
-<h3 class="entrega-cliente-label">
-Cliente
-</h3>
-
-
-<p class="entrega-cliente">
-${entrega.cliente_nome}
-</p>
-
-
-<p class="entrega-endereco">
-📍 ${entrega.endereco}
-</p>
-
-
-<p class="entrega-bairro">
-🏘️ ${entrega.bairro}
-</p>
-
-
-${
-  entrega.descricao
-    ? `
-<p class="entrega-descricao">
-${entrega.descricao}
-</p>
-`
-    : ""
-}
-
-
-
-<button class="btn-aceitar-corrida" onclick="aceitarEntrega('${entrega.id}')">
-
-Aceitar entrega
-
-</button>
-
-`;
-
+        <div class="entrega-card-header">
+          <span class="entrega-card-badge">📦 Nova corrida</span>
+          <span class="entrega-card-valor">R$ ${Number(entrega.valor).toFixed(2)}</span>
+        </div>
+        <h3 class="entrega-cliente-label">Cliente</h3>
+        <p class="entrega-cliente">${entrega.cliente_nome}</p>
+        <p class="entrega-endereco">📍 ${entrega.endereco}</p>
+        <p class="entrega-bairro">🏘️ ${entrega.bairro}</p>
+        ${entrega.descricao ? `<p class="entrega-descricao">${entrega.descricao}</p>` : ""}
+        ${
+          entrega.status === "pendente"
+            ? `<button class="btn-aceitar-corrida" onclick="aceitarEntrega('${entrega.id}')">Aceitar entrega</button>`
+            : `<span class="status-entrega">${entrega.status}</span>`
+        }
+      `;
       container.appendChild(div);
     });
   } catch (error) {
@@ -558,39 +634,64 @@ function atualizarTituloPainelEntregas(quantidadeDisponiveis) {
 
 async function carregarEntregaAtual() {
   try {
-    const response = await fetch(
-      `${API}/api/entregador/minhas-entregas`,
+    const response = await fetch(`${API}/api/entregas/minhas`, { headers });
+    const resposta = await response.json();
 
-      {
-        headers,
-      },
+    console.log(resposta);
+
+    const entregas = Array.isArray(resposta) ? resposta : resposta.entregas || [];
+
+    console.log("ABA ATUAL:", abaAtual);
+    console.log(
+      "STATUS RECEBIDOS:",
+      entregas.map((e) => ({
+        id: e.id,
+        status: e.status,
+      })),
     );
 
-    const entregas = await response.json();
+    console.table(
+      entregas.map((e) => ({
+        id: e.id,
+        status: e.status,
+      })),
+    );
 
     const container = document.getElementById("entregaAtual");
+    console.log("CONTAINER ENTREGA_ATUAL:", container);
 
-    const ativas = entregas.filter(
-      (e) => e.status === "aceita" || e.status === "retirada",
-    );
+    let lista = [];
 
-    quantidadeEntregasAtivas = ativas.length;
+    if (abaAtual === "disponiveis") {
+      lista = entregas.filter((e) => e.status === "pendente");
+    } else if (abaAtual === "aceita") {
+      lista = entregas.filter((e) => e.status === "aceita");
+    } else if (abaAtual === "retirada") {
+      lista = entregas.filter((e) => e.status === "retirada");
+    } else if (abaAtual === "finalizada") {
+      lista = entregas.filter((e) => e.status === "finalizada");
+    }
 
+    console.log("ABA:", abaAtual);
+    console.log("ENTREGAS:", lista);
+
+    quantidadeEntregasAtivas = lista.length;
     atualizarTituloPainelEntregas(ultimaLista.length);
 
-    if (!ativas.length) {
+    if (!lista.length) {
       container.innerHTML = `
         <div class="sem-entrega">
             Nenhuma entrega em andamento.
         </div>
         `;
-
       return;
     }
 
-    container.innerHTML = ativas
+    container.innerHTML = lista
       .map((entrega) => {
         const emRota = entrega.status === "retirada";
+        const latEmpresa = entrega.empresas?.latitude || null;
+        const lngEmpresa = entrega.empresas?.longitude || null;
 
         return `
         <div class="entrega-atual">
@@ -624,17 +725,20 @@ onclick="retirarEntrega('${entrega.id}')"
 </button>
 </div>
 
+
 <div class="acoes-navegacao">
+${
+latEmpresa && lngEmpresa
+  ? `
 <button
 class="btn-mapa"
-onclick="abrirSeletorMapa(
-${entrega.empresas.latitude},
-${entrega.empresas.longitude},
-'coleta'
-)"
+onclick="abrirSeletorMapa('${latEmpresa}','${lngEmpresa}','coleta')"
 >
 🧭 Navegar
 </button>
+`
+  : ""
+}
 
 </div>
 `
@@ -649,16 +753,18 @@ onclick="finalizarEntrega('${entrega.id}')"
 </div>
 
 <div class="acoes-navegacao">
+${
+latEmpresa && lngEmpresa
+  ? `
 <button
 class="btn-mapa"
-onclick="abrirSeletorMapa(
-${entrega.latitude},
-${entrega.longitude},
-'cliente'
-)"
+onclick="abrirSeletorMapa('${latEmpresa}','${lngEmpresa}','coleta')"
 >
 🧭 Navegar
 </button>
+`
+  : ""
+}
 </div>
 `
 }
