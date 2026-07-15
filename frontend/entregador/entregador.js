@@ -1,7 +1,9 @@
 // Detecta automaticamente onde o site está rodando
-const API = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-  ? "http://localhost:3001"  // Se for no seu PC, aponta para a porta do backend
-  : "";                      // Se for na Vercel, usa rota relativa (o vercel.json resolve)
+const API =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
+    ? "http://localhost:5500" // Se for no seu PC, aponta para a porta do backend
+    : ""; // Se for na Vercel, usa rota relativa (o vercel.json resolve)
 
 const token = localStorage.getItem("token");
 
@@ -17,81 +19,49 @@ let entregaAtual = null;
 
 let contadorInterval = null;
 
-const somNovaEntrega =
-new Audio("../assets/nova-entrega.mp3");
+const somNovaEntrega = new Audio("../assets/nova-entrega.mp3");
 
 somNovaEntrega.volume = 1;
 
 let alertaSonoro = null;
 
-function iniciarAlertaEntrega(){
+function iniciarAlertaEntrega() {
+  somNovaEntrega.currentTime = 0;
 
+  somNovaEntrega.play().catch(() => {});
+
+  alertaSonoro = setInterval(() => {
     somNovaEntrega.currentTime = 0;
 
-    somNovaEntrega.play()
-    .catch(()=>{});
+    somNovaEntrega.play().catch(() => {});
+  }, 3000);
 
-    alertaSonoro = setInterval(() => {
-
-        somNovaEntrega.currentTime = 0;
-
-        somNovaEntrega.play()
-        .catch(()=>{});
-
-    }, 3000);
-
-
-    setTimeout(() => {
-
-        pararAlertaEntrega();
-
-    }, 30000);
-
+  setTimeout(() => {
+    pararAlertaEntrega();
+  }, 30000);
 }
 
+function pararAlertaEntrega() {
+  if (alertaSonoro) {
+    clearInterval(alertaSonoro);
 
-
-function pararAlertaEntrega(){
-
-    if(alertaSonoro){
-
-        clearInterval(alertaSonoro);
-
-        alertaSonoro = null;
-
-    }
-
+    alertaSonoro = null;
+  }
 }
 
-
-if(!token){
-
-    window.location.href="../login/login.html";
-
+if (!token) {
+  window.location.href = "../login/login.html";
 }
 
-
-
-const usuario =
-JSON.parse(
-    localStorage.getItem("usuario")
-);
-
-
+const usuario = JSON.parse(localStorage.getItem("usuario"));
 
 const headers = {
-
-    "Authorization":
-    `Bearer ${token}`
-
+  Authorization: `Bearer ${token}`,
 };
-
-
 
 // =======================
 // MAPA
 // =======================
-
 
 let mapa;
 
@@ -99,530 +69,237 @@ let marcador;
 
 let linhaRota = null;
 
-
 // ícone customizado: pontinho pulsante estilo "localização ao vivo"
 const gpsIcon = L.divIcon({
+  className: "gps-marker",
 
-    className: "gps-marker",
-
-    html: `
+  html: `
         <div class="gps-marker-pulse"></div>
         <div class="gps-marker-dot"></div>
     `,
 
-    iconSize: [22, 22],
+  iconSize: [22, 22],
 
-    iconAnchor: [11, 11]
-
+  iconAnchor: [11, 11],
 });
 
+function iniciarMapa() {
+  mapa = L.map("mapa", {
+    zoomControl: false,
+  }).setView([-16.359, -46.906], 15);
 
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap",
 
-function iniciarMapa(){
+    maxZoom: 19,
+  }).addTo(mapa);
 
-
-    mapa =
-    L.map("mapa", {
-
-        zoomControl: false
-
+  // zoom reposicionado, estilo app de entrega (canto inferior direito)
+  L.control
+    .zoom({
+      position: "bottomright",
     })
-    .setView(
-        [-16.359,-46.906],
-        15
-    );
-
-
-
-    L.tileLayer(
-        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-        {
-
-            attribution:
-            "&copy; OpenStreetMap",
-
-            maxZoom: 19
-
-        }
-
-    ).addTo(mapa);
-
-
-    // zoom reposicionado, estilo app de entrega (canto inferior direito)
-    L.control.zoom({
-
-        position: "bottomright"
-
-    }).addTo(mapa);
-
-
-
+    .addTo(mapa);
 }
 
+function atualizarMapa(latitude, longitude) {
+  if (!mapa) {
+    return;
+  }
 
+  const posicao = [Number(latitude), Number(longitude)];
 
+  if (!marcador) {
+    marcador = L.marker(posicao, {
+      icon: gpsIcon,
+    })
 
+      .addTo(mapa)
 
+      .bindPopup("🚴 Você está aqui", {
+        className: "popup-entregador",
 
-function atualizarMapa(latitude,longitude){
+        closeButton: false,
+      })
 
+      .openPopup();
+  } else {
+    marcador.setLatLng(posicao);
+  }
 
-    if(!mapa){
-
-        return;
-
-    }
-
-
-
-    const posicao = [
-
-        Number(latitude),
-
-        Number(longitude)
-
-    ];
-
-
-
-    if(!marcador){
-
-
-        marcador =
-
-        L.marker(posicao, {
-
-            icon: gpsIcon
-
-        })
-
-        .addTo(mapa)
-
-        .bindPopup(
-            "🚴 Você está aqui",
-            {
-
-                className: "popup-entregador",
-
-                closeButton: false
-
-            }
-        )
-
-        .openPopup();
-
-
-    }
-
-    else{
-
-
-        marcador
-        .setLatLng(posicao);
-
-
-    }
-
-
-
-    mapa
-    .setView(
-        posicao,
-        16
-    );
-
-
+  mapa.setView(posicao, 16);
 }
 
-function desenharRota(origem,destino){
-
-    if(rotaAtual){
-
-        mapa.removeLayer(rotaAtual);
-
-    }
-
-    rotaAtual = L.polyline(
-        [
-            origem,
-            destino
-        ]
-    ).addTo(mapa);
-
-}
-if(rotaAtual){
-
+function desenharRota(origem, destino) {
+  if (rotaAtual) {
     mapa.removeLayer(rotaAtual);
+  }
 
-    rotaAtual = null;
-
+  rotaAtual = L.polyline([origem, destino]).addTo(mapa);
 }
+if (rotaAtual) {
+  mapa.removeLayer(rotaAtual);
 
-
-
-
-
-
+  rotaAtual = null;
+}
 
 // =======================
 // PERFIL
 // =======================
 
+async function carregarPerfil() {
+  try {
+    const response = await fetch(
+      `${API}/api/entregador/me`,
 
-async function carregarPerfil(){
-
-
-try{
-
-
-    const response =
-
-    await fetch(
-
-        `${API}/api/entregador/me`,
-
-        {
-
-            headers
-
-        }
-
+      {
+        headers,
+      },
     );
 
+    const data = await response.json();
 
+    document.getElementById("nomeUsuario").innerHTML =
+      data.nome || "Entregador";
 
-    const data =
-    await response.json();
+    document.getElementById("veiculo").innerHTML = data.tipo_veiculo || "-";
 
+    document.getElementById("placa").innerHTML = data.placa || "-";
 
+    atualizarStatus(data.online);
 
-    document
-    .getElementById("nomeUsuario")
-    .innerHTML =
-    data.nome || "Entregador";
+    if (data.latitude && data.longitude) {
+      atualizarMapa(
+        data.latitude,
 
-
-
-    document
-    .getElementById("veiculo")
-    .innerHTML =
-    data.tipo_veiculo || "-";
-
-
-
-    document
-    .getElementById("placa")
-    .innerHTML =
-    data.placa || "-";
-
-
-
-    atualizarStatus(
-        data.online
-    );
-
-
-
-    if(data.latitude && data.longitude){
-
-
-        atualizarMapa(
-
-            data.latitude,
-
-            data.longitude
-
-        );
-
-
+        data.longitude,
+      );
     }
-
-
-
-}catch(error){
-
-
+  } catch (error) {
     console.log(error);
-
-
+  }
 }
-
-
-}
-
-
-
-
-
-
-
 
 // =======================
 // STATUS
 // =======================
 
-
-function atualizarStatus(online){
-
-
-    document
-    .getElementById("status")
-    .innerHTML =
-
-
-    online
-
-    ?
-
-    "🟢 Online"
-
-    :
-
-    "🔴 Offline";
-
-
+function atualizarStatus(online) {
+  document.getElementById("status").innerHTML = online
+    ? "🟢 Online"
+    : "🔴 Offline";
 }
-
-
-
-
-
-
 
 // =======================
 // ONLINE
 // =======================
 
+document.getElementById("btnOnline").onclick = async () => {
+  try {
+    const response = await fetch(
+      `${API}/api/entregador/online`,
 
-document
-.getElementById("btnOnline")
-.onclick = async()=>{
+      {
+        method: "POST",
 
+        headers,
+      },
+    );
 
-try{
+    const data = await response.json();
 
+    if (response.ok) {
+      atualizarStatus(true);
+    }
 
-const response =
-
-await fetch(
-
-`${API}/api/entregador/online`,
-
-{
-
-method:"POST",
-
-headers
-
-}
-
-);
-
-
-
-const data =
-await response.json();
-
-
-
-if(response.ok){
-
-    atualizarStatus(true);
-
-}
-
-
-
-alert(data.message);
-
-
-
-}catch(error){
-
-console.log(error);
-
-}
-
-
+    alert(data.message);
+  } catch (error) {
+    console.log(error);
+  }
 };
-
-
-
-
-
-
-
 
 // =======================
 // OFFLINE
 // =======================
 
+document.getElementById("btnOffline").onclick = async () => {
+  try {
+    const response = await fetch(
+      `${API}/api/entregador/offline`,
 
-document
-.getElementById("btnOffline")
-.onclick = async()=>{
+      {
+        method: "POST",
 
+        headers,
+      },
+    );
 
-try{
+    const data = await response.json();
 
+    if (response.ok) {
+      atualizarStatus(false);
+    }
 
-const response =
-
-await fetch(
-
-`${API}/api/entregador/offline`,
-
-{
-
-method:"POST",
-
-headers
-
-}
-
-);
-
-
-
-const data =
-await response.json();
-
-
-
-if(response.ok){
-
-    atualizarStatus(false);
-
-}
-
-
-
-alert(data.message);
-
-
-
-}catch(error){
-
-console.log(error);
-
-}
-
-
+    alert(data.message);
+  } catch (error) {
+    console.log(error);
+  }
 };
-
-
-
-
-
-
-
 
 // =======================
 // ENTREGAS DISPONÍVEIS
 // =======================
 
+async function carregarEntregas() {
+  try {
+    const response = await fetch(
+      `${API}/api/entregas/disponiveis`,
 
-async function carregarEntregas(){
-
-
-try{
-
-
-const response =
-
-await fetch(
-
-`${API}/api/entregas/disponiveis`,
-
-{
-
-headers
-
-}
-
-);
-
-
-
-const entregas = await response.json();
-
-const idsAtuais =
-entregas.map(e => e.id);
-
-const existemNovas =
-
-idsAtuais.some(
-    id => !ultimaLista.some(
-        antiga => antiga.id === id
-    )
-);
-
-if(existemNovas){
-
-    abrirModalEntrega(
-        entregas[0]
+      {
+        headers,
+      },
     );
 
-}
+    const entregas = await response.json();
 
-if(
-    JSON.stringify(entregas) ===
-    JSON.stringify(ultimaLista)
-){
-    return;
-}
+    const idsAtuais = entregas.map((e) => e.id);
 
-ultimaLista = [...entregas];
+    const existemNovas = idsAtuais.some(
+      (id) => !ultimaLista.some((antiga) => antiga.id === id),
+    );
 
-ultimaQuantidade =
-entregas.length;
+    if (existemNovas) {
+      abrirModalEntrega(entregas[0]);
+    }
 
+    if (JSON.stringify(entregas) === JSON.stringify(ultimaLista)) {
+      return;
+    }
 
+    ultimaLista = [...entregas];
 
-const container =
-document.getElementById("entregas");
+    ultimaQuantidade = entregas.length;
 
-container.innerHTML = "";
+    const container = document.getElementById("entregas");
 
+    container.innerHTML = "";
 
-
-
-
-if(!entregas.length){
-
-
-container.innerHTML =
-
-`
+    if (!entregas.length) {
+      container.innerHTML = `
 <p>
 Nenhuma entrega disponível.
 </p>
 `;
 
+      return;
+    }
 
-return;
+    entregas.forEach((entrega) => {
+      const div = document.createElement("div");
 
+      div.className = "entrega-card";
 
-}
-
-
-
-
-entregas.forEach(entrega=>{
-
-
-const div =
-document.createElement("div");
-
-
-div.className =
-"entrega-card";
-
-
-
-div.innerHTML =
-
-`
+      div.innerHTML = `
 
 <div class="entrega-card-header">
     <span class="entrega-card-badge">📦 Nova corrida</span>
@@ -650,11 +327,15 @@ ${entrega.cliente_nome}
 </p>
 
 
-${entrega.descricao ? `
+${
+  entrega.descricao
+    ? `
 <p class="entrega-descricao">
 ${entrega.descricao}
 </p>
-` : ""}
+`
+    : ""
+}
 
 
 
@@ -666,138 +347,70 @@ Aceitar entrega
 
 `;
 
-
-container.appendChild(div);
-
-
-
-});
-
-
-
-}catch(error){
-
-
-console.log(error);
-
-
+      container.appendChild(div);
+    });
+  } catch (error) {
+    console.log(error);
+  }
 }
-
-
-}
-
-
-
-
-
-
-
 
 // =======================
 // ACEITAR ENTREGA
 // =======================
 
-
-async function aceitarEntrega(id){
-
-
-try{
-
-
-const response =
-
-await fetch(
-
-`${API}/api/entregas/${id}/aceitar`,
-
-{
-
-method:"PUT",
-
-headers
-
-}
-
-);
-
-
-
-const data =
-await response.json();
-
-
-
-alert(data.message);
-
-
-
-carregarEntregas();
-
-
-
-}catch(error){
-
-
-console.log(error);
-
-
-}
-
-
-
-}
-
-async function carregarEntregaAtual(){
-
-try{
-
+async function aceitarEntrega(id) {
+  try {
     const response = await fetch(
+      `${API}/api/entregas/${id}/aceitar`,
 
-        `${API}/api/entregador/minhas-entregas`,
+      {
+        method: "PUT",
 
-        {
-            headers
-        }
-
+        headers,
+      },
     );
 
-    const entregas =
-    await response.json();
+    const data = await response.json();
 
-    const container =
-    document.getElementById("entregaAtual");
+    alert(data.message);
 
+    carregarEntregas();
+  } catch (error) {
+    console.log(error);
+  }
+}
 
+async function carregarEntregaAtual() {
+  try {
+    const response = await fetch(
+      `${API}/api/entregador/minhas-entregas`,
 
-    const ativas = entregas.filter(e=>
-
-        e.status === "aceita" ||
-        e.status === "retirada"
-
+      {
+        headers,
+      },
     );
 
+    const entregas = await response.json();
 
+    const container = document.getElementById("entregaAtual");
 
-    if(!ativas.length){
+    const ativas = entregas.filter(
+      (e) => e.status === "aceita" || e.status === "retirada",
+    );
 
-        container.innerHTML =
-
-        `
+    if (!ativas.length) {
+      container.innerHTML = `
         <div class="sem-entrega">
             Nenhuma entrega em andamento.
         </div>
         `;
 
-        return;
-
+      return;
     }
 
-
-
-    container.innerHTML = ativas.map(entrega => {
-
-        const emRota =
-        entrega.status === "retirada";
+    container.innerHTML = ativas
+      .map((entrega) => {
+        const emRota = entrega.status === "retirada";
 
         return `
 
@@ -807,11 +420,7 @@ try{
 
                 <span class="entrega-atual-status">
 
-                    ${
-                        emRota
-                        ? "🟢 Em rota"
-                        : "🟡 Aguardando coleta"
-                    }
+                    ${emRota ? "🟢 Em rota" : "🟡 Aguardando coleta"}
 
                 </span>
 
@@ -833,424 +442,274 @@ try{
                 💰 R$ ${Number(entrega.valor).toFixed(2)}
             </p>
 
-            <div class="entrega-atual-botoes">
+           <div class="entrega-atual-botoes">
 
-                ${
-                    entrega.status === "aceita"
+${
+  entrega.status === "aceita"
+    ? `
 
-                    ?
+<button
+class="btn-retirar"
+onclick="retirarEntrega('${entrega.id}')"
+>
+📦 Retirei pedido
+</button>
 
-                    `
-                    <button
-                    class="btn-retirar"
-                    onclick="retirarEntrega('${entrega.id}')"
-                    >
-                    📦 Retirei pedido
-                    </button>
-                    `
+<button
+class="btn-mapa"
+onclick="navegarColeta(
+'${entrega.empresas.latitude}',
+'${entrega.empresas.longitude}'
+)"
+>
+🧭 Ir para coleta
+</button>
 
-                    :
+`
+    : `
 
-                    `
-                    <button
-                    class="btn-finalizar"
-                    onclick="finalizarEntrega('${entrega.id}')"
-                    >
-                    ✅ Finalizar
-                    </button>
-                    `
-                }
+<button
+class="btn-finalizar"
+onclick="finalizarEntrega('${entrega.id}')"
+>
+✅ Finalizar
+</button>
 
-            </div>
+<button
+class="btn-mapa"
+onclick="navegarCliente(
+'${entrega.latitude}',
+'${entrega.longitude}'
+)"
+>
+🧭 Ir para cliente
+</button>
+
+`
+}
+
+</div>
 
         </div>
 
         `;
-
-    }).join("");
-
-
-}catch(error){
-
+      })
+      .join("");
+  } catch (error) {
     console.log(error);
-
+  }
 }
 
-}
+function abrirModalEntrega(entrega) {
+  entregaAtual = entrega;
 
-
-function abrirModalEntrega(entrega){
-
-    entregaAtual = entrega;
-
-    document
-    .getElementById("modalCliente")
-    .innerHTML =
+  document.getElementById("modalCliente").innerHTML =
     `Cliente: ${entrega.cliente_nome}`;
 
+  document.getElementById("modalEndereco").innerHTML = `📍 ${entrega.endereco}`;
 
-    document
-    .getElementById("modalEndereco")
-    .innerHTML =
-    `📍 ${entrega.endereco}`;
+  document.getElementById("modalBairro").innerHTML = `🏘️ ${entrega.bairro}`;
 
-    document
-    .getElementById("modalBairro")
-    .innerHTML =
-    `🏘️ ${entrega.bairro}`;
+  document.getElementById("modalValor").innerHTML = `💰 R$ ${entrega.valor}`;
 
+  document.getElementById("modalDescricao").innerHTML = entrega.descricao || "";
 
-    document
-    .getElementById("modalValor")
-    .innerHTML =
-    `💰 R$ ${entrega.valor}`;
+  iniciarAlertaEntrega();
 
+  document.getElementById("modalEntrega").classList.add("ativo");
 
-    document
-    .getElementById("modalDescricao")
-    .innerHTML =
-    entrega.descricao || "";
+  let tempo = 30;
 
+  document.getElementById("contadorEntrega").innerHTML = tempo;
 
-    iniciarAlertaEntrega();
+  clearInterval(contadorInterval);
 
+  contadorInterval = setInterval(() => {
+    tempo--;
 
-    document
-    .getElementById("modalEntrega")
-    .classList.add("ativo");
+    document.getElementById("contadorEntrega").innerHTML = tempo;
 
-
-    let tempo = 30;
-
-
-    document
-    .getElementById("contadorEntrega")
-    .innerHTML = tempo;
-
-
-    clearInterval(contadorInterval);
-
-
-    contadorInterval = setInterval(()=>{
-
-        tempo--;
-
-        document
-        .getElementById("contadorEntrega")
-        .innerHTML = tempo;
-
-
-        if(tempo <= 0){
-
-            fecharModalEntrega();
-
-        }
-
-    },1000);
-
-}
-
-function fecharModalEntrega(){
-
-    pararAlertaEntrega();
-
-    clearInterval(
-        contadorInterval
-    );
-
-    document
-    .getElementById("modalEntrega")
-    .classList.remove("ativo");
-
-}
-
-document
-.getElementById("btnAceitarModal")
-.onclick = async()=>{
-
-    if(!entregaAtual){
-
-        return;
-
+    if (tempo <= 0) {
+      fecharModalEntrega();
     }
+  }, 1000);
+}
 
-    await aceitarEntrega(
-        entregaAtual.id
-    );
+function fecharModalEntrega() {
+  pararAlertaEntrega();
 
-    fecharModalEntrega();
+  clearInterval(contadorInterval);
 
+  document.getElementById("modalEntrega").classList.remove("ativo");
+}
+
+document.getElementById("btnAceitarModal").onclick = async () => {
+  if (!entregaAtual) {
+    return;
+  }
+
+  await aceitarEntrega(entregaAtual.id);
+
+  fecharModalEntrega();
 };
 
-document
-.getElementById("btnRecusarModal")
-.onclick = ()=>{
-
-    fecharModalEntrega();
-
+document.getElementById("btnRecusarModal").onclick = () => {
+  fecharModalEntrega();
 };
-
-
-
-
-
 
 // =======================
 // GPS
 // =======================
 
-
 let watchId;
 
+function iniciarGPS() {
+  if (!navigator.geolocation) {
+    alert("GPS não disponível");
 
+    return;
+  }
 
-function iniciarGPS(){
+  watchId = navigator.geolocation.watchPosition(
+    async (pos) => {
+      const latitude = pos.coords.latitude;
 
+      const longitude = pos.coords.longitude;
 
+      const precisao = pos.coords.accuracy;
 
-if(!navigator.geolocation){
-
-
-alert(
-"GPS não disponível"
-);
-
-
-return;
-
-
-}
-
-
-
-
-
-watchId =
-
-navigator.geolocation.watchPosition(
-
-async(pos)=>{
-
-
-const latitude =
-pos.coords.latitude;
-
-
-const longitude =
-pos.coords.longitude;
-
-
-
-const precisao =
-pos.coords.accuracy;
-
-
-
-document
-.getElementById("localizacao")
-.innerHTML =
-
-`
+      document.getElementById("localizacao").innerHTML = `
 
 GPS ativo · precisão de ${Math.round(precisao)}m
 
 `;
 
+      // envia para backend
 
+      if (precisao <= 100) {
+        await fetch(
+          `${API}/api/entregador/localizacao`,
 
+          {
+            method: "PUT",
 
-// envia para backend
+            headers: {
+              ...headers,
 
-if(precisao <=100){
+              "Content-Type": "application/json",
+            },
 
+            body: JSON.stringify({
+              latitude,
 
+              longitude,
+            }),
+          },
+        );
+      }
 
-await fetch(
+      atualizarMapa(
+        latitude,
 
-`${API}/api/entregador/localizacao`,
+        longitude,
+      );
+    },
 
-{
+    (error) => {
+      console.log("Erro GPS", error);
+    },
 
-method:"PUT",
+    {
+      enableHighAccuracy: true,
 
-headers:{
+      timeout: 15000,
 
-...headers,
-
-"Content-Type":
-"application/json"
-
-},
-
-
-body:JSON.stringify({
-
-latitude,
-
-longitude
-
-})
-
-
+      maximumAge: 0,
+    },
+  );
 }
-
-);
-
-
-
-}
-
-
-
-
-atualizarMapa(
-
-latitude,
-
-longitude
-
-);
-
-
-
-},
-
-
-(error)=>{
-
-
-console.log(
-"Erro GPS",
-error
-);
-
-
-},
-
-
-{
-
-enableHighAccuracy:true,
-
-timeout:15000,
-
-maximumAge:0
-
-}
-
-
-);
-
-
-
-}
-
-
-
-
-
-
 
 // =======================
 // LOGOUT
 // =======================
 
+document.getElementById("logout").onclick = () => {
+  localStorage.removeItem("token");
 
-document
-.getElementById("logout")
-.onclick = ()=>{
+  localStorage.removeItem("usuario");
 
-
-localStorage.removeItem("token");
-
-
-localStorage.removeItem("usuario");
-
-
-window.location.href =
-"../login/login.html";
-
-
+  window.location.href = "../login/login.html";
 };
 
+async function carregarFinanceiro() {
+  const response = await fetch(
+    `${API}/api/financeiro/resumo`,
 
-async function carregarFinanceiro(){
+    { headers },
+  );
 
-    const response = await fetch(
+  const data = await response.json();
 
-        `${API}/api/financeiro/resumo`,
-
-        { headers }
-
-    );
-
-    const data = await response.json();
-
-    document.getElementById("ganhosHoje").innerHTML =
+  document.getElementById("ganhosHoje").innerHTML =
     `R$ ${data.hoje.toFixed(2)}`;
 
-    document.getElementById("ganhosSemana").innerHTML =
+  document.getElementById("ganhosSemana").innerHTML =
     `R$ ${data.semana.toFixed(2)}`;
 
-    document.getElementById("ganhosMes").innerHTML =
-    `R$ ${data.mes.toFixed(2)}`;
+  document.getElementById("ganhosMes").innerHTML = `R$ ${data.mes.toFixed(2)}`;
 
-    document.getElementById("saldoCarteira").innerHTML =
+  document.getElementById("saldoCarteira").innerHTML =
     `R$ ${data.saldo.toFixed(2)}`;
 }
 
+async function retirarEntrega(id) {
+  const response = await fetch(
+    `${API}/api/entregas/${id}/retirar`,
 
+    {
+      method: "PUT",
+      headers,
+    },
+  );
 
-async function retirarEntrega(id){
+  const data = await response.json();
 
-const response =
-await fetch(
+  alert(data.message);
 
-`${API}/api/entregas/${id}/retirar`,
-
-{
-method:"PUT",
-headers
+  carregarEntregas();
+  carregarEntregaAtual();
 }
 
-);
+async function finalizarEntrega(id) {
+  const response = await fetch(
+    `${API}/api/entregas/${id}/finalizar`,
 
-const data =
-await response.json();
+    {
+      method: "PUT",
+      headers,
+    },
+  );
 
-alert(data.message);
+  const data = await response.json();
 
-carregarEntregas();
-carregarEntregaAtual();
+  alert(data.message);
 
+  carregarEntregas();
+  carregarEntregaAtual();
+  carregarFinanceiro();
 }
 
-async function finalizarEntrega(id){
+function navegarColeta(lat, lng) {
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
-const response =
-await fetch(
-
-`${API}/api/entregas/${id}/finalizar`,
-
-{
-method:"PUT",
-headers
+  window.open(url, "_blank");
 }
 
-);
+function navegarCliente(lat, lng) {
+  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
-const data =
-await response.json();
-
-alert(data.message);
-
-carregarEntregas();
-carregarEntregaAtual();
-carregarFinanceiro();
-
+  window.open(url, "_blank");
 }
-
-
 
 // =======================
 // INICIAR SISTEMA
@@ -1265,13 +724,10 @@ carregarFinanceiro();
 
 iniciarGPS();
 
+setInterval(() => {
+  carregarEntregas();
 
-setInterval(()=>{
+  carregarEntregaAtual();
 
-    carregarEntregas();
-
-    carregarEntregaAtual();
-
-    carregarFinanceiro();
-
-},3000);
+  carregarFinanceiro();
+}, 3000);

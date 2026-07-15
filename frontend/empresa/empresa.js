@@ -1,278 +1,117 @@
 // Detecta automaticamente onde o site está rodando
-const API = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-  ? "http://localhost:3001"  // Se for no seu PC, aponta para a porta do backend
-  : "";                      // Se for na Vercel, usa rota relativa (o vercel.json resolve)
+const API =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
+    ? "http://localhost:5500" // Se for no seu PC, aponta para a porta do backend
+    : ""; // Se for na Vercel, usa rota relativa (o vercel.json resolve)
 
+const token = localStorage.getItem("token");
 
-const token =
-localStorage.getItem("token");
-
-
-
-if(!token){
-
-window.location.href="../login/login.html";
-
+if (!token) {
+  window.location.href = "../login/login.html";
 }
 
+const headers = {
+  Authorization: `Bearer ${token}`,
 
-
-const headers={
-
-"Authorization":
-`Bearer ${token}`,
-
-"Content-Type":
-"application/json"
-
+  "Content-Type": "application/json",
 };
-
-
-
 
 // =================================
 // PEGAR LOCALIZAÇÃO DA EMPRESA
 // =================================
 
+document.getElementById("buscarLocalizacao").onclick = () => {
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      document.getElementById("latitude").value = pos.coords.latitude;
 
-document
-.getElementById("buscarLocalizacao")
-.onclick = ()=>{
+      document.getElementById("longitude").value = pos.coords.longitude;
 
+      alert("Localização capturada");
+    },
 
-navigator.geolocation.getCurrentPosition(
-
-(pos)=>{
-
-
-document
-.getElementById("latitude")
-.value =
-pos.coords.latitude;
-
-
-
-document
-.getElementById("longitude")
-.value =
-pos.coords.longitude;
-
-
-
-alert(
-"Localização capturada"
-);
-
-
-
-},
-
-(error)=>{
-
-
-alert(
-"Erro ao pegar localização"
-);
-
-
-}
-
-);
-
-
+    (error) => {
+      alert("Erro ao pegar localização");
+    },
+  );
 };
-
-
-
-
-
-
 
 // =================================
 // CRIAR ENTREGA
 // =================================
 
+document.getElementById("btnCriarEntrega").onclick = async () => {
+  const body = {
+    cliente_nome: document.getElementById("cliente_nome").value,
 
-document
-.getElementById("btnCriarEntrega")
-.onclick = async()=>{
+    cliente_telefone: document.getElementById("cliente_telefone").value,
 
+    endereco: document.getElementById("endereco").value,
 
-const body={
+    bairro: document.getElementById("bairro").value,
 
+    cidade: document.getElementById("cidade").value,
 
-cliente_nome:
-document
-.getElementById("cliente_nome")
-.value,
+    descricao: document.getElementById("descricao").value,
 
+    latitude: Number(document.getElementById("latitude").value),
 
-cliente_telefone:
-document
-.getElementById("cliente_telefone")
-.value,
+    longitude: Number(document.getElementById("longitude").value),
+  };
 
+  const response = await fetch(
+    `${API}/api/entregas`,
 
-endereco:
-document
-.getElementById("endereco")
-.value,
+    {
+      method: "POST",
 
+      headers,
 
-bairro:
-document
-.getElementById("bairro")
-.value,
+      body: JSON.stringify(body),
+    },
+  );
 
+  const data = await response.json();
 
-cidade:
-document
-.getElementById("cidade")
-.value,
+  console.log(data);
 
+  alert(data.message);
 
-descricao:
-document
-.getElementById("descricao")
-.value,
-
-
-latitude:
-Number(
-document
-.getElementById("latitude")
-.value
-),
-
-
-longitude:
-Number(
-document
-.getElementById("longitude")
-.value
-)
-
-
+  carregarEntregas();
 };
-
-
-
-
-
-const response =
-await fetch(
-
-`${API}/api/entregas`,
-
-{
-
-method:"POST",
-
-headers,
-
-body:
-JSON.stringify(body)
-
-}
-
-);
-
-
-
-
-const data =
-await response.json();
-
-
-
-
-console.log(data);
-
-
-
-alert(
-data.message
-);
-
-
-
-carregarEntregas();
-
-
-
-};
-
-
-
-
-
-
-
 
 // =================================
 // LISTAR ENTREGAS
 // =================================
 
+async function carregarEntregas() {
+  const response = await fetch(
+    `${API}/api/entregas/empresa`,
 
-async function carregarEntregas(){
+    {
+      headers,
+    },
+  );
 
+  const entregas = await response.json();
 
-const response =
-await fetch(
+  const div = document.getElementById("listaEntregas");
 
-`${API}/api/entregas/empresa`,
+  div.innerHTML = "";
 
-{
-
-headers
-
-}
-
-);
-
-
-
-const entregas =
-await response.json();
-
-
-
-const div =
-document
-.getElementById("listaEntregas");
-
-
-
-div.innerHTML="";
-
-
-
-
-if(!entregas.length){
-
-
-div.innerHTML=
-`
+  if (!entregas.length) {
+    div.innerHTML = `
 <p>
 Nenhuma entrega.
 </p>
 `;
 
+    return;
+  }
 
-return;
-
-
-}
-
-
-
-
-entregas.forEach(entrega=>{
-
-
-div.innerHTML +=
-
-`
+  entregas.forEach((entrega) => {
+    div.innerHTML += `
 
 <div class="entrega">
 
@@ -321,17 +160,7 @@ ${entrega.longitude}
 </div>
 
 `;
-
-
-
-});
-
-
-
+  });
 }
-
-
-
-
 
 carregarEntregas();
