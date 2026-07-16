@@ -813,7 +813,8 @@ const { data: entregador } = await supabase
 const { data: disponiveis } = await supabase
 .from("entregas")
 .select("*")
-.eq("status","pendente");
+.eq("status","pendente")
+.eq("entregador_id", entregador.id);
 
 const { data: aceitas } = await supabase
 .from("entregas")
