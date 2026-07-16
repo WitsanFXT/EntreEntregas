@@ -1,5 +1,7 @@
 /* =========================================================
-   PAINEL ENTREGADOR — CSS (mapa em tela cheia + painéis flutuantes)
+   PAINEL ENTREGADOR — CSS
+   Mapa em tela cheia + telas (Início/Entregas/Ganhos/Perfil)
+   + modal de nova entrega SEMPRE no topo de tudo.
    ========================================================= */
 
 :root {
@@ -8,6 +10,7 @@
   --cor-primaria-clara: rgba(34, 197, 94, 0.16);
   --cor-perigo: #ef4444;
   --cor-perigo-escura: #dc2626;
+  --cor-perigo-clara: rgba(239, 68, 68, 0.16);
   --cor-alerta: #f59e0b;
   --cor-alerta-clara: rgba(245, 158, 11, 0.16);
   --cor-fundo: #0f1115;
@@ -20,14 +23,22 @@
   --sombra-forte: 0 8px 28px rgba(0, 0, 0, 0.55);
   --raio: 14px;
   --altura-menu: 64px;
-  --altura-sheet-fechado: 132px;
+  /* safe area for iOS devices */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* =====================================================
+     ESCALA DE Z-INDEX — ordem única, sem conflitos
+     O modal de nova entrega é sempre o maior de todos.
+     ===================================================== */
+  /* z-index escala revisada para evitar conflitos (mobile first)
+     ordem: mapa < elementos < telas < menu < toasts < overlay < modal */
   --z-mapa: 1;
-  --z-superior: 30;
-  --z-resumo: 25;
-  --z-sheet: 20;
-  --z-menu: 40;
-  --z-modal: 99999;
-  --z-toast: 999999;
+  --z-elementos-inicio: 30;   /* painel superior, resumo do dia, painel operacional */
+  --z-telas: 200;             /* telas cheias: Entregas / Ganhos / Perfil */
+  --z-menu: 250;              /* menu inferior sempre visível por cima das telas */
+  --z-toast: 300;             /* toasts ficam acima do menu, abaixo do overlay/modal */
+  --z-overlay-modal: 9998;    /* escurece TUDO */
+  --z-modal: 9999;            /* modal de nova entrega — nada fica na frente */
 }
 
 * {
@@ -47,8 +58,10 @@ body {
   color: var(--cor-texto);
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
-  position: fixed;
-  inset: 0;
+  /* allow inner fixed panels to scroll independently and avoid locking viewport
+     while keeping map positioned fixed behind everything */
+  position: relative;
+  min-height: 100dvh;
 }
 
 button {
@@ -68,6 +81,14 @@ button {
   background: var(--cor-borda);
 }
 
+/* ensure leaflet UI doesn't float above app modals */
+.leaflet-container,
+.leaflet-control,
+.leaflet-popup,
+.leaflet-pane {
+  z-index: calc(var(--z-mapa) + 1) !important;
+}
+
 #mapa .leaflet-tile-pane {
   filter: saturate(0.85) brightness(0.82) contrast(1.05) invert(0.92)
     hue-rotate(180deg);
@@ -78,9 +99,7 @@ button {
   box-shadow: var(--sombra-forte) !important;
   border-radius: 10px !important;
   overflow: hidden;
-  margin-bottom: calc(
-    var(--altura-sheet-fechado) + var(--altura-menu) + 20px
-  ) !important;
+  margin-bottom: calc(var(--altura-menu) + 20px) !important;
 }
 
 #mapa .leaflet-control-zoom a {
@@ -168,7 +187,7 @@ button {
   }
 }
 
-/* marcadores de coleta / entrega, usados quando o modal está minimizado */
+/* marcadores de coleta / entrega */
 .marcador-ponto {
   display: flex;
   align-items: center;
@@ -195,7 +214,19 @@ button {
 }
 
 /* =========================================================
-   PAINEL SUPERIOR — status + identidade, flutuante sobre o mapa
+   TELA INÍCIO — wrapper transparente (não cobre o mapa)
+   ========================================================= */
+
+.tela-inicio {
+  display: none;
+}
+
+.tela-inicio.ativa {
+  display: block;
+}
+
+/* =========================================================
+   PAINEL SUPERIOR — identidade, flutuante sobre o mapa
    ========================================================= */
 
 .painel-superior {
@@ -203,7 +234,7 @@ button {
   top: 12px;
   left: 12px;
   right: 12px;
-  z-index: var(--z-superior);
+  z-index: var(--z-elementos-inicio);
   background: rgba(26, 29, 36, 0.88);
   backdrop-filter: blur(10px);
   border: 1px solid var(--cor-borda);
@@ -212,12 +243,6 @@ button {
   padding: 12px 14px;
   max-width: 480px;
   margin: 0 auto;
-}
-
-.painel-superior-linha {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 
 .identidade h1 {
@@ -259,259 +284,167 @@ button {
   }
 }
 
-.status-barra {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--cor-borda);
-}
+/* =========================================================
+   RESUMO DO DIA — card compacto, canto superior direito
+   ========================================================= */
 
-.status-info {
+.card-resumo-dia {
+  position: fixed;
+  top: 92px;
+  right: 12px;
+  z-index: var(--z-elementos-inicio);
+  background: var(--cor-card);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra-forte);
+  padding: 10px 14px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 6px;
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--cor-texto);
-  cursor: pointer;
+  min-width: 130px;
 }
 
-.seta-detalhes {
+.resumo-dia-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.resumo-dia-label {
+  font-size: 0.66rem;
+  color: var(--cor-texto-suave);
+}
+
+.resumo-dia-item strong {
+  font-size: 0.95rem;
+  color: var(--cor-primaria);
+}
+
+/* =========================================================
+   PAINEL OPERACIONAL — base da tela Início
+   Ordem: 1) entrega atual   2) online/offline
+   ========================================================= */
+
+.painel-operacional {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--altura-menu) + var(--safe-bottom));
+  z-index: var(--z-elementos-inicio);
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  touch-action: none;
+  transition: transform 0.35s cubic-bezier(.2,.9,.2,1), max-height 0.25s ease;
+  will-change: transform;
+}
+
+/* alça — seta cinza centralizada, clicável e arrastável.
+   Clicar/arrastar pra baixo esconde o painel e mostra mais mapa;
+   clicar/arrastar pra cima traz o painel de volta. */
+.painel-operacional-alca {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--cor-card);
+  border: 1px solid var(--cor-borda);
+  border-bottom: none;
+  border-radius: 14px 14px 0 0;
+  padding: 8px 22px 4px;
+  cursor: grab;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.painel-operacional-alca .alca-linha {
+  width: 38px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--cor-texto-suave);
+}
+
+.painel-operacional-alca .alca-seta {
   font-size: 0.7rem;
   color: var(--cor-texto-suave);
   transition: transform 0.2s ease;
 }
 
-.painel-superior.aberto .seta-detalhes {
+.painel-operacional.fechado .painel-operacional-alca .alca-seta {
   transform: rotate(180deg);
 }
 
-.status-acoes {
+.painel-operacional-conteudo {
   display: flex;
-  gap: 6px;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 62vh;
+  overflow-y: auto;
+  padding-bottom: 12px;
+  transition: max-height 0.25s ease, opacity 0.2s ease, padding 0.25s ease;
 }
 
-.status-acoes button {
-  border: none;
-  border-radius: 999px;
-  padding: 7px 16px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-  color: #fff;
-  transition:
-    transform 0.15s ease,
-    opacity 0.15s ease;
-}
-
-.status-acoes button:active {
-  transform: scale(0.94);
-}
-
-#btnOnline {
-  background: var(--cor-primaria);
-}
-
-#btnOnline:hover {
-  background: var(--cor-primaria-escura);
-}
-
-#btnOffline {
-  background: var(--cor-perigo);
-}
-
-#btnOffline:hover {
-  background: var(--cor-perigo-escura);
-}
-
-.status-detalhes {
+.painel-operacional.fechado .painel-operacional-conteudo {
   max-height: 0;
+  opacity: 0;
   overflow: hidden;
-  transition:
-    max-height 0.25s ease,
-    margin-top 0.25s ease;
+  padding-bottom: 0;
 }
 
-.painel-superior.aberto .status-detalhes {
-  max-height: 120px;
-  margin-top: 10px;
-}
-
-.status-detalhes p {
-  margin: 4px 0;
-  font-size: 0.82rem;
+.sem-entrega {
+  text-align: center;
   color: var(--cor-texto-suave);
-}
-
-.status-detalhes p span {
-  color: var(--cor-texto);
-  font-weight: 600;
-}
-
-/* =========================================================
-   CARD FLUTUANTE DE GANHOS
-   ========================================================= */
-
-.card-resumo {
-  position: fixed;
-  right: 12px;
-  bottom: calc(var(--altura-menu) + var(--altura-sheet-fechado) + 16px);
-  z-index: var(--z-resumo);
+  font-size: 0.85rem;
+  padding: 10px 0;
   background: var(--cor-card);
   border: 1px solid var(--cor-borda);
   border-radius: var(--raio);
-  box-shadow: var(--sombra-forte);
-  cursor: pointer;
-  overflow: hidden;
-  transition:
-    bottom 0.25s ease,
-    opacity 0.2s ease,
-    transform 0.2s ease;
-  width: 168px;
 }
 
-.card-resumo.oculto {
-  opacity: 0;
-  transform: translateY(16px) scale(0.96);
-  pointer-events: none;
+/* =========================================================
+   ENDEREÇO — bloco reutilizável (card entrega atual + modal)
+   O número da residência é o dado mais importante: precisa
+   ficar bem visível, já que o mapa nem sempre acerta a casa.
+   ========================================================= */
+
+.endereco-bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.resumo-fechado {
-  padding: 12px 16px;
-  text-align: center;
-}
-
-.resumo-fechado h2 {
+.endereco-rua {
   margin: 0;
-  font-size: 1.2rem;
-  color: var(--cor-primaria);
-}
-
-.resumo-fechado p {
-  margin: 4px 0 0;
-  font-size: 0.75rem;
-  color: var(--cor-texto-suave);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-.seta-resumo {
-  font-size: 0.65rem;
-  transition: transform 0.2s ease;
-}
-
-.card-resumo.aberto .seta-resumo {
-  transform: rotate(180deg);
-}
-
-.resumo-aberto {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.25s ease;
-}
-
-.card-resumo.aberto .resumo-aberto {
-  max-height: 260px;
-}
-
-.card-resumo.aberto {
-  width: 220px;
-}
-
-.resumo-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 8px 16px;
-  border-top: 1px solid var(--cor-borda);
-}
-
-.resumo-label {
-  font-size: 0.72rem;
-  color: var(--cor-texto-suave);
-}
-
-.resumo-item strong {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
+  font-weight: 600;
   color: var(--cor-texto);
 }
 
-/* =========================================================
-   PAINEL DE ENTREGAS — bottom sheet arrastável
-   ========================================================= */
-
-.painel-entregas {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: var(--altura-menu);
-  z-index: var(--z-sheet);
-  background: var(--cor-card);
-  border-radius: 20px 20px 0 0;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
-  max-width: 480px;
-  margin: 0 auto;
-  height: var(--altura-sheet-fechado);
-  max-height: 78vh;
-  transition: height 0.25s ease;
-  display: flex;
-  flex-direction: column;
-  touch-action: none;
-}
-
-.painel-entregas.aberto {
-  height: 78vh;
-}
-
-.painel-entregas-alca {
-  flex-shrink: 0;
-  padding: 8px 16px 4px;
-  cursor: grab;
-  text-align: center;
-}
-
-.alca-linha {
-  width: 40px;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--cor-borda);
-  margin: 0 auto 8px;
-}
-
-.painel-entregas-alca h3 {
+.endereco-numero {
   margin: 0;
-  font-size: 0.92rem;
-  text-align: left;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--cor-primaria);
+  background: var(--cor-primaria-clara);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  width: fit-content;
+  box-shadow: 0 6px 18px rgba(34,197,94,0.12);
 }
 
-.painel-entregas-conteudo {
-  flex: 1;
-  overflow-y: auto;
-  padding: 4px 16px 16px;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
+.endereco-bairro {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--cor-texto-suave);
 }
 
 /* =========================================================
-   ENTREGA EM ANDAMENTO
+   CARD ENTREGA ATUAL (Início)
    ========================================================= */
-
-.entrega-status .sem-entrega,
-#entregaAtual .sem-entrega {
-  text-align: center;
-  color: var(--cor-texto-suave);
-  font-size: 0.85rem;
-  padding: 10px 0 14px;
-}
 
 .entrega-atual {
   border: 1px solid var(--cor-borda);
@@ -520,9 +453,9 @@ button {
   padding: 14px;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 6px;
-  background: var(--cor-card-alt);
-  margin-bottom: 14px;
+  gap: 8px;
+  background: var(--cor-card);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
 .entrega-atual-topo {
@@ -541,7 +474,6 @@ button {
   border-radius: 999px;
 }
 
-.entrega-atual-cliente,
 .entrega-atual h3 {
   margin: 2px 0 0;
   font-size: 1rem;
@@ -549,22 +481,21 @@ button {
   color: var(--cor-texto);
 }
 
-.entrega-atual-endereco,
-.entrega-atual-valor,
-.entrega-atual p {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--cor-texto-suave);
-}
-
 .entrega-atual-valor {
+  margin: 0;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--cor-primaria-escura);
 }
 
-.entrega-atual-botoes,
-.entrega-atual .acoes-principais,
-.entrega-atual .acoes-navegacao {
+.entrega-atual-botoes {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.acoes-principais,
+.acoes-navegacao {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
@@ -578,9 +509,7 @@ button {
   font-weight: 700;
   color: #fff;
   cursor: pointer;
-  transition:
-    transform 0.15s ease,
-    filter 0.15s ease;
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
 
 .entrega-atual button:active {
@@ -593,11 +522,7 @@ button {
 }
 
 .btn-finalizar {
-  background: linear-gradient(
-    135deg,
-    var(--cor-primaria),
-    var(--cor-primaria-escura)
-  );
+  background: linear-gradient(135deg, var(--cor-primaria), var(--cor-primaria-escura));
   box-shadow: 0 4px 10px rgba(22, 163, 74, 0.28);
 }
 
@@ -607,21 +532,294 @@ button {
 }
 
 /* =========================================================
-   CHAMADOS DISPONÍVEIS (cards gerados pelo JS)
+   CARD STATUS ONLINE/OFFLINE — abaixo da entrega atual
    ========================================================= */
 
-#entregas {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.card-status-online {
+  background: rgba(26, 29, 36, 0.92);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+  padding: 12px 14px;
 }
 
-#entregas > p {
-  text-align: center;
-  padding: 10px 0 4px;
-  font-size: 0.85rem;
+.status-online-linha {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* botão único: mostra o status atual e alterna ao clicar
+   (verde = online, clique -> fica offline; vermelho = offline, clique -> fica online) */
+.btn-status-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 999px;
+  padding: 11px 16px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #fff;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.btn-status-toggle:active {
+  transform: scale(0.97);
+}
+
+.status-toggle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.btn-status-toggle.online {
+  background: var(--cor-primaria);
+}
+
+.btn-status-toggle.online:hover {
+  background: var(--cor-primaria-escura);
+}
+
+.btn-status-toggle.offline {
+  background: var(--cor-perigo);
+}
+
+.btn-status-toggle.offline:hover {
+  background: var(--cor-perigo-escura);
+}
+
+#status {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.status-toggle-detalhes {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--cor-borda);
+  margin-top: 10px;
+  padding: 8px 0 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.seta-detalhes {
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+}
+
+.card-status-online.aberto .seta-detalhes {
+  transform: rotate(180deg);
+}
+
+.status-detalhes {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease, margin-top 0.25s ease;
+}
+
+.card-status-online.aberto .status-detalhes {
+  max-height: 120px;
+  margin-top: 8px;
+}
+
+.status-detalhes p {
+  margin: 4px 0;
+  font-size: 0.82rem;
   color: var(--cor-texto-suave);
 }
+
+.status-detalhes p span {
+  color: var(--cor-texto);
+  font-weight: 600;
+}
+
+/* =========================================================
+   TELAS CHEIAS — Entregas / Ganhos / Perfil
+   Cobrem tudo, exceto o menu inferior (que fica por cima).
+   ========================================================= */
+
+.tela-entregas,
+.tela-ganhos,
+.tela-perfil {
+  display: none;
+  position: fixed;
+  inset: 0;
+  bottom: calc(var(--altura-menu) + var(--safe-bottom));
+  z-index: var(--z-telas);
+  background: var(--cor-fundo);
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tela-entregas.ativa,
+.tela-ganhos.ativa,
+.tela-perfil.ativa {
+  display: flex;
+}
+
+.tela-cabecalho {
+  flex-shrink: 0;
+  padding: 20px 16px 8px;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.tela-cabecalho h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.tela-conteudo-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 16px 24px;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =========================================================
+   ABAS DE ENTREGAS
+   ========================================================= */
+
+.tabs-entregas {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 10px;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.tab-entrega {
+  flex: 1;
+  white-space: nowrap;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 8px;
+  background: var(--cor-card);
+  color: var(--cor-texto-suave);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.tab-entrega span {
+  background: var(--cor-card-alt);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 0.7rem;
+}
+
+.tab-entrega.ativa {
+  background: var(--cor-primaria);
+  color: #fff;
+}
+
+.tab-entrega.ativa span {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* =========================================================
+   FILTROS HISTÓRICO
+   ========================================================= */
+
+.filtros-historico {
+  display: none;
+  gap: 6px;
+  padding: 0 16px 10px;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.filtros-historico.mostrar {
+  display: flex;
+}
+
+.filtro-historico {
+  white-space: nowrap;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--cor-texto-suave);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filtro-historico.ativo {
+  background: var(--cor-primaria-clara);
+  border-color: var(--cor-primaria);
+  color: var(--cor-primaria);
+}
+
+.filtro-personalizado {
+  display: none;
+  gap: 8px;
+  align-items: center;
+  padding: 0 16px 10px;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.filtro-personalizado.mostrar {
+  display: flex;
+}
+
+.filtro-personalizado input {
+  background: var(--cor-card-alt);
+  border: 1px solid var(--cor-borda);
+  color: var(--cor-texto);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 0.78rem;
+}
+
+.filtro-personalizado button {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  background: var(--cor-primaria);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+/* =========================================================
+   CHAMADOS / LISTA DE ENTREGAS (cards gerados pelo JS)
+   ========================================================= */
 
 .entrega-card {
   background: var(--cor-card);
@@ -631,17 +829,10 @@ button {
   padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   box-shadow: var(--sombra);
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
+  margin-bottom: 12px;
   animation: entrarCard 0.25s ease-out;
-}
-
-.entrega-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--sombra-forte);
 }
 
 @keyframes entrarCard {
@@ -653,15 +844,6 @@ button {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.entrega-card h3 {
-  margin: 0;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--cor-primaria);
 }
 
 .entrega-card-header {
@@ -688,29 +870,30 @@ button {
 }
 
 .entrega-cliente {
-  margin: 2px 0 0;
+  margin: 0;
   font-size: 0.98rem;
   font-weight: 700;
   color: var(--cor-texto);
 }
 
-.entrega-endereco,
-.entrega-bairro,
 .entrega-descricao {
   margin: 0;
   font-size: 0.84rem;
   color: var(--cor-texto-suave);
+  font-style: italic;
   line-height: 1.35;
 }
 
-.entrega-descricao {
-  font-style: italic;
+.entrega-card .status-entrega {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--cor-texto-suave);
+  text-transform: capitalize;
 }
 
 .entrega-card button,
-.btn-aceitar-corrida,
-#entregas button {
-  margin-top: 8px;
+.btn-aceitar-corrida {
+  margin-top: 4px;
   border: none;
   border-radius: 10px;
   padding: 11px;
@@ -718,41 +901,140 @@ button {
   font-weight: 700;
   color: #fff;
   cursor: pointer;
-  background: linear-gradient(
-    135deg,
-    var(--cor-primaria),
-    var(--cor-primaria-escura)
-  );
+  background: linear-gradient(135deg, var(--cor-primaria), var(--cor-primaria-escura));
   box-shadow: 0 4px 10px rgba(22, 163, 74, 0.28);
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    filter 0.15s ease;
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
 
-.entrega-card button:hover,
-.btn-aceitar-corrida:hover {
+.entrega-card button:hover {
   filter: brightness(1.05);
 }
 
-.entrega-card button:active,
-.btn-aceitar-corrida:active {
+.entrega-card button:active {
   transform: scale(0.97);
 }
 
 /* =========================================================
-   MODAL (nova entrega) — com opção de minimizar
+   TELA GANHOS
+   ========================================================= */
+
+.grid-ganhos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.ganho-card {
+  background: var(--cor-card);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ganho-card-destaque {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, var(--cor-primaria-clara), transparent);
+  border-color: var(--cor-primaria);
+}
+
+.ganho-label {
+  font-size: 0.74rem;
+  color: var(--cor-texto-suave);
+}
+
+.ganho-card strong {
+  font-size: 1.15rem;
+  color: var(--cor-texto);
+}
+
+.ganho-card-destaque strong {
+  color: var(--cor-primaria);
+  font-size: 1.6rem;
+}
+
+/* =========================================================
+   TELA PERFIL
+   ========================================================= */
+
+.perfil-card {
+  background: var(--cor-card);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  padding: 4px 16px;
+}
+
+.perfil-card p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  margin: 0;
+  border-bottom: 1px solid var(--cor-borda);
+  font-size: 0.86rem;
+}
+
+.perfil-card p:last-child {
+  border-bottom: none;
+}
+
+.perfil-card p span {
+  color: var(--cor-texto-suave);
+}
+
+.perfil-card p strong {
+  color: var(--cor-texto);
+  font-weight: 600;
+}
+
+.btn-config {
+  width: 100%;
+  margin-top: 14px;
+  border: 1px solid var(--cor-borda);
+  border-radius: 12px;
+  padding: 13px;
+  background: var(--cor-card-alt);
+  color: var(--cor-texto);
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.btn-config:hover {
+  background: var(--cor-card);
+}
+
+/* =========================================================
+   OVERLAY DO MODAL — escurece TUDO abaixo dele
+   ========================================================= */
+
+.overlay-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: var(--z-overlay-modal);
+}
+
+.overlay-modal.ativo {
+  display: block;
+}
+
+/* =========================================================
+   MODAL (nova entrega) — maior z-index do sistema
    ========================================================= */
 
 .modal {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
   align-items: center;
   justify-content: center;
   padding: 16px;
   z-index: var(--z-modal);
+  pointer-events: none;
 }
 
 .modal.ativo {
@@ -760,6 +1042,7 @@ button {
 }
 
 .modal-content {
+  pointer-events: auto;
   position: relative;
   background: var(--cor-card);
   border: 1px solid var(--cor-borda);
@@ -783,7 +1066,6 @@ button {
   }
 }
 
-/* alça de minimizar — barra arrastável no topo do modal */
 .modal-puxador {
   display: flex;
   flex-direction: column;
@@ -823,7 +1105,6 @@ button {
   line-height: 1;
 }
 
-/* cabeçalho: tag + valor em destaque */
 .modal-topo {
   display: flex;
   align-items: center;
@@ -855,11 +1136,7 @@ button {
   color: var(--cor-texto);
 }
 
-/* bloco de endereço com ícone */
 .modal-bloco-endereco {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
   margin-top: 12px;
   padding: 12px;
   background: var(--cor-card-alt);
@@ -867,26 +1144,6 @@ button {
   border: 1px solid var(--cor-borda);
 }
 
-.modal-bloco-icone {
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-
-.modal-endereco-linha {
-  margin: 0;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--cor-texto);
-  line-height: 1.35;
-}
-
-.modal-bairro-linha {
-  margin: 3px 0 0;
-  font-size: 0.78rem;
-  color: var(--cor-texto-suave);
-}
-
-/* distância / tempo estimado */
 .modal-metricas {
   display: flex;
   gap: 10px;
@@ -930,7 +1187,6 @@ button {
   line-height: 1.4;
 }
 
-/* contador regressivo */
 .modal-contador-wrap {
   display: flex;
   flex-direction: column;
@@ -948,9 +1204,7 @@ button {
   justify-content: center;
   background: var(--cor-primaria-clara);
   border: 3px solid var(--cor-primaria);
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .modal-contador h3 {
@@ -961,7 +1215,7 @@ button {
 }
 
 .modal-contador.urgente {
-  background: var(--cor-perigo-clara, rgba(239, 68, 68, 0.16));
+  background: var(--cor-perigo-clara);
   border-color: var(--cor-perigo);
   animation: pulsoContador 1s infinite;
 }
@@ -1000,9 +1254,7 @@ button {
   font-weight: 700;
   cursor: pointer;
   color: #fff;
-  transition:
-    transform 0.15s ease,
-    filter 0.15s ease;
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
 
 .modal-botoes button:active {
@@ -1010,11 +1262,7 @@ button {
 }
 
 #btnAceitarModal {
-  background: linear-gradient(
-    135deg,
-    var(--cor-primaria),
-    var(--cor-primaria-escura)
-  );
+  background: linear-gradient(135deg, var(--cor-primaria), var(--cor-primaria-escura));
   box-shadow: 0 4px 12px rgba(34, 197, 94, 0.32);
 }
 
@@ -1033,13 +1281,13 @@ button {
   background: rgba(239, 68, 68, 0.12);
 }
 
-/* barra minimizada do modal, fica colada no rodapé acima do menu */
+/* barra minimizada — ainda faz parte do .modal, então mantém o maior z-index */
 .modal-minimizado {
   display: none;
   position: fixed;
   left: 12px;
   right: 12px;
-  bottom: calc(var(--altura-menu) + 12px);
+  bottom: calc(var(--altura-menu) + var(--safe-bottom) + 12px);
   max-width: 456px;
   margin: 0 auto;
   background: var(--cor-card-alt);
@@ -1052,12 +1300,11 @@ button {
   box-shadow: var(--sombra-forte);
   font-size: 0.85rem;
   font-weight: 600;
-  z-index: var(--z-modal);
+  pointer-events: auto;
 }
 
 .modal.minimizado {
   background: transparent;
-  pointer-events: none;
 }
 
 .modal.minimizado .modal-content {
@@ -1066,7 +1313,6 @@ button {
 
 .modal.minimizado .modal-minimizado {
   display: flex;
-  pointer-events: auto;
 }
 
 #expandirModal {
@@ -1081,6 +1327,7 @@ button {
 
 /* =========================================================
    MODAL — seletor de app de navegação
+   Fica abaixo do modal de nova entrega, mas acima do resto.
    ========================================================= */
 
 .modal-seletor-mapa {
@@ -1090,7 +1337,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-modal);
+  z-index: calc(var(--z-overlay-modal) - 1);
 }
 
 .modal-seletor-mapa-conteudo {
@@ -1123,9 +1370,7 @@ button {
   background: var(--cor-card-alt);
   color: var(--cor-texto);
   font-weight: 600;
-  transition:
-    background 0.15s ease,
-    transform 0.15s ease;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .opcoes-mapa button:hover {
@@ -1146,9 +1391,7 @@ button {
   color: #fff;
   font-weight: 700;
   cursor: pointer;
-  transition:
-    background 0.15s ease,
-    transform 0.15s ease;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .btn-fechar-modal:hover {
@@ -1171,6 +1414,7 @@ button {
   height: var(--altura-menu);
   background: var(--cor-card);
   border-top: 1px solid var(--cor-borda);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -1208,7 +1452,7 @@ button {
 }
 
 /* =========================================================
-   TOASTS — feedback não bloqueante para ações (online/offline etc.)
+   TOASTS — feedback não bloqueante
    ========================================================= */
 
 .toast-container {
@@ -1226,6 +1470,14 @@ button {
   pointer-events: none;
 }
 
+/* Prevent double scroll: ensure inner scrolling containers handle touch
+   and outer body remains fixed visually */
+.tela-conteudo-scroll,
+.painel-operacional-conteudo,
+.toast-container {
+  -webkit-overflow-scrolling: touch;
+}
+
 .toast {
   background: var(--cor-card-alt);
   border: 1px solid var(--cor-borda);
@@ -1237,9 +1489,7 @@ button {
   box-shadow: var(--sombra-forte);
   opacity: 0;
   transform: translateY(10px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
   max-width: 100%;
 }
 
@@ -1262,20 +1512,22 @@ button {
 
 @media (min-width: 600px) {
   .painel-superior,
-  .painel-entregas {
+  .painel-operacional,
+  .card-resumo-dia {
     max-width: 420px;
   }
 
-  .painel-entregas {
+  .tela-entregas,
+  .tela-ganhos,
+  .tela-perfil {
     left: 12px;
     right: auto;
+    top: 16px;
     bottom: 16px;
+    width: 420px;
     border-radius: 20px;
     box-shadow: var(--sombra-forte);
-  }
-
-  .card-resumo {
-    bottom: calc(var(--altura-sheet-fechado) + 30px);
+    border: 1px solid var(--cor-borda);
   }
 
   .menu-inferior {
@@ -1284,6 +1536,14 @@ button {
 
   :root {
     --altura-menu: 0px;
+  }
+
+  .painel-operacional {
+    bottom: 16px;
+  }
+
+  .toast-container {
+    bottom: 16px;
   }
 }
 
@@ -1296,37 +1556,20 @@ button {
     font-size: 0.88rem;
   }
 
-  .card-resumo {
-    width: 148px;
+  .card-resumo-dia {
+    min-width: 110px;
+    padding: 8px 10px;
+  }
+
+  .grid-ganhos {
+    grid-template-columns: 1fr;
   }
 }
 
-.entregas-tabs{
-    display:flex;
-    gap:8px;
-    margin-bottom:15px;
+.painel-operacional{
+    transition:.3s;
 }
 
-.tab-entrega{
-    flex:1;
-    border:none;
-    border-radius:12px;
-    padding:12px;
-    background:#1f2937;
-    color:#fff;
-    font-weight:600;
-    cursor:pointer;
-}
-
-.tab-entrega.ativa{
-    background:#22c55e;
-    color:#fff;
-}
-
-.sem-entrega{
-    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
-    text-align:center;
-    color:var(--cor-texto-suave);
-    font-size:0.85rem;
-    padding:10px 0 14px;
+.painel-operacional.recolhido{
+    transform:translateY(75%);
 }

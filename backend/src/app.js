@@ -2,26 +2,22 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const http = require("http");
 
-const authRoutes =
-    require("./routes/authRoutes");
+const { iniciarSocket } = require("./socket/socket");
+
+const authRoutes = require("./routes/authRoutes");
+const perfilRoutes = require("./routes/perfilRoutes");
+const empresaRoutes = require("./routes/empresaRoutes");
+const entregadorRoutes = require("./routes/entregadorRoutes");
+const entregasRoutes = require("./routes/entregasRoutes");
+const financeiroRoutes = require("./routes/financeiroRoutes");
 
 const app = express();
 
-const perfilRoutes =
-require("./routes/perfilRoutes");
+const server = http.createServer(app);
 
-const empresaRoutes =
-require("./routes/empresaRoutes");
-
-const entregadorRoutes =
-require("./routes/entregadorRoutes");
-
-const entregasRoutes =
-require("./routes/entregasRoutes");
-
-const financeiroRoutes =
-require("./routes/financeiroRoutes");
+iniciarSocket(server);
 
 app.use(cors({
     origin: "*"
@@ -29,43 +25,15 @@ app.use(cors({
 
 app.use(express.json());
 
-app.use(
-"/api/auth",
-authRoutes
-);
+app.use("/api/auth", authRoutes);
+app.use("/api/perfil", perfilRoutes);
+app.use("/api/empresa", empresaRoutes);
+app.use("/api/entregador", entregadorRoutes);
+app.use("/api/entregas", entregasRoutes);
+app.use("/api/financeiro", financeiroRoutes);
 
-app.use(
-"/api/perfil",
-perfilRoutes
-);
+server.listen(process.env.PORT, () => {
+    console.log(`Servidor rodando na porta ${process.env.PORT}`);
+});
 
-app.use(
-"/api/empresa",
-empresaRoutes
-);
-
-app.use(
-"/api/entregador",
-entregadorRoutes
-);
-
-app.use(
-"/api/entregas",
-entregasRoutes
-);
-
-app.use(
-"/api/financeiro",
-financeiroRoutes
-);
-
-app.listen(
-    process.env.PORT,
-    () => {
-        console.log(
-            `Servidor rodando na porta ${process.env.PORT}`
-        );
-    }
-);
-
-module.exports = app; // <-- ESSENCIAL para a Vercel funcionar
+module.exports = app;

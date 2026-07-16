@@ -1,6 +1,10 @@
 const supabase =
 require("../config/supabase");
 
+const {
+    getIO
+} = require("../socket/socket");
+
 
 
 
@@ -169,6 +173,11 @@ return res.status(400).json(error);
 
 await distribuirEntrega(entrega.id);
 
+getIO().emit(
+    "nova_entrega",
+    entrega
+);
+
 
 
 
@@ -318,71 +327,37 @@ message:"Erro interno"
 
 exports.listarEntregasEntregador = async(req,res)=>{
 
-
 try{
 
+const usuarioId = req.usuario.id;
 
+const { data: entregador } = await supabase
+.from("entregadores")
+.select("id")
+.eq("usuario_id", usuarioId)
+.single();
 
-const {data,error}=
-
-await supabase
-
+const { data, error } = await supabase
 .from("entregas")
-
 .select("*")
-
-.eq(
-
-"status",
-
-"pendente"
-
-)
-
-.is(
-
-"entregador_id",
-
-null
-
-);
-
-
-
-
-
+.eq("status","pendente")
+.eq("entregador_id", entregador.id);
 
 if(error){
-
-return res.status(400).json(error);
-
+  return res.status(400).json(error);
 }
 
-
-
-
-
-res.json(data);
-
-
-
-
+return res.json(data);
 
 }catch(error){
 
-
 console.log(error);
 
-
-res.status(500).json({
-
-message:"Erro interno"
-
+return res.status(500).json({
+  message:"Erro interno"
 });
 
-
 }
-
 
 };
 
@@ -403,6 +378,9 @@ exports.aceitarEntrega = async(req,res)=>{
 
 try{
 
+    console.log("======== ACEITAR ENTREGA ========");
+    console.log("Usuario:", req.usuario);
+    console.log("Entrega:", req.params.id);
 
 const entregaId =
 req.params.id;
@@ -455,36 +433,21 @@ message:
 // buscar entrega livre
 
 
-const {data:entrega,error}=
-
-await supabase
-
+const { data: entrega, error } = await supabase
 .from("entregas")
-
 .select("*")
-
-.eq(
-"id",
-entregaId
-)
-
-.eq(
-"status",
-"pendente"
-)
-
-.is(
-"entregador_id",
-null
-)
-
+.eq("id", entregaId)
+.eq("status", "pendente")
+.eq("entregador_id", entregador.id)
 .single();
 
+console.log("ENTREGADOR:", entregador.id);
+console.log("ENTREGA ENCONTRADA:", entrega);
+console.log("ERRO:", error);
 
 
 
-
-if(error || !entrega){
+if(error || !entrega || entrega.length === 0){
 
 
 return res.status(400).json({
@@ -539,20 +502,18 @@ entregaId
 
 if(updateError){
 
+    console.log(updateError);
 
-console.log(updateError);
-
-
-return res.status(400).json({
-
-message:
-"Erro ao aceitar entrega."
-
-});
-
+    return res.status(400).json({
+        message:"Erro ao aceitar entrega."
+    });
 
 }
 
+getIO().emit(
+    "entrega_aceita",
+    atualizada
+);
 
 
 
@@ -618,6 +579,11 @@ if(error){
 return res.status(400).json(error);
 
 }
+
+getIO().emit(
+    "entrega_retirada",
+    data
+);
 
 return res.json({
 
@@ -750,6 +716,13 @@ Number(entregador?.saldo || 0) + valorEntrega
 
 .eq("id",entrega.entregador_id);
 
+getIO().emit(
+    "entrega_finalizada",
+    {
+        id: entregaId,
+        entregador_id: entrega.entregador_id
+    }
+);
 return res.json({
 
 message:"Entrega finalizada.",

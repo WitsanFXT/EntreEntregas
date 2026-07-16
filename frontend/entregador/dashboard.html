@@ -11,166 +11,186 @@
 
     <link rel="stylesheet" href="entregador.css" />
 
-    <!-- MAPA LEAFLET -->
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   </head>
 
   <body>
-    <!-- =========================================================
-     MAPA — TELA CHEIA, FICA ATRÁS DE TUDO
-     ========================================================= -->
-
     <div id="mapa"></div>
 
-    <!-- =========================================================
-     PAINEL SUPERIOR — status + saudação, flutuante sobre o mapa
-     ========================================================= -->
+    <div class="tela tela-inicio ativa" id="telaInicio">
+      <div class="painel-superior" id="painelSuperior">
 
-    <div class="painel-superior" id="painelSuperior">
-      <div class="painel-superior-linha">
         <div class="identidade">
           <h1 id="nomeUsuario">Carregando...</h1>
-
-          <p id="localizacao">Aguardando GPS...</p>
+          
+          <div id="infoEntregaTopo"></div>
+          
+          <p id="localizacao">
+              Aguardando GPS...
+          </p>
         </div>
       </div>
 
-      <div class="status-barra">
-        <button
-          id="toggleDetalhesStatus"
-          class="status-info"
-          aria-expanded="false"
-        >
-          <span id="status">🔴 Offline</span>
+      <div class="card-resumo-dia" id="cardResumoDia">
+          <div class="resumo-dia-item">
+            <span class="resumo-dia-label">Ganhos hoje</span>
+            <strong id="resumoDiaGanhos">R$ 0,00</strong>
+          </div>
+          <div class="resumo-dia-item">
+            <span class="resumo-dia-label">Entregas</span>
+            <strong id="resumoDiaQtd">0</strong>
+          </div>
+        </div>
 
-          <span class="seta-detalhes">▾</span>
+      <div class="painel-operacional" id="painelOperacional" data-estado="medio">
+
+        <button class="painel-operacional-alca" id="alcaPainelOperacional" aria-expanded="true">
+          <span class="alca-linha"></span>
+          <span class="alca-seta">▾</span>
         </button>
 
-        <div class="status-acoes">
-          <button id="btnOnline">ON</button>
+        <div class="painel-operacional-conteudo" id="painelOperacionalConteudo">
+          
+          <div class="card-status-online" id="cardStatusOnline">
+            <div class="status-online-linha">
+              <button id="btnToggleOnline" class="btn-status-toggle offline">
+                <span class="status-toggle-dot"></span>
+                <span id="status">Offline</span>
+              </button>
+            </div>
 
-          <button id="btnOffline">OFF</button>
-        </div>
-      </div>
+            <button
+              id="toggleDetalhesStatus"
+              class="status-toggle-detalhes"
+              aria-expanded="false"
+            >
+              Veículo e placa <span class="seta-detalhes">▾</span>
+            </button>
 
-      <div class="status-detalhes" id="statusDetalhes">
-        <p>🏍️ Veículo: <span id="veiculo">-</span></p>
+            <div class="status-detalhes" id="statusDetalhes">
+              <p>🏍️ Veículo: <span id="veiculo">-</span></p>
+              <p>🔖 Placa: <span id="placa">-</span></p>
+            </div>
+          </div>
 
-        <p>🔖 Placa: <span id="placa">-</span></p>
-      </div>
-    </div>
-
-    <!-- =========================================================
-     CARD FLUTUANTE DE GANHOS — clicável, expande
-     ========================================================= -->
-
-    <div class="card-resumo" id="cardResumo">
-      <div class="resumo-fechado">
-        <h2 id="ganhosHoje">R$ 0,00</h2>
-
-        <p>Hoje <span class="seta-resumo">▴</span></p>
-      </div>
-
-      <div class="resumo-aberto">
-        <div class="resumo-item">
-          <span class="resumo-label">Ganhos hoje</span>
-
-          <strong id="ganhosHojeExpandido">R$ 0,00</strong>
-        </div>
-
-        <div class="resumo-item">
-          <span class="resumo-label">Últimos 7 dias</span>
-
-          <strong id="ganhosSemana">R$ 0,00</strong>
-        </div>
-
-        <div class="resumo-item">
-          <span class="resumo-label">Últimos 30 dias</span>
-
-          <strong id="ganhosMes">R$ 0,00</strong>
-        </div>
-
-        <div class="resumo-item">
-          <span class="resumo-label">Carteira</span>
-
-          <strong id="saldoCarteira">R$ 0,00</strong>
+          <div id="cardEntregaAtualInicio">
+            <div class="sem-entrega">Nenhuma entrega em andamento.</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- =========================================================
-     PAINEL DE ENTREGAS — bottom sheet arrastável
-     ========================================================= -->
-
-    <div class="painel-entregas" id="painelEntregas">
-      <div class="painel-entregas-alca" id="alcaEntregas">
-        <div class="alca-linha"></div>
-
-        <h3 id="tituloPainelEntregas">📦 Chamados disponíveis</h3>
+    <div class="tela tela-entregas" id="telaEntregas">
+      <div class="tela-cabecalho">
+        <h2>📦 Entregas</h2>
       </div>
 
-      <div class="painel-entregas-conteudo">
-        <!-- ENTREGA EM ANDAMENTO -->
-         <div class="tabs-entregas">
+      <div class="tabs-entregas">
+        <button id="tabDisponiveis" class="tab-entrega ativa" data-tab="disponiveis">
+          Disponíveis <span id="badgeDisponiveis">0</span>
+        </button>
 
-    <button
-        id="tabDisponiveis"
-        class="tab-entrega ativa"
-        data-tab="disponiveis"
-    >
-        Disponíveis
-        <span id="badgeDisponiveis">0</span>
-    </button>
+        <button id="tabColetas" class="tab-entrega" data-tab="coletas">
+          Em Coleta <span id="badgeColetas">0</span>
+        </button>
 
-    <button
-        id="tabColetas"
-        class="tab-entrega"
-        data-tab="coletas"
-    >
-        Coletas
-        <span id="badgeColetas">0</span>
-    </button>
+        <button id="tabRota" class="tab-entrega" data-tab="rota">
+          Em Rota <span id="badgeRota">0</span>
+        </button>
 
-    <button
-        id="tabRota"
-        class="tab-entrega"
-        data-tab="rota"
-    >
-        Em rota
-        <span id="badgeRota">0</span>
-    </button>
+        <button id="tabHistorico" class="tab-entrega" data-tab="historico">
+          Histórico <span id="badgeHistorico">0</span>
+        </button>
+      </div>
 
-    <button
-        id="tabHistorico"
-        class="tab-entrega"
-        data-tab="historico"
-    >
-        Histórico
-        <span id="badgeHistorico">0</span>
-    </button>
+      <div class="filtros-historico" id="filtrosHistorico">
+        <button class="filtro-historico ativo" data-filtro="hoje">Hoje</button>
+        <button class="filtro-historico" data-filtro="ontem">Ontem</button>
+        <button class="filtro-historico" data-filtro="7dias">7 dias</button>
+        <button class="filtro-historico" data-filtro="30dias">30 dias</button>
+        <button class="filtro-historico" data-filtro="personalizado">Personalizado</button>
+      </div>
 
-</div>
+      <div class="filtro-personalizado" id="filtroPersonalizado">
+        <input type="date" id="filtroDataInicio" />
+        <span>até</span>
+        <input type="date" id="filtroDataFim" />
+        <button id="btnAplicarFiltroPersonalizado">Aplicar</button>
+      </div>
 
-        <div id="entregaAtual">
-          <div class="sem-entrega">Nenhuma entrega em andamento.</div>
-        </div>
-
-        <!-- CHAMADOS DISPONÍVEIS -->
-        <div id="chamadosDisponiveis">
-          <div class="sem-entrega">Nenhum chamado disponível.</div>
+      <div class="tela-conteudo-scroll" id="listaEntregas">
+        <div class="sem-entrega">Nenhum chamado disponível.</div>
       </div>
     </div>
 
-    <!-- =========================================================
-     MODAL — nova entrega (minimizável)
-     ========================================================= -->
+    <div class="tela tela-ganhos" id="telaGanhos">
+      <div class="tela-cabecalho">
+        <h2>💰 Ganhos</h2>
+      </div>
+
+      <div class="tela-conteudo-scroll">
+        <div class="grid-ganhos">
+          <div class="ganho-card ganho-card-destaque">
+            <span class="ganho-label">Ganhos hoje</span>
+            <strong id="ganhosHoje">R$ 0,00</strong>
+          </div>
+
+          <div class="ganho-card">
+            <span class="ganho-label">Últimos 7 dias</span>
+            <strong id="ganhosSemana">R$ 0,00</strong>
+          </div>
+
+          <div class="ganho-card">
+            <span class="ganho-label">Últimos 30 dias</span>
+            <strong id="ganhosMes">R$ 0,00</strong>
+          </div>
+
+          <div class="ganho-card">
+            <span class="ganho-label">Saldo em carteira</span>
+            <strong id="saldoCarteira">R$ 0,00</strong>
+          </div>
+
+          <div class="ganho-card">
+            <span class="ganho-label">Entregas concluídas</span>
+            <strong id="entregasConcluidas">0</strong>
+          </div>
+
+          <div class="ganho-card">
+            <span class="ganho-label">Ticket médio</span>
+            <strong id="ticketMedio">R$ 0,00</strong>
+          </div>
+
+          <div class="ganho-card">
+            <span class="ganho-label">Taxa de aceitação</span>
+            <strong id="taxaAceitacao">—</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tela tela-perfil" id="telaPerfil">
+      <div class="tela-cabecalho">
+        <h2>👤 Perfil</h2>
+      </div>
+
+      <div class="tela-conteudo-scroll">
+        <div class="perfil-card">
+          <p><span>Nome</span><strong id="perfilNome">-</strong></p>
+          <p><span>Telefone</span><strong id="perfilTelefone">-</strong></p>
+          <p><span>Veículo</span><strong id="perfilVeiculo">-</strong></p>
+          <p><span>Placa</span><strong id="perfilPlaca">-</strong></p>
+        </div>
+
+        <button class="btn-config" id="btnConfiguracoes">⚙️ Configurações</button>
+      </div>
+    </div>
+
+    <div id="overlayModal" class="overlay-modal"></div>
 
     <div id="modalEntrega" class="modal">
       <div class="modal-content">
         <button id="minimizarModal" class="modal-puxador" title="Minimizar">
           <span class="modal-puxador-linha"></span>
-
           <span class="modal-puxador-texto"
             >Minimizar <span class="modal-puxador-seta">⌄</span></span
           >
@@ -178,36 +198,24 @@
 
         <div class="modal-topo">
           <span class="modal-tag">📦 Nova corrida</span>
-
           <span class="modal-valor" id="modalValor">R$ 0,00</span>
         </div>
 
         <h2 class="modal-cliente" id="modalCliente">Cliente</h2>
 
-        <div class="modal-bloco-endereco">
-          <span class="modal-bloco-icone">📍</span>
-
-          <div class="modal-bloco-texto">
-            <p class="modal-endereco-linha" id="modalEndereco">Endereço</p>
-
-            <p class="modal-bairro-linha" id="modalBairro">Bairro</p>
+        <div class="modal-bloco-endereco" id="modalEnderecoBloco">
           </div>
-        </div>
 
         <div class="modal-metricas" id="modalMetricas">
           <div class="modal-metrica">
             <span class="modal-metrica-icone">📏</span>
-
             <span class="modal-metrica-valor" id="modalDistancia">-</span>
-
             <span class="modal-metrica-label">distância</span>
           </div>
 
           <div class="modal-metrica">
             <span class="modal-metrica-icone">⏱️</span>
-
             <span class="modal-metrica-valor" id="modalTempo">-</span>
-
             <span class="modal-metrica-label">tempo est.</span>
           </div>
         </div>
@@ -218,52 +226,40 @@
           <div class="modal-contador" id="contadorWrap">
             <h3 id="contadorEntrega">30</h3>
           </div>
-
           <span class="modal-contador-label">segundos para decidir</span>
         </div>
 
         <div class="modal-botoes">
           <button id="btnAceitarModal">✔ Aceitar</button>
-
           <button id="btnRecusarModal">✕ Recusar</button>
         </div>
       </div>
 
-      <!-- barra minimizada, aparece quando o modal é reduzido -->
       <div class="modal-minimizado" id="modalMinimizado">
         <span>📦 Nova entrega · <span id="contadorEntregaMin">30</span>s</span>
-
         <button id="expandirModal">⬆</button>
       </div>
     </div>
 
-    <!-- =========================================================
-     TOASTS — notificações não bloqueantes
-     ========================================================= -->
-
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- =========================================================
-     MENU INFERIOR
-     ========================================================= -->
-
     <nav class="menu-inferior">
-      <button id="menuInicio">
+      <button id="menuInicio" class="ativo" data-tela="telaInicio">
         🏠
         <span>Início</span>
       </button>
 
-      <button id="menuEntregas">
+      <button id="menuEntregas" data-tela="telaEntregas">
         📦
         <span>Entregas</span>
       </button>
 
-      <button id="menuGanhos">
+      <button id="menuGanhos" data-tela="telaGanhos">
         💰
         <span>Ganhos</span>
       </button>
 
-      <button id="menuPerfil">
+      <button id="menuPerfil" data-tela="telaPerfil">
         👤
         <span>Perfil</span>
       </button>
@@ -274,9 +270,9 @@
       </button>
     </nav>
 
-    <!-- LEAFLET JS -->
-
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 
     <script src="entregador.js"></script>
   </body>

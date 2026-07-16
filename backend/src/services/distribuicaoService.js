@@ -28,14 +28,11 @@ const {data:entrega,error}=
 await supabase
 
 .from("entregas")
-
 .select("*")
-
 .eq(
 "id",
 entregaId
 )
-
 .single();
 
 

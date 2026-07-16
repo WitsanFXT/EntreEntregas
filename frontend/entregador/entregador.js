@@ -1,3 +1,8 @@
+
+// =========================================================
+// CONFIG / AUTENTICAÇÃO
+// =========================================================
+
 // Detecta automaticamente onde o site está rodando
 const API =
   window.location.hostname === "localhost" ||
@@ -7,34 +12,43 @@ const API =
 
 const token = localStorage.getItem("token");
 
+if (!token) {
+  window.location.href = "../login/login.html";
+}
+
+const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+
+const headers = {
+  Authorization: `Bearer ${token}`,
+};
+
+// =========================================================
+// ESTADO GLOBAL
+// =========================================================
+
 let ultimaLista = [];
-
 let ultimoPedidoNotificado = null;
+let ultimaQuantidadeDisponiveis = 0;
+let quantidadeEntregasAtivas = 0;
 
-let rotaAtual = null;
-
-let ultimaQuantidade = 0;
-
-let entregaAtual = null;
-
-let abaAtual = "disponiveis";
+let entregaAtual = null; // entrega mostrada no modal de nova corrida
+let abaAtual = "disponiveis"; // disponiveis | coletas | rota | historico
+let filtroHistoricoAtual = "hoje";
 
 let contadorInterval = null;
 
+let estadoPainel = "medio";
+
 const somNovaEntrega = new Audio("../assets/nova-entrega.mp3");
-
 somNovaEntrega.volume = 1;
-
 let alertaSonoro = null;
 
 function iniciarAlertaEntrega() {
   somNovaEntrega.currentTime = 0;
-
   somNovaEntrega.play().catch(() => {});
 
   alertaSonoro = setInterval(() => {
     somNovaEntrega.currentTime = 0;
-
     somNovaEntrega.play().catch(() => {});
   }, 3000);
 
@@ -46,68 +60,119 @@ function iniciarAlertaEntrega() {
 function pararAlertaEntrega() {
   if (alertaSonoro) {
     clearInterval(alertaSonoro);
-
     alertaSonoro = null;
   }
 }
 
-if (!token) {
-  window.location.href = "../login/login.html";
-}
 
-const usuario = JSON.parse(localStorage.getItem("usuario"));
+const painel = document.getElementById("painelOperacional");
+const alca = document.getElementById("alcaPainelOperacional");
 
-const headers = {
-  Authorization: `Bearer ${token}`,
-};
+alca.addEventListener("click", () => {
+  painel.classList.toggle("recolhido");
 
-// =======================
+  if (estadoPainel === "medio") {
+    painel.dataset.estado = "aberto";
+    estadoPainel = "aberto";
+  } else {
+    painel.dataset.estado = "medio";
+    estadoPainel = "medio";
+  }
+});
+// =========================================================
 // TOASTS — feedback não bloqueante
-// =======================
+// =========================================================
 
 function toast(mensagem, tipo = "sucesso") {
   const container = document.getElementById("toastContainer");
-
   if (!container) return;
 
   const el = document.createElement("div");
-
   el.className = `toast ${tipo}`;
-
   el.textContent = mensagem;
-
   container.appendChild(el);
 
   requestAnimationFrame(() => el.classList.add("mostrar"));
 
   setTimeout(() => {
     el.classList.remove("mostrar");
-
     setTimeout(() => el.remove(), 250);
   }, 2500);
 }
 
-// =======================
+// =========================================================
+// ENDEREÇO — extrai número da residência em destaque
+//
+// IMPORTANTE: o backend hoje só manda "endereco" (string) e
+// "bairro". Como o mapa nem sempre acerta a casa exata, o
+// número precisa ficar bem visível. Enquanto o backend não
+// expuser um campo "numero" dedicado, extraímos com regex.
+// Recomendação: adicionar `numero` como campo próprio na API
+// para eliminar essa heurística.
+// =========================================================
+
+function obterNumeroEndereco(entrega) {
+  if (entrega.numero) return String(entrega.numero);
+  if (!entrega.endereco) return null;
+  const match = entrega.endereco.match(/\b(\d{1,6})\b/);
+  return match ? match[1] : null;
+}
+
+function obterRuaSemNumero(entrega) {
+  if (!entrega.endereco) return "-";
+  return entrega.endereco
+    .replace(/\bn[ºo°]?\.?\s*\d{1,6}\b/gi, "")
+    .replace(/,?\s*\b\d{1,6}\b/, "")
+    .replace(/,\s*,/g, ",")
+    .replace(/,\s*$/, "")
+    .trim();
+}
+
+// gera o bloco de endereço (rua + número em destaque + bairro)
+// usado tanto no card de entrega atual quanto no modal
+function montarBlocoEndereco(entrega) {
+  const numero = obterNumeroEndereco(entrega);
+  const rua = obterRuaSemNumero(entrega);
+
+  return `
+    <p class="endereco-rua">📍 ${rua}</p>
+    ${numero ? `<p class="endereco-numero">🏠 Nº ${numero}</p>` : ""}
+    <p class="endereco-bairro">🏘️ ${entrega.bairro || "-"}</p>
+  `;
+}
+
+function atualizarEnderecoTopo(entrega) {
+
+  const el = document.getElementById("infoEntregaTopo");
+
+  if (!el) return;
+
+  if (!entrega) {
+    el.innerHTML = "";
+    return;
+  }
+
+  el.innerHTML = `
+      <p>📍 ${obterRuaSemNumero(entrega)}</p>
+      <p>🏠 Nº ${obterNumeroEndereco(entrega) || "-"}</p>
+      <p>🏘 ${entrega.bairro || "-"}</p>
+  `;
+}
+
+// =========================================================
 // MAPA
-// =======================
+// =========================================================
 
 let mapa;
-
 let marcador;
 
-let linhaRota = null;
-
-// ícone customizado: pontinho pulsante estilo "localização ao vivo"
 const gpsIcon = L.divIcon({
   className: "gps-marker",
-
   html: `
         <div class="gps-marker-pulse"></div>
         <div class="gps-marker-dot"></div>
     `,
-
   iconSize: [22, 22],
-
   iconAnchor: [11, 11],
 });
 
@@ -118,11 +183,9 @@ function iniciarMapa() {
 
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap",
-
     maxZoom: 19,
   }).addTo(mapa);
 
-  // zoom reposicionado, estilo app de entrega (canto inferior direito)
   L.control
     .zoom({
       position: "bottomright",
@@ -131,25 +194,17 @@ function iniciarMapa() {
 }
 
 function atualizarMapa(latitude, longitude) {
-  if (!mapa) {
-    return;
-  }
+  if (!mapa) return;
 
   const posicao = [Number(latitude), Number(longitude)];
 
   if (!marcador) {
-    marcador = L.marker(posicao, {
-      icon: gpsIcon,
-    })
-
+    marcador = L.marker(posicao, { icon: gpsIcon })
       .addTo(mapa)
-
       .bindPopup("🚴 Você está aqui", {
         className: "popup-entregador",
-
         closeButton: false,
       })
-
       .openPopup();
   } else {
     marcador.setLatLng(posicao);
@@ -158,755 +213,12 @@ function atualizarMapa(latitude, longitude) {
   mapa.setView(posicao, 16);
 }
 
-function desenharRota(origem, destino) {
-  if (rotaAtual) {
-    mapa.removeLayer(rotaAtual);
-  }
-
-  rotaAtual = L.polyline([origem, destino]).addTo(mapa);
-}
-if (rotaAtual) {
-  mapa.removeLayer(rotaAtual);
-
-  rotaAtual = null;
-}
-
-// =======================
-// PERFIL
-// =======================
-
-async function carregarPerfil() {
-  try {
-    const response = await fetch(
-      `${API}/api/entregador/me`,
-
-      {
-        headers,
-      },
-    );
-
-    const data = await response.json();
-
-    document.getElementById("nomeUsuario").innerHTML =
-      data.nome || "Entregador";
-
-    document.getElementById("veiculo").innerHTML = data.tipo_veiculo || "-";
-
-    document.getElementById("placa").innerHTML = data.placa || "-";
-
-    atualizarStatus(data.online);
-
-    if (data.latitude && data.longitude) {
-      atualizarMapa(
-        data.latitude,
-
-        data.longitude,
-      );
-    }
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-// =======================
-// STATUS
-// =======================
-
-function atualizarStatus(online) {
-  document.getElementById("status").innerHTML = online
-    ? "🟢 Online"
-    : "🔴 Offline";
-}
-
-// =======================
-// PAINEL SUPERIOR — expandir detalhes (veículo/placa)
-// =======================
-
-document.getElementById("toggleDetalhesStatus").onclick = () => {
-  const painel = document.getElementById("painelSuperior");
-  const aberto = painel.classList.toggle("aberto");
-  document
-    .getElementById("toggleDetalhesStatus")
-    .setAttribute("aria-expanded", aberto);
-};
-
-// =======================
-// CARD DE GANHOS — expandir/recolher
-// =======================
-
-document.getElementById("cardResumo").onclick = () => {
-  document.getElementById("cardResumo").classList.toggle("aberto");
-};
-
-// =======================
-// PAINEL DE ENTREGAS — bottom sheet (clicável e arrastável)
-// =======================
-
-const painelEntregas = document.getElementById("painelEntregas");
-const alcaEntregas = document.getElementById("alcaEntregas");
-const cardResumo = document.getElementById("cardResumo");
-
-function sincronizarCardResumo() {
-  cardResumo.classList.toggle(
-    "oculto",
-    painelEntregas.classList.contains("aberto"),
-  );
-}
-
-alcaEntregas.onclick = () => {
-  painelEntregas.classList.toggle("aberto");
-  sincronizarCardResumo();
-};
-
-(function habilitarArrasto() {
-  let arrastando = false;
-  let inicioY = 0;
-
-  const iniciar = (y) => {
-    arrastando = true;
-    inicioY = y;
-  };
-
-  const mover = (y) => {
-    if (!arrastando) return;
-    const delta = inicioY - y;
-    if (delta > 40) {
-      painelEntregas.classList.add("aberto");
-      sincronizarCardResumo();
-      arrastando = false;
-    } else if (delta < -40) {
-      painelEntregas.classList.remove("aberto");
-      sincronizarCardResumo();
-      arrastando = false;
-    }
-  };
-
-  const soltar = () => {
-    arrastando = false;
-  };
-
-  alcaEntregas.addEventListener("pointerdown", (e) => iniciar(e.clientY));
-  alcaEntregas.addEventListener("pointermove", (e) => mover(e.clientY));
-  window.addEventListener("pointerup", soltar);
-
-  alcaEntregas.addEventListener(
-    "touchstart",
-    (e) => iniciar(e.touches[0].clientY),
-    { passive: true },
-  );
-  alcaEntregas.addEventListener(
-    "touchmove",
-    (e) => mover(e.touches[0].clientY),
-    { passive: true },
-  );
-  alcaEntregas.addEventListener("touchend", soltar);
-})();
-
-// =======================
-// MENU INFERIOR
-// =======================
-
-function marcarMenuAtivo(botao) {
-  document
-    .querySelectorAll(".menu-inferior button")
-    .forEach((b) => b.classList.remove("ativo"));
-  botao.classList.add("ativo");
-}
-
-document.getElementById("menuInicio").onclick = (e) => {
-  marcarMenuAtivo(e.currentTarget);
-  document.getElementById("painelSuperior").classList.remove("aberto");
-  document.getElementById("cardResumo").classList.remove("aberto");
-  painelEntregas.classList.remove("aberto");
-  sincronizarCardResumo();
-};
-
-document.getElementById("menuEntregas").onclick = (e) => {
-  marcarMenuAtivo(e.currentTarget);
-  painelEntregas.classList.add("aberto");
-  sincronizarCardResumo();
-};
-
-document.getElementById("menuGanhos").onclick = (e) => {
-  marcarMenuAtivo(e.currentTarget);
-  painelEntregas.classList.remove("aberto");
-  sincronizarCardResumo();
-  document.getElementById("cardResumo").classList.add("aberto");
-};
-
-document.getElementById("menuPerfil").onclick = (e) => {
-  marcarMenuAtivo(e.currentTarget);
-  document.getElementById("painelSuperior").classList.add("aberto");
-};
-
-document.getElementById("menuSair").onclick = (e) => {
-  marcarMenuAtivo(e.currentTarget);
-  fazerLogout();
-};
-
-// =======================
-// ONLINE
-// =======================
-
-document.getElementById("btnOnline").onclick = async () => {
-  try {
-    const response = await fetch(
-      `${API}/api/entregador/online`,
-
-      {
-        method: "POST",
-
-        headers,
-      },
-    );
-
-    const data = await response.json();
-
-    if (response.ok) {
-      atualizarStatus(true);
-
-      toast(data.message || "Você está online", "sucesso");
-    } else {
-      toast(data.message || "Não foi possível ficar online", "erro");
-    }
-  } catch (error) {
-    console.log(error);
-
-    toast("Erro ao conectar com o servidor", "erro");
-  }
-};
-
-// =======================
-// OFFLINE
-// =======================
-
-document.getElementById("btnOffline").onclick = async () => {
-  try {
-    const response = await fetch(
-      `${API}/api/entregador/offline`,
-
-      {
-        method: "POST",
-
-        headers,
-      },
-    );
-
-    const data = await response.json();
-
-    if (response.ok) {
-      atualizarStatus(false);
-
-      toast(data.message || "Você está offline", "sucesso");
-    } else {
-      toast(data.message || "Não foi possível ficar offline", "erro");
-    }
-  } catch (error) {
-    console.log(error);
-
-    toast("Erro ao conectar com o servidor", "erro");
-  }
-};
-
-
-// =======================
-// Disponiveis
-// =======================
-document.getElementById("tabDisponiveis").onclick = () => {
-    abaAtual = "disponiveis";
-    atualizarTabs();
-    carregarEntregas();
-    carregarEntregaAtual();
-};
-
-document.getElementById("tabColetas").onclick = () => {
-    abaAtual = "aceita";
-    atualizarTabs();
-    carregarEntregas();
-    carregarEntregaAtual();
-};
-
-document.getElementById("tabRota").onclick = () => {
-    abaAtual = "retirada";
-    atualizarTabs();
-    carregarEntregas();
-    carregarEntregaAtual();
-};
-
-document.getElementById("tabHistorico").onclick = () => {
-    abaAtual = "finalizada";
-    atualizarTabs();
-    carregarEntregas();
-    carregarEntregaAtual();
-};
-
-function atualizarTabs() {
-
-    document
-    .querySelectorAll(".tab-entrega")
-    .forEach(tab => tab.classList.remove("ativa"));
-
-    if (abaAtual === "disponiveis") {
-        document
-        .getElementById("tabDisponiveis")
-        .classList.add("ativa");
-    }
-
-    if (abaAtual === "aceita") {
-        document
-        .getElementById("tabColetas")
-        .classList.add("ativa");
-    }
-
-    if (abaAtual === "retirada") {
-        document
-        .getElementById("tabRota")
-        .classList.add("ativa");
-    }
-
-    if (abaAtual === "finalizada") {
-        document
-        .getElementById("tabHistorico")
-        .classList.add("ativa");
-    }
-
-}
-
-// =======================
-// ENTREGAS DISPONÍVEIS
-// =======================
-
-async function carregarEntregas() {
-  try {
-    const disponiveisReq = await fetch(`${API}/api/entregas/disponiveis`, { headers });
-    const minhasReq = await fetch(`${API}/api/entregas/minhas`, { headers });
-
-    const disponiveis = await disponiveisReq.json();
-    const minhas = await minhasReq.json();
-
-    // combina listas (disponíveis + minhas) e remove duplicatas
-    const mapa = new Map();
-    (Array.isArray(disponiveis) ? disponiveis : disponiveis.entregas || []).forEach(e => mapa.set(e.id, e));
-    (Array.isArray(minhas) ? minhas : minhas.entregas || []).forEach(e => mapa.set(e.id, e));
-    const entregas = Array.from(mapa.values());
-
-    // atualiza badges uma única vez com filtros eficientes
-    const contadores = {
-      pendente: 0,
-      aceita: 0,
-      retirada: 0,
-      finalizada: 0
-    };
-
-    entregas.forEach(e => {
-      if (contadores.hasOwnProperty(e.status)) {
-        contadores[e.status]++;
-      }
-    });
-
-    document.getElementById("badgeDisponiveis").innerHTML = contadores.pendente;
-    document.getElementById("badgeColetas").innerHTML = contadores.aceita;
-    document.getElementById("badgeRota").innerHTML = contadores.retirada;
-    document.getElementById("badgeHistorico").innerHTML = contadores.finalizada;
-
-    // mapa de status para filtragem
-    const statusMap = {
-      disponiveis: "pendente",
-      aceita: "aceita",
-      retirada: "retirada",
-      finalizada: "finalizada"
-    };
-
-    console.log("ABA ATUAL:", abaAtual);
-    console.log(
-      "STATUS RECEBIDOS:",
-      entregas.map(e => ({
-        id: e.id,
-        status: e.status,
-      })),
-    );
-
-    const statusAtual = statusMap[abaAtual] || "pendente";
-    const entregasFiltradas = entregas.filter(e => e.status === statusAtual);
-
-    console.log("STATUS ATUAL:", statusAtual);
-    console.log("ENTREGAS FILTRADAS:", entregasFiltradas);
-    console.log("CONTAINER:", document.getElementById("entregas"));
-
-    // detecta novas entregas comparando IDs e evita repetir notificações
-    const idsAntigos = new Set(ultimaLista.map((e) => String(e.id)));
-    const novasEntregas = entregas.filter(
-      (e) => !idsAntigos.has(String(e.id)),
-    );
-
-    if (novasEntregas.length > 0 && ultimaLista.length > 0) {
-      const novaPendentes = novasEntregas.find((e) => e.status === "pendente");
-      const entregaParaNotificar = novaPendentes || novasEntregas[0];
-
-      if (
-        entregaParaNotificar &&
-        String(entregaParaNotificar.id) !== String(ultimoPedidoNotificado)
-      ) {
-        abrirModalEntrega(entregaParaNotificar);
-        ultimoPedidoNotificado = String(entregaParaNotificar.id);
-      }
-    }
-
-    // atualiza cache
-    ultimaLista = entregas.map(e => ({ ...e }));
-    ultimaQuantidade = entregas.length;
-    atualizarTituloPainelEntregas(entregas.length);
-
-    // renderiza entregas filtradas
-    const container = document.getElementById("entregas");
-    container.innerHTML = "";
-
-    if (!entregasFiltradas.length) {
-      container.innerHTML = `<p>Nenhuma entrega encontrada.</p>`;
-      return;
-    }
-
-    entregasFiltradas.forEach(entrega => {
-      const div = document.createElement("div");
-      div.className = "entrega-card";
-      div.innerHTML = `
-        <div class="entrega-card-header">
-          <span class="entrega-card-badge">📦 Nova corrida</span>
-          <span class="entrega-card-valor">R$ ${Number(entrega.valor).toFixed(2)}</span>
-        </div>
-        <h3 class="entrega-cliente-label">Cliente</h3>
-        <p class="entrega-cliente">${entrega.cliente_nome}</p>
-        <p class="entrega-endereco">📍 ${entrega.endereco}</p>
-        <p class="entrega-bairro">🏘️ ${entrega.bairro}</p>
-        ${entrega.descricao ? `<p class="entrega-descricao">${entrega.descricao}</p>` : ""}
-        ${
-          entrega.status === "pendente"
-            ? `<button class="btn-aceitar-corrida" onclick="aceitarEntrega('${entrega.id}')">Aceitar entrega</button>`
-            : `<span class="status-entrega">${entrega.status}</span>`
-        }
-      `;
-      container.appendChild(div);
-    });
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-// =======================
-// ACEITAR ENTREGA
-// =======================
-
-async function aceitarEntrega(id) {
-  try {
-    const response = await fetch(
-      `${API}/api/entregas/${id}/aceitar`,
-
-      {
-        method: "PUT",
-
-        headers,
-      },
-    );
-
-    const data = await response.json();
-
-    toast(data.message || "Entrega aceita", "sucesso");
-
-    carregarEntregas();
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-let quantidadeEntregasAtivas = 0;
-
-function atualizarTituloPainelEntregas(quantidadeDisponiveis) {
-  const titulo = document.getElementById("tituloPainelEntregas");
-
-  if (quantidadeEntregasAtivas > 0) {
-    titulo.innerHTML = `🚚 Minhas Entregas (${quantidadeEntregasAtivas})`;
-  } else if (quantidadeDisponiveis > 0) {
-    titulo.innerHTML = `📦 Chamados disponíveis (${quantidadeDisponiveis})`;
-  } else {
-    titulo.innerHTML = "📦 Chamados disponíveis";
-  }
-}
-
-async function carregarEntregaAtual() {
-  try {
-    const response = await fetch(`${API}/api/entregas/minhas`, { headers });
-    const resposta = await response.json();
-
-    console.log(resposta);
-
-    const entregas = Array.isArray(resposta) ? resposta : resposta.entregas || [];
-
-    console.log("ABA ATUAL:", abaAtual);
-    console.log(
-      "STATUS RECEBIDOS:",
-      entregas.map((e) => ({
-        id: e.id,
-        status: e.status,
-      })),
-    );
-
-    console.table(
-      entregas.map((e) => ({
-        id: e.id,
-        status: e.status,
-      })),
-    );
-
-    const container = document.getElementById("entregaAtual");
-    console.log("CONTAINER ENTREGA_ATUAL:", container);
-
-    let lista = [];
-
-    if (abaAtual === "disponiveis") {
-      lista = entregas.filter((e) => e.status === "pendente");
-    } else if (abaAtual === "aceita") {
-      lista = entregas.filter((e) => e.status === "aceita");
-    } else if (abaAtual === "retirada") {
-      lista = entregas.filter((e) => e.status === "retirada");
-    } else if (abaAtual === "finalizada") {
-      lista = entregas.filter((e) => e.status === "finalizada");
-    }
-
-    console.log("ABA:", abaAtual);
-    console.log("ENTREGAS:", lista);
-
-    quantidadeEntregasAtivas = lista.length;
-    atualizarTituloPainelEntregas(ultimaLista.length);
-
-    if (!lista.length) {
-      container.innerHTML = `
-        <div class="sem-entrega">
-            Nenhuma entrega em andamento.
-        </div>
-        `;
-      return;
-    }
-
-    container.innerHTML = lista
-      .map((entrega) => {
-        const emRota = entrega.status === "retirada";
-        const latEmpresa = entrega.empresas?.latitude || null;
-        const lngEmpresa = entrega.empresas?.longitude || null;
-
-        return `
-        <div class="entrega-atual">
-            <div class="entrega-atual-topo">
-                <span class="entrega-atual-status">
-                    ${emRota ? "🟢 Em rota" : "🟡 Aguardando coleta"}
-                </span>
-            </div>
-            <h3>
-                ${entrega.cliente_nome}
-            </h3>
-            <p>
-                📍 ${entrega.endereco}
-            </p>
-            <p>
-                🏘️ ${entrega.bairro}
-            </p>
-            <p>
-                💰 R$ ${Number(entrega.valor).toFixed(2)}
-            </p>
-            <div class="entrega-atual-botoes">
-${
-  entrega.status === "aceita"
-    ? `
-<div class="acoes-principais">
-<button
-class="btn-retirar"
-onclick="retirarEntrega('${entrega.id}')"
->
-📦 Retirei pedido
-</button>
-</div>
-
-
-<div class="acoes-navegacao">
-${
-latEmpresa && lngEmpresa
-  ? `
-<button
-class="btn-mapa"
-onclick="abrirSeletorMapa('${latEmpresa}','${lngEmpresa}','coleta')"
->
-🧭 Navegar
-</button>
-`
-  : ""
-}
-
-</div>
-`
-    : `
-<div class="acoes-principais">
-<button
-class="btn-finalizar"
-onclick="finalizarEntrega('${entrega.id}')"
->
-✅ Finalizar
-</button>
-</div>
-
-<div class="acoes-navegacao">
-${
-latEmpresa && lngEmpresa
-  ? `
-<button
-class="btn-mapa"
-onclick="abrirSeletorMapa('${latEmpresa}','${lngEmpresa}','coleta')"
->
-🧭 Navegar
-</button>
-`
-  : ""
-}
-</div>
-`
-}
-            </div>
-        </div>
-`;
-      })
-      .join("");
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-function abrirModalEntrega(entrega) {
-  entregaAtual = entrega;
-
-  document.getElementById("modalCliente").innerHTML =
-    entrega.cliente_nome || "Cliente";
-
-  document.getElementById("modalEndereco").innerHTML = entrega.endereco || "-";
-
-  document.getElementById("modalBairro").innerHTML = entrega.bairro
-    ? `🏘️ ${entrega.bairro}`
-    : "";
-
-  document.getElementById("modalValor").innerHTML =
-    `R$ ${Number(entrega.valor).toFixed(2)}`;
-
-  const temDescricao = Boolean(entrega.descricao);
-
-  document.getElementById("modalDescricao").innerHTML = entrega.descricao || "";
-
-  document.getElementById("modalDescricao").style.display = temDescricao
-    ? "block"
-    : "none";
-
-  // distância / tempo são opcionais — o bloco some sozinho se a API não mandar
-  const temDistancia =
-    entrega.distancia !== undefined && entrega.distancia !== null;
-
-  const temTempo =
-    entrega.tempo_estimado !== undefined && entrega.tempo_estimado !== null;
-
-  document.getElementById("modalDistancia").innerHTML = temDistancia
-    ? `${entrega.distancia} km`
-    : "-";
-
-  document.getElementById("modalTempo").innerHTML = temTempo
-    ? `${entrega.tempo_estimado} min`
-    : "-";
-
-  document.getElementById("modalMetricas").style.display =
-    temDistancia || temTempo ? "flex" : "none";
-
-  iniciarAlertaEntrega();
-
-  document.getElementById("modalEntrega").classList.add("ativo");
-
-  document.getElementById("modalEntrega").classList.remove("minimizado");
-
-  // mostra no mapa: onde estou, onde é a coleta e onde é a entrega final
-  mostrarMarcadoresEntrega(entrega);
-
-  let tempo = 30;
-
-  document.getElementById("contadorEntrega").innerHTML = tempo;
-
-  clearInterval(contadorInterval);
-
-  contadorInterval = setInterval(() => {
-    tempo--;
-
-    document.getElementById("contadorEntrega").innerHTML = tempo;
-
-    if (tempo <= 10) {
-      document.getElementById("contadorWrap").classList.add("urgente");
-    }
-
-    if (tempo <= 0) {
-      fecharModalEntrega();
-    }
-  }, 1000);
-}
-
-function fecharModalEntrega() {
-  pararAlertaEntrega();
-
-  clearInterval(contadorInterval);
-
-  document.getElementById("modalEntrega").classList.remove("ativo");
-
-  document.getElementById("modalEntrega").classList.remove("minimizado");
-
-  document.getElementById("contadorWrap").classList.remove("urgente");
-
-  removerMarcadoresEntrega();
-}
-
-document.getElementById("btnAceitarModal").onclick = async () => {
-  if (!entregaAtual) {
-    return;
-  }
-
-  await aceitarEntrega(entregaAtual.id);
-
-  fecharModalEntrega();
-};
-
-document.getElementById("btnRecusarModal").onclick = () => {
-  fecharModalEntrega();
-};
-
-// =======================
-// MODAL — minimizar / expandir
-// =======================
-
-document.getElementById("minimizarModal").onclick = () => {
-  document.getElementById("modalEntrega").classList.add("minimizado");
-};
-
-document.getElementById("expandirModal").onclick = () => {
-  document.getElementById("modalEntrega").classList.remove("minimizado");
-};
-
-// mantém o contador da barra minimizada sincronizado com o contador do modal
-function sincronizarContadorMinimizado() {
-  const min = document.getElementById("contadorEntregaMin");
-
-  if (min) {
-    min.innerHTML = document.getElementById("contadorEntrega").innerHTML;
-  }
-}
-
-setInterval(sincronizarContadorMinimizado, 1000);
-
-// =======================
-// MARCADORES DE COLETA / ENTREGA (quando modal está minimizado)
-// =======================
+// =========================================================
+// MARCADORES DE COLETA / ENTREGA (durante uma corrida ativa)
+// =========================================================
 
 let marcadoresEntregaAtiva = [];
 
-// tenta achar as coordenadas de coleta em vários formatos possíveis da API
 function obterCoordenadasColeta(entrega) {
   const objetos = [
     entrega.empresas,
@@ -937,7 +249,6 @@ function obterCoordenadasColeta(entrega) {
   return null;
 }
 
-// tenta achar as coordenadas de entrega final em vários formatos possíveis da API
 function obterCoordenadasEntregaFinal(entrega) {
   if (entrega.latitude && entrega.longitude) {
     return { lat: entrega.latitude, lng: entrega.longitude };
@@ -966,16 +277,10 @@ function mostrarMarcadoresEntrega(entrega) {
   const pontos = [];
 
   const coleta = obterCoordenadasColeta(entrega);
-
-  if (coleta) {
-    pontos.push({ ...coleta, tipo: "coleta", label: "🏪 Coleta" });
-  }
+  if (coleta) pontos.push({ ...coleta, tipo: "coleta", label: "🏪 Coleta" });
 
   const destino = obterCoordenadasEntregaFinal(entrega);
-
-  if (destino) {
-    pontos.push({ ...destino, tipo: "entrega", label: "🏠 Entrega" });
-  }
+  if (destino) pontos.push({ ...destino, tipo: "entrega", label: "🏠 Entrega" });
 
   pontos.forEach((ponto) => {
     const icone = L.divIcon({
@@ -994,12 +299,8 @@ function mostrarMarcadoresEntrega(entrega) {
     marcadoresEntregaAtiva.push(m);
   });
 
-  // enquadra o mapa para mostrar entregador + coleta + entrega juntos
   const pontosMapa = pontos.map((p) => [p.lat, p.lng]);
-
-  if (marcador) {
-    pontosMapa.push(marcador.getLatLng());
-  }
+  if (marcador) pontosMapa.push(marcador.getLatLng());
 
   if (pontosMapa.length > 1) {
     mapa.fitBounds(pontosMapa, { padding: [60, 60] });
@@ -1010,87 +311,615 @@ function mostrarMarcadoresEntrega(entrega) {
 
 function removerMarcadoresEntrega() {
   marcadoresEntregaAtiva.forEach((m) => mapa && mapa.removeLayer(m));
-
   marcadoresEntregaAtiva = [];
 }
 
-// =======================
-// GPS
-// =======================
+// =========================================================
+// NAVEGAÇÃO ENTRE TELAS (Início / Entregas / Ganhos / Perfil)
+// =========================================================
 
-let watchId;
+let telaEntregasAtiva = false;
 
-function iniciarGPS() {
-  if (!navigator.geolocation) {
-    toast("GPS não disponível neste dispositivo", "erro");
+function mostrarTela(idTela) {
+  document.querySelectorAll(".tela").forEach((tela) => {
+    tela.classList.toggle("ativa", tela.id === idTela);
+  });
 
-    return;
+  document.querySelectorAll(".menu-inferior button[data-tela]").forEach((botao) => {
+    botao.classList.toggle("ativo", botao.dataset.tela === idTela);
+  });
+
+  telaEntregasAtiva = idTela === "telaEntregas";
+
+  if (telaEntregasAtiva) {
+    carregarListaEntregas();
+  }
+}
+
+document.querySelectorAll(".menu-inferior button[data-tela]").forEach((botao) => {
+  botao.onclick = () => mostrarTela(botao.dataset.tela);
+});
+
+document.getElementById("menuSair").onclick = () => fazerLogout();
+
+// =========================================================
+// PERFIL
+// =========================================================
+
+async function carregarPerfil() {
+  try {
+    const response = await fetch(`${API}/api/entregador/me`, { headers });
+    const data = await response.json();
+
+    document.getElementById("nomeUsuario").innerHTML = data.nome || "Entregador";
+    document.getElementById("veiculo").innerHTML = data.tipo_veiculo || "-";
+    document.getElementById("placa").innerHTML = data.placa || "-";
+
+    // tela Perfil
+    document.getElementById("perfilNome").innerHTML = data.nome || "-";
+    document.getElementById("perfilTelefone").innerHTML =
+      data.telefone || usuario?.telefone || "-";
+    document.getElementById("perfilVeiculo").innerHTML = data.tipo_veiculo || "-";
+    document.getElementById("perfilPlaca").innerHTML = data.placa || "-";
+
+    atualizarStatus(data.online);
+
+    if (data.latitude && data.longitude) {
+      atualizarMapa(data.latitude, data.longitude);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+document.getElementById("btnConfiguracoes").onclick = () => {
+  toast("Configurações em breve", "sucesso");
+};
+
+// =========================================================
+// STATUS ONLINE / OFFLINE — botão único que alterna
+// ("Online" -> clica -> fica "Offline" -> clica -> volta a "Online")
+// =========================================================
+
+let onlineAtual = false;
+
+function atualizarStatus(online) {
+  onlineAtual = Boolean(online);
+
+  const botao = document.getElementById("btnToggleOnline");
+  const texto = document.getElementById("status");
+
+  texto.innerHTML = onlineAtual ? "Online" : "Offline";
+  botao.classList.toggle("online", onlineAtual);
+  botao.classList.toggle("offline", !onlineAtual);
+}
+
+document.getElementById("toggleDetalhesStatus").onclick = () => {
+  const card = document.getElementById("cardStatusOnline");
+  const aberto = card.classList.toggle("aberto");
+  document.getElementById("toggleDetalhesStatus").setAttribute("aria-expanded", aberto);
+};
+
+document.getElementById("btnToggleOnline").onclick = async () => {
+  const irParaOnline = !onlineAtual;
+  const rota = irParaOnline ? "online" : "offline";
+
+  try {
+    const response = await fetch(`${API}/api/entregador/${rota}`, {
+      method: "POST",
+      headers,
+    });
+    const data = await response.json();
+
+    if (response.ok) {
+      atualizarStatus(irParaOnline);
+      toast(data.message || (irParaOnline ? "Você está online" : "Você está offline"), "sucesso");
+    } else {
+      toast(data.message || `Não foi possível ficar ${rota}`, "erro");
+    }
+  } catch (error) {
+    console.log(error);
+    toast("Erro ao conectar com o servidor", "erro");
+  }
+};
+
+// =========================================================
+// ABAS DA TELA ENTREGAS
+// =========================================================
+
+document.getElementById("tabDisponiveis").onclick = () => selecionarAba("disponiveis");
+document.getElementById("tabColetas").onclick = () => selecionarAba("coletas");
+document.getElementById("tabRota").onclick = () => selecionarAba("rota");
+document.getElementById("tabHistorico").onclick = () => selecionarAba("historico");
+
+function selecionarAba(aba) {
+  abaAtual = aba;
+  atualizarTabsVisual();
+
+  const filtros = document.getElementById("filtrosHistorico");
+  filtros.classList.toggle("mostrar", aba === "historico");
+
+  if (aba !== "historico") {
+    document.getElementById("filtroPersonalizado").classList.remove("mostrar");
   }
 
-  watchId = navigator.geolocation.watchPosition(
-    async (pos) => {
-      const latitude = pos.coords.latitude;
+  carregarListaEntregas();
+}
 
-      const longitude = pos.coords.longitude;
+function atualizarTabsVisual() {
+  document.querySelectorAll(".tab-entrega").forEach((tab) => tab.classList.remove("ativa"));
 
-      const precisao = pos.coords.accuracy;
+  const mapaTabs = {
+    disponiveis: "tabDisponiveis",
+    coletas: "tabColetas",
+    rota: "tabRota",
+    historico: "tabHistorico",
+  };
 
-      document.getElementById("localizacao").innerHTML = `
+  document.getElementById(mapaTabs[abaAtual]).classList.add("ativa");
+}
 
-GPS ativo · precisão de ${Math.round(precisao)}m
+// mapeia aba (UI) -> status (API)
+const STATUS_POR_ABA = {
+  disponiveis: "pendente",
+  coletas: "aceita",
+  rota: "retirada",
+  historico: "finalizada",
+};
 
-`;
+// =========================================================
+// FILTROS DE HISTÓRICO
+// =========================================================
 
-      // envia para backend
+document.querySelectorAll(".filtro-historico").forEach((botao) => {
+  botao.onclick = () => {
+    const filtro = botao.dataset.filtro;
+    filtroHistoricoAtual = filtro;
 
-      if (precisao <= 100) {
-        await fetch(
-          `${API}/api/entregador/localizacao`,
+    document.querySelectorAll(".filtro-historico").forEach((b) => b.classList.remove("ativo"));
+    botao.classList.add("ativo");
 
-          {
-            method: "PUT",
+    document
+      .getElementById("filtroPersonalizado")
+      .classList.toggle("mostrar", filtro === "personalizado");
 
-            headers: {
-              ...headers,
+    if (filtro !== "personalizado") {
+      carregarListaEntregas();
+    }
+  };
+});
 
-              "Content-Type": "application/json",
-            },
+document.getElementById("btnAplicarFiltroPersonalizado").onclick = () => {
+  carregarListaEntregas();
+};
 
-            body: JSON.stringify({
-              latitude,
-
-              longitude,
-            }),
-          },
-        );
-      }
-
-      atualizarMapa(
-        latitude,
-
-        longitude,
-      );
-    },
-
-    (error) => {
-      console.log("Erro GPS", error);
-    },
-
-    {
-      enableHighAccuracy: true,
-
-      timeout: 15000,
-
-      maximumAge: 0,
-    },
+function obterDataEntrega(entrega) {
+  return (
+    entrega.criado_em ||
+    entrega.data_criacao ||
+    entrega.created_at ||
+    entrega.finalizado_em ||
+    null
   );
 }
 
-function abrirGoogleMaps(lat, lng) {
-  window.open(
-    `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
-    "_blank",
+function passaNoFiltroHistorico(entrega) {
+  if (filtroHistoricoAtual === "personalizado") {
+    const inicio = document.getElementById("filtroDataInicio").value;
+    const fim = document.getElementById("filtroDataFim").value;
+    if (!inicio || !fim) return true; // sem intervalo definido ainda, não filtra
+
+    const dataStr = obterDataEntrega(entrega);
+    if (!dataStr) return true;
+
+    const data = new Date(dataStr);
+    return data >= new Date(inicio) && data <= new Date(`${fim}T23:59:59`);
+  }
+
+  const dataStr = obterDataEntrega(entrega);
+  if (!dataStr) return true; // sem dado suficiente pra filtrar, não exclui
+
+  const data = new Date(dataStr);
+  const agora = new Date();
+  const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+  const diffDias = Math.floor(
+    (inicioHoje - new Date(data.getFullYear(), data.getMonth(), data.getDate())) / 86400000,
   );
+
+  switch (filtroHistoricoAtual) {
+    case "hoje":
+      return diffDias === 0;
+    case "ontem":
+      return diffDias === 1;
+    case "7dias":
+      return diffDias >= 0 && diffDias <= 7;
+    case "30dias":
+      return diffDias >= 0 && diffDias <= 30;
+    default:
+      return true;
+  }
+}
+
+// =========================================================
+// CARREGAR TODAS AS ENTREGAS (disponíveis + minhas)
+// usado tanto pela tela Entregas quanto pelos badges
+// =========================================================
+
+async function buscarTodasEntregas() {
+  const disponiveisReq = await fetch(`${API}/api/entregas/disponiveis`, { headers });
+  const minhasReq = await fetch(`${API}/api/entregas/minhas`, { headers });
+
+  const disponiveis = await disponiveisReq.json();
+  const minhas = await minhasReq.json();
+
+  const mapaEntregas = new Map();
+  (Array.isArray(disponiveis) ? disponiveis : disponiveis.entregas || []).forEach((e) =>
+    mapaEntregas.set(e.id, e),
+  );
+  (Array.isArray(minhas) ? minhas : minhas.entregas || []).forEach((e) =>
+    mapaEntregas.set(e.id, e),
+  );
+
+  return Array.from(mapaEntregas.values());
+}
+
+function atualizarBadges(entregas) {
+  const contadores = { pendente: 0, aceita: 0, retirada: 0, finalizada: 0 };
+
+  entregas.forEach((e) => {
+    if (contadores.hasOwnProperty(e.status)) contadores[e.status]++;
+  });
+
+  document.getElementById("badgeDisponiveis").innerHTML = contadores.pendente;
+  document.getElementById("badgeColetas").innerHTML = contadores.aceita;
+  document.getElementById("badgeRota").innerHTML = contadores.retirada;
+  document.getElementById("badgeHistorico").innerHTML = contadores.finalizada;
+
+  return contadores;
+}
+
+function detectarNovaEntregaEDisparar(entregas) {
+  const idsAntigos = new Set(ultimaLista.map((e) => String(e.id)));
+  const novasEntregas = entregas.filter((e) => !idsAntigos.has(String(e.id)));
+
+  if (novasEntregas.length > 0 && ultimaLista.length > 0) {
+    const novaPendente = novasEntregas.find((e) => {
+  return (
+    e.status === "pendente" &&
+    !quantidadeEntregasAtivas
+  );
+});
+    const entregaParaNotificar = novaPendente || novasEntregas[0];
+
+    if (
+      entregaParaNotificar &&
+      String(entregaParaNotificar.id) !== String(ultimoPedidoNotificado)
+    ) {
+      abrirModalEntrega(entregaParaNotificar);
+      ultimoPedidoNotificado = String(entregaParaNotificar.id);
+    }
+  }
+
+  ultimaLista = entregas.map((e) => ({ ...e }));
+}
+
+// renderiza a lista da tela Entregas (aba ativa)
+async function carregarListaEntregas() {
+  try {
+    const entregas = await buscarTodasEntregas();
+    atualizarBadges(entregas);
+    detectarNovaEntregaEDisparar(entregas);
+
+    const statusAlvo = STATUS_POR_ABA[abaAtual];
+    let filtradas = entregas.filter((e) => e.status === statusAlvo);
+
+    if (abaAtual === "historico") {
+      filtradas = filtradas.filter(passaNoFiltroHistorico);
+    }
+
+    const container = document.getElementById("listaEntregas");
+    container.innerHTML = "";
+
+    if (!filtradas.length) {
+      container.innerHTML = `<div class="sem-entrega">Nenhuma entrega encontrada.</div>`;
+      return;
+    }
+
+    filtradas.forEach((entrega) => {
+      container.appendChild(criarCardEntrega(entrega));
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+function criarCardEntrega(entrega) {
+  const div = document.createElement("div");
+  div.className = "entrega-card";
+  div.innerHTML = `
+    <div class="entrega-card-header">
+      <span class="entrega-card-badge">📦 Corrida</span>
+      <span class="entrega-card-valor">R$ ${Number(entrega.valor || 0).toFixed(2)}</span>
+    </div>
+    <p class="entrega-cliente">${entrega.cliente_nome || "Cliente"}</p>
+    ${montarBlocoEndereco(entrega)}
+    ${entrega.descricao ? `<p class="entrega-descricao">${entrega.descricao}</p>` : ""}
+    ${
+      entrega.status === "pendente"
+        ? `<button class="btn-aceitar-corrida" data-id="${entrega.id}">Aceitar entrega</button>`
+        : `<span class="status-entrega">${entrega.status}</span>`
+    }
+  `;
+
+  const botaoAceitar = div.querySelector(".btn-aceitar-corrida");
+  if (botaoAceitar) {
+    botaoAceitar.onclick = () => aceitarEntrega(entrega.id);
+  }
+
+  return div;
+}
+
+// =========================================================
+// ENTREGA ATUAL (tela Início) — a corrida em andamento agora
+// =========================================================
+
+async function carregarEntregaAtualInicio() {
+  try {
+    const response = await fetch(`${API}/api/entregas/minhas`, { headers });
+    const resposta = await response.json();
+
+    const entregas = Array.isArray(resposta) ? resposta : resposta.entregas || [];
+    const ativas = entregas.filter((e) => e.status === "aceita" || e.status === "retirada");
+
+    quantidadeEntregasAtivas = ativas.length;
+
+    const container = document.getElementById("cardEntregaAtualInicio");
+
+    if (!ativas.length) {
+      container.innerHTML = `<div class="sem-entrega">Nenhuma entrega em andamento.</div>`
+      atualizarEnderecoTopo(null);
+      return;
+    }
+
+    // Define a entrega principal ativa para ser renderizada pelo seu novo código
+    const principal = ativas[0];
+
+    atualizarEnderecoTopo(principal);
+
+    // >>> SUA SUBSTITUIÇÃO COMEÇA AQUI >>>
+    container.innerHTML = `
+    <div class="entrega-atual">
+
+      <div class="entrega-atual-topo">
+          <span class="entrega-atual-status">
+              ${
+                principal.status === "retirada"
+                  ? "🟢 Em rota"
+                  : "🟡 Aguardando coleta"
+              }
+          </span>
+      </div>
+
+      <h3>${principal.cliente_nome || "Cliente"}</h3>
+
+      ${montarBlocoEndereco(principal)}
+
+      <p class="entrega-atual-valor">
+          💰 R$ ${Number(principal.valor || 0).toFixed(2)}
+      </p>
+
+      <div class="entrega-atual-botoes">
+        ${
+          principal.status === "aceita"
+            ? `
+              <div class="acoes-principais">
+                <button class="btn-retirar" data-acao="retirar" data-id="${principal.id}">
+                  📦 Retirei pedido
+                </button>
+              </div>
+              <div class="acoes-navegacao">
+                ${
+                  principal.empresas?.latitude && principal.empresas?.longitude
+                    ? `<button class="btn-mapa" data-acao="navegar" data-lat="${principal.empresas.latitude}" data-lng="${principal.empresas.longitude}">🧭 Navegar</button>`
+                    : ""
+                }
+              </div>
+            `
+            : `
+              <div class="acoes-principais">
+                <button class="btn-finalizar" data-acao="finalizar" data-id="${principal.id}">
+                  ✅ Finalizar
+                </button>
+              </div>
+              <div class="acoes-navegacao">
+                ${
+                  principal.empresas?.latitude && principal.empresas?.longitude
+                    ? `<button class="btn-mapa" data-acao="navegar" data-lat="${principal.empresas.latitude}" data-lng="${principal.empresas.longitude}">🧭 Navegar</button>`
+                    : ""
+                }
+              </div>
+            `
+        }
+      </div>
+
+    </div>
+    `;
+    // <<< SUA SUBSTITUIÇÃO TERMINA AQUI <<<
+
+    // Mantém a ligação dos eventos de clique nos novos botões gerados
+    container.querySelectorAll("[data-acao='retirar']").forEach((btn) => {
+      btn.onclick = () => retirarEntrega(btn.dataset.id);
+    });
+    container.querySelectorAll("[data-acao='finalizar']").forEach((btn) => {
+      btn.onclick = () => finalizarEntrega(btn.dataset.id);
+    });
+    container.querySelectorAll("[data-acao='navegar']").forEach((btn) => {
+      btn.onclick = () => abrirSeletorMapa(btn.dataset.lat, btn.dataset.lng);
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+// =========================================================
+// AÇÕES DE ENTREGA (aceitar / retirar / finalizar)
+// =========================================================
+
+async function aceitarEntrega(id) {
+  try {
+    const response = await fetch(`${API}/api/entregas/${id}/aceitar`, {
+      method: "PUT",
+      headers,
+    });
+    const data = await response.json();
+
+    toast(data.message || "Entrega aceita", "sucesso");
+
+    fecharModalEntrega();
+    carregarListaEntregas();
+    carregarEntregaAtualInicio();
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+async function retirarEntrega(id) {
+  try {
+    const response = await fetch(`${API}/api/entregas/${id}/retirar`, {
+      method: "PUT",
+      headers,
+    });
+    const data = await response.json();
+
+    toast(data.message || "Pedido retirado", "sucesso");
+
+    carregarListaEntregas();
+    carregarEntregaAtualInicio();
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+async function finalizarEntrega(id) {
+  try {
+    const response = await fetch(`${API}/api/entregas/${id}/finalizar`, {
+      method: "PUT",
+      headers,
+    });
+    const data = await response.json();
+
+    toast(data.message || "Entrega finalizada", "sucesso");
+
+    carregarListaEntregas();
+    carregarEntregaAtualInicio();
+    carregarFinanceiro();
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+// =========================================================
+// MODAL DE NOVA ENTREGA
+// Fica sempre no topo de tudo (ver z-index no CSS).
+// =========================================================
+
+function abrirModalEntrega(entrega) {
+  entregaAtual = entrega;
+
+  document.getElementById("modalCliente").innerHTML = entrega.cliente_nome || "Cliente";
+  document.getElementById("modalEnderecoBloco").innerHTML = montarBlocoEndereco(entrega);
+  document.getElementById("modalValor").innerHTML = `R$ ${Number(entrega.valor || 0).toFixed(2)}`;
+
+  const temDescricao = Boolean(entrega.descricao);
+  document.getElementById("modalDescricao").innerHTML = entrega.descricao || "";
+  document.getElementById("modalDescricao").style.display = temDescricao ? "block" : "none";
+
+  const temDistancia = entrega.distancia !== undefined && entrega.distancia !== null;
+  const temTempo = entrega.tempo_estimado !== undefined && entrega.tempo_estimado !== null;
+
+  document.getElementById("modalDistancia").innerHTML = temDistancia
+    ? `${entrega.distancia} km`
+    : "-";
+  document.getElementById("modalTempo").innerHTML = temTempo ? `${entrega.tempo_estimado} min` : "-";
+  document.getElementById("modalMetricas").style.display = temDistancia || temTempo ? "flex" : "none";
+
+  iniciarAlertaEntrega();
+
+  document.getElementById("overlayModal").classList.add("ativo");
+  document.getElementById("modalEntrega").classList.add("ativo");
+  document.getElementById("modalEntrega").classList.remove("minimizado");
+
+  mostrarMarcadoresEntrega(entrega);
+
+  let tempo = 30;
+  document.getElementById("contadorEntrega").innerHTML = tempo;
+  document.getElementById("contadorWrap").classList.remove("urgente");
+
+  clearInterval(contadorInterval);
+  contadorInterval = setInterval(() => {
+    tempo--;
+    document.getElementById("contadorEntrega").innerHTML = tempo;
+
+    if (tempo <= 10) {
+      document.getElementById("contadorWrap").classList.add("urgente");
+    }
+
+    if (tempo <= 0) {
+      fecharModalEntrega();
+    }
+  }, 1000);
+}
+
+function fecharModalEntrega() {
+  pararAlertaEntrega();
+  clearInterval(contadorInterval);
+
+  document.getElementById("overlayModal").classList.remove("ativo");
+  document.getElementById("modalEntrega").classList.remove("ativo");
+  document.getElementById("modalEntrega").classList.remove("minimizado");
+  document.getElementById("contadorWrap").classList.remove("urgente");
+
+  removerMarcadoresEntrega();
+}
+
+document.getElementById("btnAceitarModal").onclick = async () => {
+  if (!entregaAtual) return;
+  await aceitarEntrega(entregaAtual.id);
+  fecharModalEntrega();
+};
+
+document.getElementById("btnRecusarModal").onclick = () => {
+  fecharModalEntrega();
+};
+
+// minimizar / expandir — some com o escurecimento ao minimizar,
+// já que o objetivo é liberar a visão do mapa, mas mantém o modal
+// como a camada mais alta (barra minimizada continua clicável)
+document.getElementById("minimizarModal").onclick = () => {
+  document.getElementById("modalEntrega").classList.add("minimizado");
+  document.getElementById("overlayModal").classList.remove("ativo");
+};
+
+document.getElementById("expandirModal").onclick = () => {
+  document.getElementById("modalEntrega").classList.remove("minimizado");
+  document.getElementById("overlayModal").classList.add("ativo");
+};
+
+function sincronizarContadorMinimizado() {
+  const min = document.getElementById("contadorEntregaMin");
+  if (min) {
+    min.innerHTML = document.getElementById("contadorEntrega").innerHTML;
+  }
+}
+
+setInterval(sincronizarContadorMinimizado, 1000);
+
+// =========================================================
+// NAVEGAÇÃO (Google Maps / Waze / Apple Maps)
+// =========================================================
+
+function abrirGoogleMaps(lat, lng) {
+  window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, "_blank");
 }
 
 function abrirWaze(lat, lng) {
@@ -1100,193 +929,254 @@ function abrirWaze(lat, lng) {
 function abrirAppleMaps(lat, lng) {
   window.open(`https://maps.apple.com/?daddr=${lat},${lng}`, "_blank");
 }
-// =======================
-// LOGOUT
-// =======================
 
-function fazerLogout() {
-  localStorage.removeItem("token");
-
-  localStorage.removeItem("usuario");
-
-  window.location.href = "../login/login.html";
-}
-
-async function carregarFinanceiro() {
-  const response = await fetch(
-    `${API}/api/financeiro/resumo`,
-
-    { headers },
-  );
-
-  const data = await response.json();
-
-  document.getElementById("ganhosHoje").innerHTML =
-    `R$ ${data.hoje.toFixed(2)}`;
-
-  document.getElementById("ganhosHojeExpandido").innerHTML =
-    `R$ ${data.hoje.toFixed(2)}`;
-
-  document.getElementById("ganhosSemana").innerHTML =
-    `R$ ${data.semana.toFixed(2)}`;
-
-  document.getElementById("ganhosMes").innerHTML = `R$ ${data.mes.toFixed(2)}`;
-
-  document.getElementById("saldoCarteira").innerHTML =
-    `R$ ${data.saldo.toFixed(2)}`;
-}
-
-async function retirarEntrega(id) {
-  const response = await fetch(
-    `${API}/api/entregas/${id}/retirar`,
-
-    {
-      method: "PUT",
-      headers,
-    },
-  );
-
-  const data = await response.json();
-
-  toast(data.message || "Pedido retirado", "sucesso");
-
-  carregarEntregas();
-  carregarEntregaAtual();
-}
-
-async function finalizarEntrega(id) {
-  const response = await fetch(
-    `${API}/api/entregas/${id}/finalizar`,
-
-    {
-      method: "PUT",
-      headers,
-    },
-  );
-
-  const data = await response.json();
-
-  toast(data.message || "Entrega finalizada", "sucesso");
-
-  carregarEntregas();
-  carregarEntregaAtual();
-  carregarFinanceiro();
-}
-
-function abrirSeletorMapa(lat, lng, tipo) {
+function abrirSeletorMapa(lat, lng) {
   const modal = document.createElement("div");
-
   modal.className = "modal-seletor-mapa";
-
   modal.innerHTML = `
-  
     <div class="modal-seletor-mapa-conteudo">
-
-      <h3>
-      Escolha o aplicativo de navegação
-      </h3>
-
+      <h3>Escolha o aplicativo de navegação</h3>
       <div class="opcoes-mapa">
-
-        <button onclick="navegarCom('google', ${lat}, ${lng}, '${tipo}')">
-          🗺 Google Maps
-        </button>
-
-        <button onclick="navegarCom('waze', ${lat}, ${lng}, '${tipo}')">
-          📍 Waze
-        </button>
-
-        <button onclick="navegarCom('apple', ${lat}, ${lng}, '${tipo}')">
-          🍎 Apple Maps
-        </button>
-
+        <button data-app="google">🗺 Google Maps</button>
+        <button data-app="waze">📍 Waze</button>
+        <button data-app="apple">🍎 Apple Maps</button>
       </div>
-
-      <button
-      class="btn-fechar-modal"
-      onclick="this.closest('.modal-seletor-mapa').remove()"
-      >
-        Cancelar
-      </button>
-
+      <button class="btn-fechar-modal">Cancelar</button>
     </div>
-
   `;
+
+  modal.querySelector("[data-app='google']").onclick = () => navegarCom("google", lat, lng);
+  modal.querySelector("[data-app='waze']").onclick = () => navegarCom("waze", lat, lng);
+  modal.querySelector("[data-app='apple']").onclick = () => navegarCom("apple", lat, lng);
+  modal.querySelector(".btn-fechar-modal").onclick = () => modal.remove();
 
   document.body.appendChild(modal);
 }
 
 function navegarCom(app, lat, lng) {
-  if (app === "google") {
-    abrirGoogleMaps(lat, lng);
-  }
-
-  if (app === "waze") {
-    abrirWaze(lat, lng);
-  }
-
-  if (app === "apple") {
-    abrirAppleMaps(lat, lng);
-  }
+  if (app === "google") abrirGoogleMaps(lat, lng);
+  if (app === "waze") abrirWaze(lat, lng);
+  if (app === "apple") abrirAppleMaps(lat, lng);
 
   document.querySelector(".modal-seletor-mapa")?.remove();
 }
 
-function abrirGoogleMaps(lat, lng) {
-  window.open(
-    `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
+// =========================================================
+// GPS
+// =========================================================
 
-    "_blank",
+let watchId;
+
+function iniciarGPS() {
+  if (!navigator.geolocation) {
+    toast("GPS não disponível neste dispositivo", "erro");
+    return;
+  }
+
+  watchId = navigator.geolocation.watchPosition(
+    async (pos) => {
+      const latitude = pos.coords.latitude;
+      const longitude = pos.coords.longitude;
+      const precisao = pos.coords.accuracy;
+
+      document.getElementById("localizacao").innerHTML =
+        `GPS ativo · precisão de ${Math.round(precisao)}m`;
+
+      if (precisao <= 100) {
+        await fetch(`${API}/api/entregador/localizacao`, {
+          method: "PUT",
+          headers: {
+            ...headers,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ latitude, longitude }),
+        });
+      }
+
+      atualizarMapa(latitude, longitude);
+    },
+    (error) => {
+      console.log("Erro GPS", error);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0,
+    },
   );
 }
 
-function abrirWaze(lat, lng) {
-  window.open(
-    `https://waze.com/ul?ll=${lat},${lng}&navigate=yes`,
+// =========================================================
+// LOGOUT
+// =========================================================
 
-    "_blank",
+function fazerLogout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("usuario");
+  window.location.href = "../login/login.html";
+}
+
+// =========================================================
+// FINANCEIRO / GANHOS
+// =========================================================
+
+async function carregarFinanceiro() {
+  try {
+    const response = await fetch(`${API}/api/financeiro/resumo`, { headers });
+    const data = await response.json();
+
+    const hoje = Number(data.hoje || 0);
+    const semana = Number(data.semana || 0);
+    const mes = Number(data.mes || 0);
+    const saldo = Number(data.saldo || 0);
+
+    // tela Início — resumo do dia
+    document.getElementById("resumoDiaGanhos").innerHTML = `R$ ${hoje.toFixed(2)}`;
+
+    // tela Ganhos
+    document.getElementById("ganhosHoje").innerHTML = `R$ ${hoje.toFixed(2)}`;
+    document.getElementById("ganhosSemana").innerHTML = `R$ ${semana.toFixed(2)}`;
+    document.getElementById("ganhosMes").innerHTML = `R$ ${mes.toFixed(2)}`;
+    document.getElementById("saldoCarteira").innerHTML = `R$ ${saldo.toFixed(2)}`;
+
+    // Campos extras: usam o valor da API se existir, senão calculam
+    // a partir do cache local de entregas (melhor esforço — o ideal
+    // é o backend expor esses três campos prontos no /resumo).
+    const entregasFinalizadasHoje = ultimaLista.filter(
+      (e) => e.status === "finalizada" && passaNoFiltroDataHoje(e),
+    );
+
+    const entregasConcluidas =
+      data.entregasConcluidas ?? entregasFinalizadasHoje.length;
+
+    const ticketMedio =
+      data.ticketMedio ??
+      (entregasConcluidas > 0 ? hoje / entregasConcluidas : 0);
+
+    document.getElementById("entregasConcluidas").innerHTML = entregasConcluidas;
+    document.getElementById("ticketMedio").innerHTML = `R$ ${Number(ticketMedio).toFixed(2)}`;
+
+    document.getElementById("taxaAceitacao").innerHTML =
+      data.taxaAceitacao !== undefined ? `${data.taxaAceitacao}%` : "—";
+
+    // quantidade de entregas hoje (card resumo do dia)
+    document.getElementById("resumoDiaQtd").innerHTML = entregasFinalizadasHoje.length;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+function passaNoFiltroDataHoje(entrega) {
+  const dataStr = obterDataEntrega(entrega);
+  if (!dataStr) return false;
+  const data = new Date(dataStr);
+  const agora = new Date();
+  return (
+    data.getFullYear() === agora.getFullYear() &&
+    data.getMonth() === agora.getMonth() &&
+    data.getDate() === agora.getDate()
   );
 }
 
-function abrirAppleMaps(lat, lng) {
-  window.open(
-    `https://maps.apple.com/?daddr=${lat},${lng}`,
+// =========================================================
+// SOCKET.IO — substitui o polling por setInterval
+// Eventos esperados do backend:
+//   nova_entrega, entrega_aceita, entrega_retirada,
+//   entrega_finalizada, localizacao_atualizada
+// =========================================================
 
-    "_blank",
-  );
+let socket;
+
+function iniciarSocket() {
+  if (typeof io === "undefined") {
+    console.warn(
+      "Socket.IO não carregado — verifique a tag <script> do socket.io.min.js no HTML.",
+    );
+    return;
+  }
+
+  socket = io(API || window.location.origin, {
+    auth: { token },
+    transports: ["websocket"],
+  });
+
+  socket.on("connect", () => {
+    console.log("Socket conectado");
+    socket.emit("entrar_entregador", usuario.id);
+  });
+  socket.on("disconnect", () => console.log("Socket desconectado"));
+  socket.on("connect_error", (err) => console.log("Erro no socket:", err.message));
+
+  socket.on("nova_entrega", (entrega) => {
+    // Atualizar ultimaLista para evitar duplicação quando a aba Entregas for aberta depois
+    if (entrega && entrega.id) {
+      const existe = ultimaLista.some((e) => String(e.id) === String(entrega.id));
+      if (!existe) {
+        ultimaLista.push({ ...entrega });
+      }
+    }
+
+    // Marcar como notificada para não reabrir em carregarListaEntregas()
+    if (entrega && entrega.id) {
+      ultimoPedidoNotificado = String(entrega.id);
+    }
+
+    // Mostrar tela inicial e abrir modal
+    mostrarTela("telaInicio");
+    abrirModalEntrega(entrega);
+  });
+
+  socket.on("entrega_aceita", () => {
+    carregarListaEntregas();
+    carregarEntregaAtualInicio();
+  });
+
+  socket.on("entrega_retirada", () => {
+    carregarListaEntregas();
+    carregarEntregaAtualInicio();
+  });
+
+  socket.on("entrega_finalizada", () => {
+    carregarListaEntregas();
+    carregarEntregaAtualInicio();
+    carregarFinanceiro();
+  });
+
+  socket.on("localizacao_atualizada", (dados) => {
+    if (dados?.latitude && dados?.longitude) {
+      atualizarMapa(dados.latitude, dados.longitude);
+    }
+  });
 }
 
-function navegarColeta(lat, lng) {
-  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
-  window.open(url, "_blank");
+async function verificarNovasEntregasGlobal() {
+  try {
+    const entregas = await buscarTodasEntregas();
+
+    detectarNovaEntregaEDisparar(entregas);
+
+  } catch (error) {
+    console.log(error);
+  }
 }
-
-function navegarCliente(lat, lng) {
-  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-
-  window.open(url, "_blank");
-}
-
-// =======================
+// =========================================================
 // INICIAR SISTEMA
-// =======================
-iniciarMapa();
+// =========================================================
 
-document.getElementById("menuInicio").classList.add("ativo");
+iniciarMapa();
+mostrarTela("telaInicio");
 
 carregarPerfil();
+carregarListaEntregas();
+verificarNovasEntregasGlobal();
 
-carregarEntregas();
-carregarEntregaAtual();
+setInterval(() => {
+  verificarNovasEntregasGlobal();
+}, 5000);
+
+carregarEntregaAtualInicio();
 carregarFinanceiro();
 
 iniciarGPS();
-
-setInterval(() => {
-  carregarEntregas();
-
-  carregarEntregaAtual();
-
-  carregarFinanceiro();
-}, 3000);
+iniciarSocket();
