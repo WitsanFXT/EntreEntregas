@@ -5,7 +5,8 @@ const {
     getIO
 } = require("../socket/socket");
 
-
+const redistribuirEntrega =
+require("../services/redistribuirEntrega");
 
 
 
@@ -862,4 +863,42 @@ message:"Erro interno"
 });
 
 }
+};
+
+exports.recusarEntrega = async (req,res)=>{
+
+try{
+
+const entregaId = req.params.id;
+const usuarioId = req.usuario.id;
+
+const { data: entregador } = await supabase
+.from("entregadores")
+.select("id")
+.eq("usuario_id", usuarioId)
+.single();
+
+await supabase
+.from("recusas_entrega")
+.insert({
+    entrega_id: entregaId,
+    entregador_id: entregador.id
+});
+
+await redistribuirEntrega(entregaId);
+
+return res.json({
+    message:"Entrega recusada."
+});
+
+}catch(error){
+
+console.log(error);
+
+return res.status(500).json({
+    message:"Erro interno"
+});
+
+}
+
 };

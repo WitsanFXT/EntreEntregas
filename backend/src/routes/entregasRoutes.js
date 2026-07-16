@@ -11,6 +11,7 @@ const permissao =
 require("../middleware/permissao");
 
 
+
 const {
 
 criarEntrega,
@@ -19,6 +20,7 @@ listarEntregasEntregador,
 listarMinhasEntregas,
 dashboardEntregador,
 aceitarEntrega,
+recusarEntrega,
 retirarEntrega,
 finalizarEntrega
 
@@ -141,6 +143,13 @@ permissao("entregador"),
 
 finalizarEntrega
 
+);
+
+router.put(
+"/:id/recusar",
+auth,
+permissao("entregador"),
+recusarEntrega
 );
 
 router.get(

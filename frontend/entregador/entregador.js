@@ -546,6 +546,9 @@ function passaNoFiltroHistorico(entrega) {
 // =========================================================
 
 async function buscarTodasEntregas() {
+
+  console.log("DISPONIVEIS", disponiveis);
+  console.log("MINHAS", minhas);
   const disponiveisReq = await fetch(`${API}/api/entregas/disponiveis`, { headers });
   const minhasReq = await fetch(`${API}/api/entregas/minhas`, { headers });
 
@@ -700,9 +703,35 @@ async function carregarEntregaAtualInicio() {
           </span>
       </div>
 
-      <h3>${principal.cliente_nome || "Cliente"}</h3>
+      ${
+  principal.status === "aceita"
+    ? `
+      <div class="destino-atual">
+        <span class="tipo-destino">📍 Coleta</span>
 
-      ${montarBlocoEndereco(principal)}
+        <h3>
+          ${principal.empresas?.nome_fantasia || "Estabelecimento"}
+        </h3>
+
+        <p>
+          ${principal.empresas?.endereco || ""}
+        </p>
+      </div>
+    `
+    : `
+      <div class="destino-atual">
+        <span class="tipo-destino">🏠 Entrega</span>
+
+        <h3>
+          ${principal.cliente_nome || "Cliente"}
+        </h3>
+
+        <p>
+          ${principal.endereco || ""}
+        </p>
+      </div>
+    `
+}
 
       <p class="entrega-atual-valor">
           💰 R$ ${Number(principal.valor || 0).toFixed(2)}
@@ -720,7 +749,17 @@ async function carregarEntregaAtualInicio() {
               <div class="acoes-navegacao">
                 ${
                   principal.empresas?.latitude && principal.empresas?.longitude
-                    ? `<button class="btn-mapa" data-acao="navegar" data-lat="${principal.empresas.latitude}" data-lng="${principal.empresas.longitude}">🧭 Navegar</button>`
+                    ? `<button class="btn-mapa" data-acao="navegar" data-lat="${
+  principal.status === "aceita"
+    ? principal.empresas.latitude
+    : principal.latitude
+}"
+
+data-lng="${
+  principal.status === "aceita"
+    ? principal.empresas.longitude
+    : principal.longitude
+}">🧭 Navegar</button>`
                     : ""
                 }
               </div>
@@ -766,6 +805,8 @@ async function carregarEntregaAtualInicio() {
 // =========================================================
 
 async function aceitarEntrega(id) {
+
+  console.log("ACEITANDO ENTREGA:", id);
   try {
     const response = await fetch(`${API}/api/entregas/${id}/aceitar`, {
       method: "PUT",
