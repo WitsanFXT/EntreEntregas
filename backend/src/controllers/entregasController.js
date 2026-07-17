@@ -1,904 +1,606 @@
-const supabase =
-require("../config/supabase");
+const supabase = require("../config/supabase");
 
-const {
-    getIO
-} = require("../socket/socket");
+const { getIO } = require("../socket/socket");
 
-const redistribuirEntrega =
-require("../services/redistribuirEntrega");
+const redistribuirEntrega = require("../services/redistribuirEntrega");
 
-
-
+console.log("ROTA RECUSAR CHAMADA");
 // =====================================
 // CRIAR ENTREGA
 // =====================================
 
-exports.criarEntrega = async(req,res)=>{
+exports.criarEntrega = async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
 
+    const { data: empresa, error: erroEmpresa } = await supabase
 
-try{
+      .from("empresas")
 
+      .select("*")
 
-const usuarioId =
-req.usuario.id;
+      .eq("usuario_id", usuarioId)
 
+      .single();
 
+    if (erroEmpresa || !empresa) {
+      return res.status(404).json({
+        message: "Empresa não encontrada.",
+      });
+    }
 
+    const {
+      cliente_nome,
 
-const {data:empresa,error:erroEmpresa}=
+      cliente_telefone,
 
-await supabase
+      endereco,
 
-.from("empresas")
+      bairro,
 
-.select("*")
+      cidade,
 
-.eq(
-"usuario_id",
-usuarioId
-)
+      descricao,
 
-.single();
+      latitude,
 
+      longitude,
+    } = req.body;
 
+    // BUSCAR VALOR DO BAIRRO
 
+    const { data: tabelaPreco, error: erroPreco } = await supabase
 
+      .from("tabela_precos")
 
-if(erroEmpresa || !empresa){
+      .select("valor")
 
+      .eq("bairro", bairro)
 
-return res.status(404).json({
+      .single();
 
-message:
-"Empresa não encontrada."
+    if (erroPreco || !tabelaPreco) {
+      return res.status(400).json({
+        message: "Valor de entrega não encontrado para esse bairro.",
+      });
+    }
 
-});
+    const { data: entrega, error } = await supabase
 
+      .from("entregas")
 
-}
+      .insert({
+        empresa_id: empresa.id,
 
+        cliente_nome,
 
+        cliente_telefone,
 
+        endereco,
 
-const {
+        bairro,
 
-cliente_nome,
+        cidade,
 
-cliente_telefone,
+        descricao,
 
-endereco,
+        latitude,
 
-bairro,
+        longitude,
 
-cidade,
+        status: "pendente",
 
-descricao,
+        valor: tabelaPreco.valor,
+      })
 
-latitude,
+      .select()
 
-longitude
+      .single();
 
-}=req.body;
+    const distribuirEntrega = require("../services/distribuicaoService");
 
+    if (error) {
+      console.log(error);
 
+      return res.status(400).json(error);
+    }
 
-// BUSCAR VALOR DO BAIRRO
+    const entregadorEscolhido = await distribuirEntrega(entrega.id);
 
-const {data:tabelaPreco,error:erroPreco} =
-
-await supabase
-
-.from("tabela_precos")
-
-.select("valor")
-
-.eq(
-"bairro",
-bairro
-)
-
-.single();
-
-if(erroPreco || !tabelaPreco){
-
-return res.status(400).json({
-
-message:
-"Valor de entrega não encontrado para esse bairro."
-
-});
-
-}
-
-
-
-
-
-
-const {data:entrega,error}=
-
-await supabase
-
-.from("entregas")
-
-.insert({
-
-empresa_id:empresa.id,
-
-cliente_nome,
-
-cliente_telefone,
-
-endereco,
-
-bairro,
-
-cidade,
-
-descricao,
-
-latitude,
-
-longitude,
-
-status:"pendente",
-
-valor:
-tabelaPreco.valor
-
-})
-
-.select()
-
-.single();
-
-
-const distribuirEntrega =
-require("../services/distribuicaoService");
-
-
-
-
-
-if(error){
-
-
-console.log(error);
-
-
-return res.status(400).json(error);
-
-
-}
-
-await distribuirEntrega(entrega.id);
-
-getIO().emit(
-    "nova_entrega",
-    entrega
-);
-
-
-
-
-
-
-return res.status(201).json({
-
-message:
-"Entrega criada com sucesso.",
-
-entrega
-
-});
-
-
-
-
-
-}catch(error){
-
-
-console.log(error);
-
-
-return res.status(500).json({
-
-message:
-"Erro interno."
-
-});
-
-
-}
-
-
+    if (entregadorEscolhido) {
+      getIO()
+        .to(`entregador:${entregadorEscolhido.id}`)
+        .emit("nova_entrega", entrega);
+    }
+
+    return res.status(201).json({
+      message: "Entrega criada com sucesso.",
+
+      entrega,
+    });
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      message: "Erro interno.",
+    });
+  }
 };
-
-
-
-
-
-
-
-
 
 // =====================================
 // LISTAR ENTREGAS EMPRESA
 // =====================================
 
-exports.listarEntregasEmpresa = async(req,res)=>{
+exports.listarEntregasEmpresa = async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
 
+    const { data: empresa } = await supabase
 
-try{
+      .from("empresas")
 
+      .select("id")
 
-const usuarioId =
-req.usuario.id;
+      .eq("usuario_id", usuarioId)
 
+      .single();
 
+    const { data, error } = await supabase
 
-const {data:empresa}=
+      .from("entregas")
 
-await supabase
+      .select("*")
 
-.from("empresas")
+      .eq("empresa_id", empresa.id)
 
-.select("id")
+      .order("created_at", {
+        ascending: false,
+      });
 
-.eq(
-"usuario_id",
-usuarioId
-)
+    if (error) {
+      return res.status(400).json(error);
+    }
 
-.single();
+    res.json(data);
+  } catch (error) {
+    console.log(error);
 
-
-
-
-
-
-const {data,error}=
-
-await supabase
-
-.from("entregas")
-
-.select("*")
-
-.eq(
-"empresa_id",
-empresa.id
-)
-
-.order(
-"created_at",
-{
-ascending:false
-}
-);
-
-
-
-
-
-if(error){
-
-return res.status(400).json(error);
-
-}
-
-
-
-res.json(data);
-
-
-
-
-}catch(error){
-
-
-console.log(error);
-
-
-res.status(500).json({
-
-message:"Erro interno"
-
-});
-
-
-}
-
-
+    res.status(500).json({
+      message: "Erro interno",
+    });
+  }
 };
-
-
-
-
-
-
-
-
 
 // =====================================
 // ENTREGADOR VER DISPONÍVEIS
 // =====================================
 
-exports.listarEntregasEntregador = async(req,res)=>{
+exports.listarEntregasEntregador = async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
 
-try{
+    const { data: entregador } = await supabase
+      .from("entregadores")
+      .select("id")
+      .eq("usuario_id", usuarioId)
+      .single();
 
-const usuarioId = req.usuario.id;
+    const { data, error } = await supabase
+      .from("entregas")
+      .select(
+        `
+    *,
+    empresas(*)
+  `,
+      )
+      .eq("status", "pendente")
+      .eq("entregador_id", entregador.id);
 
-const { data: entregador } = await supabase
-.from("entregadores")
-.select("id")
-.eq("usuario_id", usuarioId)
-.single();
+    if (error) {
+      return res.status(400).json(error);
+    }
 
-const { data, error } = await supabase
-.from("entregas")
-.select("*")
-.eq("status","pendente")
-.eq("entregador_id", entregador.id);
+    return res.json(data);
+  } catch (error) {
+    console.log(error);
 
-if(error){
-  return res.status(400).json(error);
-}
-
-return res.json(data);
-
-}catch(error){
-
-console.log(error);
-
-return res.status(500).json({
-  message:"Erro interno"
-});
-
-}
-
+    return res.status(500).json({
+      message: "Erro interno",
+    });
+  }
 };
-
-
-
-
-
-
-
-
 
 // =====================================
 // ENTREGADOR ACEITA ENTREGA
 // =====================================
 
-exports.aceitarEntrega = async(req,res)=>{
-
-
-try{
-
+exports.aceitarEntrega = async (req, res) => {
+  try {
     console.log("======== ACEITAR ENTREGA ========");
     console.log("Usuario:", req.usuario);
     console.log("Entrega:", req.params.id);
 
-const entregaId =
-req.params.id;
+    const entregaId = req.params.id;
 
+    const usuarioId = req.usuario.id;
 
-const usuarioId =
-req.usuario.id;
+    // buscar entregador
 
+    const { data: entregador, error: erroEntregador } = await supabase
 
+      .from("entregadores")
 
+      .select("id")
 
-// buscar entregador
+      .eq("usuario_id", usuarioId)
 
+      .single();
 
-const {data:entregador,error:erroEntregador}=
-
-await supabase
-
-.from("entregadores")
-
-.select("id")
-
-.eq(
-"usuario_id",
-usuarioId
-)
-
-.single();
-
-
-
-
-if(erroEntregador || !entregador){
-
-
-return res.status(404).json({
-
-message:
-"Entregador não encontrado."
-
-});
-
-
-}
-
-
-
-
-
-// buscar entrega livre
-
-
-const { data: entrega, error } = await supabase
-.from("entregas")
-.select("*")
-.eq("id", entregaId)
-.eq("status", "pendente")
-.eq("entregador_id", entregador.id)
-.single();
-
-console.log("ENTREGADOR:", entregador.id);
-console.log("ENTREGA ENCONTRADA:", entrega);
-console.log("ERRO:", error);
-
-
-
-if(error || !entrega || entrega.length === 0){
-
-
-return res.status(400).json({
-
-message:
-"Entrega indisponível."
-
-});
-
-
-}
-
-
-
-
-
-
-// atualizar
-
-
-const {data:atualizada,error:updateError}=
-
-await supabase
-
-.from("entregas")
-
-.update({
-
-entregador_id:
-entregador.id,
-
-status:
-"aceita",
-
-aceita_em:
-new Date()
-
-})
-
-.eq(
-"id",
-entregaId
-)
-
-.select()
-
-.single();
-
-
-
-
-
-if(updateError){
-
-    console.log(updateError);
-
-    return res.status(400).json({
-        message:"Erro ao aceitar entrega."
-    });
-
-}
-
-getIO().emit(
-    "entrega_aceita",
-    atualizada
-);
-
-
-
-return res.json({
-
-message:
-"Entrega aceita com sucesso.",
-
-entrega:
-atualizada
-
-});
-
-
-
-
-
-}catch(error){
-
-
-console.log(error);
-
-
-res.status(500).json({
-
-message:
-"Erro interno."
-
-});
-
-
-}
-
-
-};
-
-exports.retirarEntrega = async (req,res)=>{
-
-try{
-
-const entregaId = req.params.id;
-
-const { data,error } = await supabase
-
-.from("entregas")
-
-.update({
-
-status:"retirada",
-
-retirada_em:new Date()
-
-})
-
-.eq("id",entregaId)
-
-.select()
-
-.single();
-
-if(error){
-
-return res.status(400).json(error);
-
-}
-
-getIO().emit(
-    "entrega_retirada",
-    data
-);
-
-return res.json({
-
-message:"Pedido retirado.",
-
-entrega:data
-
-});
-
-}catch(error){
-
-console.log(error);
-
-return res.status(500).json({
-
-message:"Erro interno"
-
-});
-
-}
-
-};
-
-exports.finalizarEntrega = async (req,res)=>{
-
-try{
-
-const entregaId = req.params.id;
-
-const { data:entrega,error } = await supabase
-
-.from("entregas")
-
-.select("*")
-
-.eq("id",entregaId)
-
-.single();
-
-if(error || !entrega){
-
-return res.status(404).json({
-
-message:"Entrega não encontrada"
-
-});
-
-}
-
-
-if(entrega.status === "finalizada"){
-
-return res.status(400).json({
-
-message:"Entrega já foi finalizada."
-
-});
-
-}
-
-const valorEntrega =
-Number(entrega.valor || 0);
-
-
-// FINALIZA ENTREGA
-
-await supabase
-
-.from("entregas")
-
-.update({
-
-status:"finalizada",
-
-finalizada_em:new Date()
-
-})
-
-.eq(
-"id",
-entregaId
-);
-
-
-// CRIA O LANÇAMENTO FINANCEIRO
-
-await supabase
-
-.from("extrato_entregadores")
-
-.insert({
-
-entregador_id: entrega.entregador_id,
-
-entrega_id: entrega.id,
-
-valor: valorEntrega,
-
-tipo:"credito",
-
-bairro: entrega.bairro,
-
-cliente_nome: entrega.cliente_nome,
-
-descricao:
-`Entrega ${entrega.bairro}`
-
-});
-
-const { data:entregador } = await supabase
-
-.from("entregadores")
-
-.select("saldo")
-
-.eq("id",entrega.entregador_id)
-
-.single();
-
-await supabase
-
-.from("entregadores")
-
-.update({
-
-saldo:
-Number(entregador?.saldo || 0) + valorEntrega
-
-})
-
-.eq("id",entrega.entregador_id);
-
-getIO().emit(
-    "entrega_finalizada",
-    {
-        id: entregaId,
-        entregador_id: entrega.entregador_id
+    if (erroEntregador || !entregador) {
+      return res.status(404).json({
+        message: "Entregador não encontrado.",
+      });
     }
-);
-return res.json({
 
-message:"Entrega finalizada.",
+    // buscar entrega livre
 
-valor:
-valorEntrega,
+    const { data: entrega, error } = await supabase
+      .from("entregas")
+      .select("*")
+      .eq("id", entregaId)
+      .eq("status", "pendente")
+      .eq("entregador_id", entregador.id)
+      .single();
 
-});
+    console.log("ENTREGADOR:", entregador.id);
+    console.log("ENTREGA ENCONTRADA:", entrega);
+    console.log("ERRO:", error);
 
-}catch(error){
+    if (error || !entrega || entrega.length === 0) {
+      return res.status(400).json({
+        message: "Entrega indisponível.",
+      });
+    }
 
-console.log(error);
+    // atualizar
 
-return res.status(500).json({
+    const { data: atualizada, error: updateError } = await supabase
+      .from("entregas")
+      .update({
+        entregador_id: entregador.id,
+        status: "aceita",
+        aceita_em: new Date(),
+      })
+      .eq("id", entregaId)
+      .select()
+      .single();
 
-message:"Erro interno"
+    if (updateError) {
+      console.log(updateError);
 
-});
+      return res.status(400).json({
+        message: "Erro ao aceitar entrega.",
+      });
+    }
 
-}
+    getIO().emit("entrega_aceita", atualizada);
 
+    return res.json({
+      message: "Entrega aceita com sucesso.",
+
+      entrega: atualizada,
+    });
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      message: "Erro interno.",
+    });
+  }
 };
 
-exports.listarMinhasEntregas = async (req,res) => {
+exports.retirarEntrega = async (req, res) => {
+  try {
+    const entregaId = req.params.id;
 
-try {
+    const { data, error } = await supabase
 
+      .from("entregas")
+
+      .update({
+        status: "retirada",
+
+        retirada_em: new Date(),
+      })
+
+      .eq("id", entregaId)
+
+      .select()
+
+      .single();
+
+    if (error) {
+      return res.status(400).json(error);
+    }
+
+    getIO().emit("entrega_retirada", data);
+
+    return res.json({
+      message: "Pedido retirado.",
+
+      entrega: data,
+    });
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      message: "Erro interno",
+    });
+  }
+};
+
+exports.finalizarEntrega = async (req, res) => {
+  try {
+    const entregaId = req.params.id;
+
+    const { data: entrega, error } = await supabase
+
+      .from("entregas")
+
+      .select("*")
+
+      .eq("id", entregaId)
+
+      .single();
+
+    if (error || !entrega) {
+      return res.status(404).json({
+        message: "Entrega não encontrada",
+      });
+    }
+
+    if (entrega.status === "finalizada") {
+      return res.status(400).json({
+        message: "Entrega já foi finalizada.",
+      });
+    }
+
+    const valorEntrega = Number(entrega.valor || 0);
+
+    // FINALIZA ENTREGA
+
+    await supabase
+
+      .from("entregas")
+
+      .update({
+        status: "finalizada",
+
+        finalizada_em: new Date(),
+      })
+
+      .eq("id", entregaId);
+
+    // CRIA O LANÇAMENTO FINANCEIRO
+
+    await supabase
+
+      .from("extrato_entregadores")
+
+      .insert({
+        entregador_id: entrega.entregador_id,
+
+        entrega_id: entrega.id,
+
+        valor: valorEntrega,
+
+        tipo: "credito",
+
+        bairro: entrega.bairro,
+
+        cliente_nome: entrega.cliente_nome,
+
+        descricao: `Entrega ${entrega.bairro}`,
+      });
+
+    const { data: entregador } = await supabase
+
+      .from("entregadores")
+
+      .select("saldo")
+
+      .eq("id", entrega.entregador_id)
+
+      .single();
+
+    await supabase
+
+      .from("entregadores")
+
+      .update({
+        saldo: Number(entregador?.saldo || 0) + valorEntrega,
+      })
+
+      .eq("id", entrega.entregador_id);
+
+    getIO().emit("entrega_finalizada", {
+      id: entregaId,
+      entregador_id: entrega.entregador_id,
+    });
+    return res.json({
+      message: "Entrega finalizada.",
+
+      valor: valorEntrega,
+    });
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      message: "Erro interno",
+    });
+  }
+};
+
+exports.listarMinhasEntregas = async (req, res) => {
+  try {
     const usuarioId = req.usuario.id;
 
     console.log("QUERY ENTREGAS MINHAS");
     console.log("USUARIO:", usuarioId);
 
     const { data: entregador, error: errorEntregador } = await supabase
-    .from("entregadores")
-    .select("id")
-    .eq("usuario_id", usuarioId)
-    .single();
+      .from("entregadores")
+      .select("id")
+      .eq("usuario_id", usuarioId)
+      .single();
 
-    if(errorEntregador || !entregador){
-        console.log("ERRO SUPABASE:", errorEntregador);
-        return res.status(404).json({
-            message:"Entregador não encontrado"
-        });
+    if (errorEntregador || !entregador) {
+      console.log("ERRO SUPABASE:", errorEntregador);
+      return res.status(404).json({
+        message: "Entregador não encontrado",
+      });
     }
 
     const { data, error } = await supabase
-    .from("entregas")
-    .select(`
+      .from("entregas")
+      .select(
+        `
         *,
         empresas (
             *
         )
-    `)
-    .eq("entregador_id", entregador.id)
-    .order("created_at", { ascending:false });
+    `,
+      )
+      .eq("entregador_id", entregador.id)
+      .order("created_at", { ascending: false });
 
-    if(error){
-        console.log("ERRO SUPABASE:", error);
-        return res.status(400).json(error);
+    console.log("ENTREGADOR LOGADO:", entregador.id);
+
+    if (error) {
+      console.log("ERRO SUPABASE:", error);
+      return res.status(400).json(error);
     }
 
     return res.json(data);
-
-} catch(error){
-
+  } catch (error) {
     console.log(error);
 
     return res.status(500).json({
-        message:"Erro interno"
+      message: "Erro interno",
     });
-
-}
-
+  }
 };
 
-exports.dashboardEntregador = async (req,res)=>{
+exports.dashboardEntregador = async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
 
-try{
+    const { data: entregador } = await supabase
+      .from("entregadores")
+      .select("id")
+      .eq("usuario_id", usuarioId)
+      .single();
 
-const usuarioId = req.usuario.id;
+    const { data: disponiveis } = await supabase
+      .from("entregas")
+      .select("*")
+      .eq("status", "pendente")
+      .eq("entregador_id", entregador.id);
 
-const { data: entregador } = await supabase
-.from("entregadores")
-.select("id")
-.eq("usuario_id", usuarioId)
-.single();
+    const { data: aceitas } = await supabase
+      .from("entregas")
+      .select("*")
+      .eq("entregador_id", entregador.id)
+      .eq("status", "aceita");
 
-const { data: disponiveis } = await supabase
-.from("entregas")
-.select("*")
-.eq("status","pendente")
-.eq("entregador_id", entregador.id);
+    const { data: retiradas } = await supabase
+      .from("entregas")
+      .select("*")
+      .eq("entregador_id", entregador.id)
+      .eq("status", "retirada");
 
-const { data: aceitas } = await supabase
-.from("entregas")
-.select("*")
-.eq("entregador_id", entregador.id)
-.eq("status","aceita");
+    const { data: finalizadas } = await supabase
+      .from("entregas")
+      .select("*")
+      .eq("entregador_id", entregador.id)
+      .eq("status", "finalizada");
 
-const { data: retiradas } = await supabase
-.from("entregas")
-.select("*")
-.eq("entregador_id", entregador.id)
-.eq("status","retirada");
+    return res.json({
+      disponiveis,
 
-const { data: finalizadas } = await supabase
-.from("entregas")
-.select("*")
-.eq("entregador_id", entregador.id)
-.eq("status","finalizada");
+      aceitas,
 
-return res.json({
+      retiradas,
 
-disponiveis,
+      finalizadas,
 
-aceitas,
+      totais: {
+        disponiveis: disponiveis.length,
+        aceitas: aceitas.length,
+        retiradas: retiradas.length,
+        finalizadas: finalizadas.length,
+      },
+    });
+  } catch (error) {
+    console.log(error);
 
-retiradas,
-
-finalizadas,
-
-totais:{
-disponiveis: disponiveis.length,
-aceitas: aceitas.length,
-retiradas: retiradas.length,
-finalizadas: finalizadas.length
-}
-
-});
-
-}catch(error){
-
-console.log(error);
-
-return res.status(500).json({
-message:"Erro interno"
-});
-
-}
+    return res.status(500).json({
+      message: "Erro interno",
+    });
+  }
 };
 
-exports.recusarEntrega = async (req,res)=>{
+exports.recusarEntrega = async (req, res) => {
+  try {
+    console.log("===== RECUSAR ENTREGA =====");
+    const entregaId = req.params.id;
+    const usuarioId = req.usuario.id;
 
-try{
+    console.log("ENTREGA:", entregaId);
+    console.log("USUARIO:", usuarioId);
 
-const entregaId = req.params.id;
-const usuarioId = req.usuario.id;
+    const { data: entregador } = await supabase
+      .from("entregadores")
+      .select("id")
+      .eq("usuario_id", usuarioId)
+      .single();
 
-const { data: entregador } = await supabase
-.from("entregadores")
-.select("id")
-.eq("usuario_id", usuarioId)
-.single();
+    console.log("ENTREGADOR:", entregador);
 
-await supabase
-.from("recusas_entrega")
-.insert({
-    entrega_id: entregaId,
-    entregador_id: entregador.id
-});
+    const { error: erroRecusa } = await supabase
+      .from("recusas_entrega")
+      .insert({
+        entrega_id: entregaId,
+        entregador_id: entregador.id,
+      });
 
-await redistribuirEntrega(entregaId);
+    if (erroRecusa) {
+      console.log("ERRO RECUSA:", erroRecusa);
+      return res.status(400).json({ message: "Erro ao registrar recusa." });
+    }
 
-return res.json({
-    message:"Entrega recusada."
-});
+    const novoEntregador = await redistribuirEntrega(entregaId);
 
-}catch(error){
+    if (novoEntregador) {
+      const { data: entregaAtualizada } = await supabase
+        .from("entregas")
+        .select("*")
+        .eq("id", entregaId)
+        .single();
 
-console.log(error);
+      getIO()
+        .to(`entregador:${novoEntregador.id}`)
+        .emit("nova_entrega", entregaAtualizada);
+    }
 
-return res.status(500).json({
-    message:"Erro interno"
-});
+    return res.json({
+      message: "Entrega recusada.",
+    });
+  } catch (error) {
+    console.log(error);
 
-}
-
+    return res.status(500).json({
+      message: "Erro interno",
+    });
+  }
 };

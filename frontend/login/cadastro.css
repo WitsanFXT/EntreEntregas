@@ -1,536 +1,469 @@
-
 /* ======================================================
-   GESENT - CADASTRO PREMIUM
+   GESENT - CADASTRO PREMIUM (TEMA: LOGÍSTICA/ENTREGAS)
 ====================================================== */
 
-:root{
-    --bg:#0b0f14;
-    --bg-secondary:#121821;
-    --card:#171f2b;
-    --card-hover:#1d2736;
-    --border:#283447;
+:root {
+  /* Paleta Dark Base */
+  --bg: #080b10;
+  --bg-secondary: #0f141c;
+  --card: #151c26;
+  --card-hover: #1b2432;
+  --border: #222d3e;
 
-    --primary:#00d084;
-    --primary-dark:#00b16d;
+  /* Cores de Destaque - Identidade de Entregas/Velocidade */
+  --primary: #ff7a00; /* Laranja dinâmico de entregas */
+  --primary-dark: #e06b00; /* Laranja ativo/hover */
+  --primary-glow: rgba(255, 122, 0, 0.15);
 
-    --text:#ffffff;
-    --text-secondary:#a8b3c5;
+  /* Tipografia */
+  --text: #f3f4f6;
+  --text-secondary: #9ca3af;
 
-    --danger:#ff4d4f;
+  /* Estados */
+  --danger: #ef4444;
+  --success: #10b981;
 
-    --shadow:
-        0 10px 40px rgba(0,0,0,.35);
-
-    --radius:18px;
+  /* Efeitos */
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --radius: 16px;
 }
 
 /* ======================================================
-   RESET
+   RESET & BASE
 ====================================================== */
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-body{
-    min-height:100vh;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    padding:30px;
-
-    font-family:
-        Inter,
-        system-ui,
-        sans-serif;
-
-    background:
-        radial-gradient(circle at top,
-            #162132 0%,
-            #0b0f14 45%);
-
-    color:var(--text);
+body {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  background: radial-gradient(circle at top, #152033 0%, #080b10 60%);
+  color: var(--text);
+  line-height: 1.5;
 }
 
 /* ======================================================
    CONTAINER
 ====================================================== */
 
-.login-container{
-    width:100%;
-    max-width:700px;
-
-    background:rgba(18,24,33,.95);
-
-    backdrop-filter:blur(15px);
-
-    border:1px solid rgba(255,255,255,.05);
-
-    border-radius:24px;
-
-    padding:40px;
-
-    box-shadow:var(--shadow);
+.login-container {
+  width: 100%;
+  max-width: 650px;
+  background: rgba(15, 20, 28, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: var(--shadow);
 }
 
 /* ======================================================
    LOGO
 ====================================================== */
 
-.logo{
-    text-align:center;
-    margin-bottom:35px;
+.logo {
+  text-align: center;
+  margin-bottom: 32px;
 }
 
-.logo h1{
-    font-size:2.3rem;
-    font-weight:900;
-    letter-spacing:2px;
-
-    color:var(--primary);
+.logo h1 {
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  color: var(--primary);
+  text-transform: uppercase;
 }
 
-.logo p{
-    margin-top:8px;
-    color:var(--text-secondary);
-}
-
-/* ======================================================
-   STEPPER
-====================================================== */
-
-.steps{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    margin-bottom:35px;
-}
-
-.step{
-    width:50px;
-    height:50px;
-
-    border-radius:50%;
-
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-    font-weight:700;
-
-    border:2px solid var(--border);
-
-    background:var(--bg-secondary);
-
-    color:var(--text-secondary);
-
-    transition:.35s ease;
-}
-
-.step.active{
-    background:var(--primary);
-    color:#fff;
-    border-color:var(--primary);
-
-    transform:scale(1.1);
-
-    box-shadow:
-        0 0 25px rgba(0,208,132,.4);
-}
-
-.step.completed{
-    background:var(--primary-dark);
-    border-color:var(--primary-dark);
-    color:#fff;
-}
-
-.line{
-    width:90px;
-    height:4px;
-
-    background:var(--border);
-
-    margin:0 12px;
-
-    border-radius:999px;
-
-    overflow:hidden;
-    position:relative;
-}
-
-.line::after{
-    content:"";
-
-    position:absolute;
-    inset:0;
-
-    width:0%;
-
-    background:var(--primary);
-
-    transition:.4s ease;
-}
-
-.line.active::after{
-    width:100%;
+.logo p {
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
 }
 
 /* ======================================================
-   TITULOS
+   STEPPER (COMPATÍVEL COM MOBILE)
 ====================================================== */
 
-.step-title{
-    text-align:center;
-    margin-bottom:25px;
+.steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 35px;
+  gap: 8px;
 }
 
-.step-title h2{
-    margin-bottom:8px;
+.step {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: 2px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
-.step-title p{
-    color:var(--text-secondary);
+.step.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(255, 122, 0, 0.3);
+}
+
+.step.completed {
+  background: var(--bg-secondary);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.line {
+  flex: 1;
+  max-width: 80px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.line::after {
+  content: "";
+  position: absolute;
+  inset: 0 100% 0 0;
+  background: var(--primary);
+  transition: inset 0.4s ease;
+}
+
+.line.active::after {
+  inset: 0 0 0 0;
 }
 
 /* ======================================================
-   FORM
+   TITULOS E TEXTOS
 ====================================================== */
 
-form{
-    display:flex;
-    flex-direction:column;
-    gap:18px;
+.step-title {
+  text-align: center;
+  margin-bottom: 24px;
 }
 
-label{
-    display:block;
-    margin-bottom:8px;
+.step-title h2 {
+  font-size: clamp(1.3rem, 4vw, 1.7rem);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
 
-    font-size:.92rem;
-    color:var(--text-secondary);
+.step-title p {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+/* ======================================================
+   FORMULÁRIO E INPUTS
+====================================================== */
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 input,
-select{
-    width:100%;
-
-    height:54px;
-
-    border-radius:14px;
-
-    border:1px solid var(--border);
-
-    background:#0f151d;
-
-    color:#fff;
-
-    padding:0 16px;
-
-    outline:none;
-
-    transition:.25s;
+select {
+  width: 100%;
+  height: 52px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: #fff;
+  padding: 0 16px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 input:focus,
-select:focus{
-    border-color:var(--primary);
-
-    box-shadow:
-        0 0 0 4px rgba(0,208,132,.15);
+select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.15);
 }
 
 /* ======================================================
    BOTÕES
 ====================================================== */
 
-button{
-    cursor:pointer;
-
-    border:none;
-
-    height:56px;
-
-    border-radius:14px;
-
-    font-weight:700;
-
-    transition:.3s ease;
+button {
+  cursor: pointer;
+  border: none;
+  height: 52px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color 0.2s,
+    transform 0.2s;
 }
 
-.btnContinuarC{
-    text-align: center;
-}
-
-#btnContinuar{
-    padding: 20px;
-    margin: 20px;
-    align-items: center;
+.btnContinuarC {
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
 #btnContinuar,
-#btnCadastrar{
-    background:var(--primary);
-    color:#fff;
+#btnCadastrar {
+  background: var(--primary);
+  color: #fff;
+  width: 100%;
 }
 
 #btnContinuar:hover,
-#btnCadastrar:hover{
-    background:var(--primary-dark);
-
-    transform:translateY(-2px);
+#btnCadastrar:hover {
+  background: var(--primary-dark);
 }
 
-#btnVoltar{
-    background:#212b3a;
-    color:#fff;
+#btnContinuar:active,
+#btnCadastrar:active {
+  transform: scale(0.98);
 }
 
-#btnVoltar:hover{
-    background:#2a3547;
+#btnVoltar {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
-.acoes{
-    display:flex;
-    gap:12px;
-    margin-top:15px;
+#btnVoltar:hover {
+  background: var(--card-hover);
 }
 
-.acoes button{
-    flex:1;
+.acoes {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.acoes button {
+  flex: 1;
 }
 
 /* ======================================================
-   PERFIS
+   GRID DE PERFIS (ENTREGADOR / CLIENTE / EMPRESA)
 ====================================================== */
 
-.perfil-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:15px;
-
-    margin:10px 0 25px;
+.perfil-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin: 8px 0 20px;
 }
 
-.perfil-card{
-    background:var(--card);
-
-    border:2px solid transparent;
-
-    border-radius:18px;
-
-    padding:24px 18px;
-
-    cursor:pointer;
-
-    text-align:center;
-
-    transition:.3s ease;
+.perfil-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.25s ease;
 }
 
-.perfil-card:hover{
-    transform:translateY(-5px);
-
-    background:var(--card-hover);
-
-    border-color:#3d4d67;
+.perfil-card:hover {
+  background: var(--card-hover);
+  border-color: #3b4e6b;
+  transform: translateY(-2px);
 }
 
-.perfil-card.selected{
-    border-color:var(--primary);
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(0,208,132,.15),
-            rgba(0,208,132,.05)
-        );
-
-    box-shadow:
-        0 0 25px rgba(0,208,132,.2);
+.perfil-card.selected {
+  border-color: var(--primary);
+  background: var(--primary-glow);
+  box-shadow: 0 0 20px rgba(255, 122, 0, 0.1);
 }
 
-.perfil-icon{
-    font-size:2rem;
-    margin-bottom:12px;
+.perfil-icon {
+  font-size: 2rem;
+  margin-bottom: 10px;
+  display: block;
 }
 
-.perfil-card h3{
-    margin-bottom:8px;
+.perfil-card h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 6px;
 }
 
-.perfil-card p{
-    font-size:.88rem;
-    color:var(--text-secondary);
-    line-height:1.4;
+.perfil-card p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
 }
 
 /* ======================================================
-   CAMPOS ESPECÍFICOS
+   CAMPOS ESPECÍFICOS VEÍCULOS / DADOS
 ====================================================== */
 
-.campos-especificos{
-    margin-top:15px;
-
-    padding:20px;
-
-    border-radius:16px;
-
-    border:1px solid var(--border);
-
-    background:#0f151d;
+.campos-especificos {
+  margin-top: 8px;
+  padding: 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg);
 }
 
-.campos-especificos h3{
-    margin-bottom:18px;
-
-    color:var(--primary);
+.campos-especificos h3 {
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  color: var(--primary);
 }
 
 /* ======================================================
-   LINK
+   FOOTER LINKS
 ====================================================== */
 
-
-.footer-link{
-    margin-top:24px;
-    text-align:center;
+.footer-link {
+  margin-top: 24px;
+  text-align: center;
 }
 
-.footer-link a{
-    color:#00d084;
-    text-decoration:none;
-    font-weight:600;
-    transition:.3s;
+.footer-link a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  position: relative;
+  padding-bottom: 2px;
 }
 
-.footer-link a:hover{
-    color:#00f59a;
+.footer-link a::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--primary);
+  transition:
+    width 0.3s standard,
+    left 0.3s standard;
+  transform: translateX(-50%);
 }
 
-.footer-link a::after{
-    content:'';
-    display:block;
-    width:0;
-    height:2px;
-    background:#00d084;
-    transition:.3s;
-    margin:auto;
-}
-
-.footer-link a:hover::after{
-    width:100%;
+.footer-link a:hover::after {
+  width: 100%;
 }
 
 /* ======================================================
-   ANIMAÇÕES
+   MENSAGENS DE FEEDBACK
+====================================================== */
+
+#mensagem {
+  display: none;
+  padding: 14px;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+#mensagem.erro {
+  display: block;
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+#mensagem.sucesso {
+  display: block;
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+/* ======================================================
+   ANIMAÇÕES CONTROLE DE FLUXO
 ====================================================== */
 
 #etapa1,
-#etapa2{
-    animation:fade .35s ease;
+#etapa2 {
+  animation: fade 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes fade{
-    from{
-        opacity:0;
-        transform:translateY(10px);
-    }
-
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
+@keyframes fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ======================================================
-   RESPONSIVO
+   MEDIA QUERIES (RESPONSIVIDADE PREMIUM)
 ====================================================== */
 
-@media(max-width:768px){
+@media (max-width: 600px) {
+  body {
+    padding: 12px;
+    align-items: flex-start;
+  }
 
-    body{
-        padding:15px;
-        align-items:flex-start;
-    }
+  .login-container {
+    padding: 24px 16px;
+    border-radius: 20px;
+  }
 
-    .login-container{
-        padding:25px;
-    }
+  .perfil-grid {
+    grid-template-columns: 1fr; /* Um card por linha no mobile vertical */
+  }
 
-    .perfil-grid{
-        grid-template-columns:1fr;
-    }
+  .acoes {
+    flex-direction: column-reverse; /* Botão voltar fica embaixo no mobile */
+  }
 
-    .acoes{
-        flex-direction:column;
-    }
+  .line {
+    max-width: 40px; /* Encurta a linha do stepper */
+  }
 
-    .line{
-        width:60px;
-    }
-
-    .logo h1{
-        font-size:1.9rem;
-    }
-}
-
-@media(max-width:480px){
-
-    .step{
-        width:42px;
-        height:42px;
-    }
-
-    .line{
-        width:40px;
-    }
-
-    input,
-    select,
-    button{
-        height:52px;
-    }
-}
-
-/*--------------------------------------------
-Mensagens de erro
-----------------------------------------------*/
-
-#mensagem{
-    display:none;
-
-    padding:12px;
-
-    margin-bottom:15px;
-
-    border-radius:12px;
-
-    text-align:center;
-
-    font-weight:600;
-}
-
-#mensagem.erro{
-    display:block;
-
-    background:rgba(255,77,79,.15);
-
-    color:#ff6b6b;
-
-    border:1px solid rgba(255,77,79,.3);
-}
-
-#mensagem.sucesso{
-    display:block;
-
-    background:rgba(0,208,132,.15);
-
-    color:#00d084;
-
-    border:1px solid rgba(0,208,132,.3);
+  .step {
+    width: 40px;
+    height: 40px;
+    font-size: 0.85rem;
+  }
 }

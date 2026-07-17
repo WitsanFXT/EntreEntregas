@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const express = require("express");
+
 const cors = require("cors");
 const http = require("http");
 
@@ -19,9 +20,11 @@ const server = http.createServer(app);
 
 iniciarSocket(server);
 
-app.use(cors({
-    origin: "*"
-}));
+app.use(
+  cors({
+    origin: "*",
+  }),
+);
 
 app.use(express.json());
 
@@ -33,7 +36,7 @@ app.use("/api/entregas", entregasRoutes);
 app.use("/api/financeiro", financeiroRoutes);
 
 server.listen(process.env.PORT, () => {
-    console.log(`Servidor rodando na porta ${process.env.PORT}`);
+  console.log(`Servidor rodando na porta ${process.env.PORT}`);
 });
 
 module.exports = app;

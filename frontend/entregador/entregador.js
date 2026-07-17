@@ -1,4 +1,3 @@
-
 // =========================================================
 // CONFIG / AUTENTICAÇÃO
 // =========================================================
@@ -26,6 +25,7 @@ const headers = {
 // ESTADO GLOBAL
 // =========================================================
 
+let entregadorId = null;
 let ultimaLista = [];
 let ultimoPedidoNotificado = null;
 let ultimaQuantidadeDisponiveis = 0;
@@ -63,7 +63,6 @@ function pararAlertaEntrega() {
     alertaSonoro = null;
   }
 }
-
 
 const painel = document.getElementById("painelOperacional");
 const alca = document.getElementById("alcaPainelOperacional");
@@ -142,7 +141,6 @@ function montarBlocoEndereco(entrega) {
 }
 
 function atualizarEnderecoTopo(entrega) {
-
   const el = document.getElementById("infoEntregaTopo");
 
   if (!el) return;
@@ -280,7 +278,8 @@ function mostrarMarcadoresEntrega(entrega) {
   if (coleta) pontos.push({ ...coleta, tipo: "coleta", label: "🏪 Coleta" });
 
   const destino = obterCoordenadasEntregaFinal(entrega);
-  if (destino) pontos.push({ ...destino, tipo: "entrega", label: "🏠 Entrega" });
+  if (destino)
+    pontos.push({ ...destino, tipo: "entrega", label: "🏠 Entrega" });
 
   pontos.forEach((ponto) => {
     const icone = L.divIcon({
@@ -325,9 +324,11 @@ function mostrarTela(idTela) {
     tela.classList.toggle("ativa", tela.id === idTela);
   });
 
-  document.querySelectorAll(".menu-inferior button[data-tela]").forEach((botao) => {
-    botao.classList.toggle("ativo", botao.dataset.tela === idTela);
-  });
+  document
+    .querySelectorAll(".menu-inferior button[data-tela]")
+    .forEach((botao) => {
+      botao.classList.toggle("ativo", botao.dataset.tela === idTela);
+    });
 
   telaEntregasAtiva = idTela === "telaEntregas";
 
@@ -336,9 +337,11 @@ function mostrarTela(idTela) {
   }
 }
 
-document.querySelectorAll(".menu-inferior button[data-tela]").forEach((botao) => {
-  botao.onclick = () => mostrarTela(botao.dataset.tela);
-});
+document
+  .querySelectorAll(".menu-inferior button[data-tela]")
+  .forEach((botao) => {
+    botao.onclick = () => mostrarTela(botao.dataset.tela);
+  });
 
 document.getElementById("menuSair").onclick = () => fazerLogout();
 
@@ -351,7 +354,11 @@ async function carregarPerfil() {
     const response = await fetch(`${API}/api/entregador/me`, { headers });
     const data = await response.json();
 
-    document.getElementById("nomeUsuario").innerHTML = data.nome || "Entregador";
+    entregadorId = data.id;
+    entrarSalaEntregador();
+
+    document.getElementById("nomeUsuario").innerHTML =
+      data.nome || "Entregador";
     document.getElementById("veiculo").innerHTML = data.tipo_veiculo || "-";
     document.getElementById("placa").innerHTML = data.placa || "-";
 
@@ -359,7 +366,8 @@ async function carregarPerfil() {
     document.getElementById("perfilNome").innerHTML = data.nome || "-";
     document.getElementById("perfilTelefone").innerHTML =
       data.telefone || usuario?.telefone || "-";
-    document.getElementById("perfilVeiculo").innerHTML = data.tipo_veiculo || "-";
+    document.getElementById("perfilVeiculo").innerHTML =
+      data.tipo_veiculo || "-";
     document.getElementById("perfilPlaca").innerHTML = data.placa || "-";
 
     atualizarStatus(data.online);
@@ -397,7 +405,9 @@ function atualizarStatus(online) {
 document.getElementById("toggleDetalhesStatus").onclick = () => {
   const card = document.getElementById("cardStatusOnline");
   const aberto = card.classList.toggle("aberto");
-  document.getElementById("toggleDetalhesStatus").setAttribute("aria-expanded", aberto);
+  document
+    .getElementById("toggleDetalhesStatus")
+    .setAttribute("aria-expanded", aberto);
 };
 
 document.getElementById("btnToggleOnline").onclick = async () => {
@@ -413,7 +423,11 @@ document.getElementById("btnToggleOnline").onclick = async () => {
 
     if (response.ok) {
       atualizarStatus(irParaOnline);
-      toast(data.message || (irParaOnline ? "Você está online" : "Você está offline"), "sucesso");
+      toast(
+        data.message ||
+          (irParaOnline ? "Você está online" : "Você está offline"),
+        "sucesso",
+      );
     } else {
       toast(data.message || `Não foi possível ficar ${rota}`, "erro");
     }
@@ -427,10 +441,12 @@ document.getElementById("btnToggleOnline").onclick = async () => {
 // ABAS DA TELA ENTREGAS
 // =========================================================
 
-document.getElementById("tabDisponiveis").onclick = () => selecionarAba("disponiveis");
+document.getElementById("tabDisponiveis").onclick = () =>
+  selecionarAba("disponiveis");
 document.getElementById("tabColetas").onclick = () => selecionarAba("coletas");
 document.getElementById("tabRota").onclick = () => selecionarAba("rota");
-document.getElementById("tabHistorico").onclick = () => selecionarAba("historico");
+document.getElementById("tabHistorico").onclick = () =>
+  selecionarAba("historico");
 
 function selecionarAba(aba) {
   abaAtual = aba;
@@ -447,7 +463,9 @@ function selecionarAba(aba) {
 }
 
 function atualizarTabsVisual() {
-  document.querySelectorAll(".tab-entrega").forEach((tab) => tab.classList.remove("ativa"));
+  document
+    .querySelectorAll(".tab-entrega")
+    .forEach((tab) => tab.classList.remove("ativa"));
 
   const mapaTabs = {
     disponiveis: "tabDisponiveis",
@@ -476,7 +494,9 @@ document.querySelectorAll(".filtro-historico").forEach((botao) => {
     const filtro = botao.dataset.filtro;
     filtroHistoricoAtual = filtro;
 
-    document.querySelectorAll(".filtro-historico").forEach((b) => b.classList.remove("ativo"));
+    document
+      .querySelectorAll(".filtro-historico")
+      .forEach((b) => b.classList.remove("ativo"));
     botao.classList.add("ativo");
 
     document
@@ -521,9 +541,15 @@ function passaNoFiltroHistorico(entrega) {
 
   const data = new Date(dataStr);
   const agora = new Date();
-  const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+  const inicioHoje = new Date(
+    agora.getFullYear(),
+    agora.getMonth(),
+    agora.getDate(),
+  );
   const diffDias = Math.floor(
-    (inicioHoje - new Date(data.getFullYear(), data.getMonth(), data.getDate())) / 86400000,
+    (inicioHoje -
+      new Date(data.getFullYear(), data.getMonth(), data.getDate())) /
+      86400000,
   );
 
   switch (filtroHistoricoAtual) {
@@ -546,24 +572,12 @@ function passaNoFiltroHistorico(entrega) {
 // =========================================================
 
 async function buscarTodasEntregas() {
-
-  console.log("DISPONIVEIS", disponiveis);
-  console.log("MINHAS", minhas);
-  const disponiveisReq = await fetch(`${API}/api/entregas/disponiveis`, { headers });
   const minhasReq = await fetch(`${API}/api/entregas/minhas`, { headers });
-
-  const disponiveis = await disponiveisReq.json();
   const minhas = await minhasReq.json();
 
-  const mapaEntregas = new Map();
-  (Array.isArray(disponiveis) ? disponiveis : disponiveis.entregas || []).forEach((e) =>
-    mapaEntregas.set(e.id, e),
-  );
-  (Array.isArray(minhas) ? minhas : minhas.entregas || []).forEach((e) =>
-    mapaEntregas.set(e.id, e),
-  );
+  console.log("MINHAS", minhas);
 
-  return Array.from(mapaEntregas.values());
+  return Array.isArray(minhas) ? minhas : minhas.entregas || [];
 }
 
 function atualizarBadges(entregas) {
@@ -587,11 +601,8 @@ function detectarNovaEntregaEDisparar(entregas) {
 
   if (novasEntregas.length > 0 && ultimaLista.length > 0) {
     const novaPendente = novasEntregas.find((e) => {
-  return (
-    e.status === "pendente" &&
-    !quantidadeEntregasAtivas
-  );
-});
+      return e.status === "pendente" && !quantidadeEntregasAtivas;
+    });
     const entregaParaNotificar = novaPendente || novasEntregas[0];
 
     if (
@@ -671,23 +682,41 @@ async function carregarEntregaAtualInicio() {
     const response = await fetch(`${API}/api/entregas/minhas`, { headers });
     const resposta = await response.json();
 
-    const entregas = Array.isArray(resposta) ? resposta : resposta.entregas || [];
-    const ativas = entregas.filter((e) => e.status === "aceita" || e.status === "retirada");
+    const entregas = Array.isArray(resposta)
+      ? resposta
+      : resposta.entregas || [];
+    const ativas = entregas.filter(
+      (e) => e.status === "aceita" || e.status === "retirada",
+    );
 
     quantidadeEntregasAtivas = ativas.length;
 
     const container = document.getElementById("cardEntregaAtualInicio");
 
     if (!ativas.length) {
-      container.innerHTML = `<div class="sem-entrega">Nenhuma entrega em andamento.</div>`
+      container.innerHTML = `<div class="sem-entrega">Nenhuma entrega em andamento.</div>`;
       atualizarEnderecoTopo(null);
+      removerMarcadoresEntrega();
       return;
     }
 
-    // Define a entrega principal ativa para ser renderizada pelo seu novo código
     const principal = ativas[0];
 
-    atualizarEnderecoTopo(principal);
+    const emColeta = principal.status === "aceita";
+
+    const nomeDestino = emColeta
+      ? principal.empresas?.nome_fantasia || "Estabelecimento"
+      : principal.cliente_nome || "Cliente";
+
+    const enderecoDestino = emColeta
+      ? {
+          endereco: principal.empresas?.endereco || "",
+          bairro: principal.empresas?.bairro || "",
+        }
+      : { endereco: principal.endereco || "", bairro: principal.bairro || "" };
+
+    atualizarEnderecoTopo(enderecoDestino);
+    mostrarMarcadoresEntrega(principal);
 
     // >>> SUA SUBSTITUIÇÃO COMEÇA AQUI >>>
     container.innerHTML = `
@@ -695,43 +724,15 @@ async function carregarEntregaAtualInicio() {
 
       <div class="entrega-atual-topo">
           <span class="entrega-atual-status">
-              ${
-                principal.status === "retirada"
-                  ? "🟢 Em rota"
-                  : "🟡 Aguardando coleta"
-              }
+              ${emColeta ? "🟡 Aguardando coleta" : "🟢 Em rota"}
           </span>
       </div>
 
-      ${
-  principal.status === "aceita"
-    ? `
       <div class="destino-atual">
-        <span class="tipo-destino">📍 Coleta</span>
-
-        <h3>
-          ${principal.empresas?.nome_fantasia || "Estabelecimento"}
-        </h3>
-
-        <p>
-          ${principal.empresas?.endereco || ""}
-        </p>
+        <span class="tipo-destino">${emColeta ? "📍 Coleta" : "🏠 Entrega"}</span>
+        <h3>${nomeDestino}</h3>
+        ${montarBlocoEndereco(enderecoDestino)}
       </div>
-    `
-    : `
-      <div class="destino-atual">
-        <span class="tipo-destino">🏠 Entrega</span>
-
-        <h3>
-          ${principal.cliente_nome || "Cliente"}
-        </h3>
-
-        <p>
-          ${principal.endereco || ""}
-        </p>
-      </div>
-    `
-}
 
       <p class="entrega-atual-valor">
           💰 R$ ${Number(principal.valor || 0).toFixed(2)}
@@ -750,16 +751,16 @@ async function carregarEntregaAtualInicio() {
                 ${
                   principal.empresas?.latitude && principal.empresas?.longitude
                     ? `<button class="btn-mapa" data-acao="navegar" data-lat="${
-  principal.status === "aceita"
-    ? principal.empresas.latitude
-    : principal.latitude
-}"
+                        principal.status === "aceita"
+                          ? principal.empresas.latitude
+                          : principal.latitude
+                      }"
 
 data-lng="${
-  principal.status === "aceita"
-    ? principal.empresas.longitude
-    : principal.longitude
-}">🧭 Navegar</button>`
+                        principal.status === "aceita"
+                          ? principal.empresas.longitude
+                          : principal.longitude
+                      }">🧭 Navegar</button>`
                     : ""
                 }
               </div>
@@ -805,7 +806,6 @@ data-lng="${
 // =========================================================
 
 async function aceitarEntrega(id) {
-
   console.log("ACEITANDO ENTREGA:", id);
   try {
     const response = await fetch(`${API}/api/entregas/${id}/aceitar`, {
@@ -813,6 +813,14 @@ async function aceitarEntrega(id) {
       headers,
     });
     const data = await response.json();
+
+    if (!response.ok) {
+      toast(data.message || "Essa entrega não está mais disponível.", "erro");
+      fecharModalEntrega();
+      carregarListaEntregas();
+      carregarEntregaAtualInicio();
+      return;
+    }
 
     toast(data.message || "Entrega aceita", "sucesso");
 
@@ -832,7 +840,10 @@ async function retirarEntrega(id) {
     });
     const data = await response.json();
 
-    toast(data.message || "Pedido retirado", "sucesso");
+    toast(
+      data.message || (response.ok ? "Pedido retirado" : "Erro ao retirar"),
+      response.ok ? "sucesso" : "erro",
+    );
 
     carregarListaEntregas();
     carregarEntregaAtualInicio();
@@ -849,7 +860,11 @@ async function finalizarEntrega(id) {
     });
     const data = await response.json();
 
-    toast(data.message || "Entrega finalizada", "sucesso");
+    toast(
+      data.message ||
+        (response.ok ? "Entrega finalizada" : "Erro ao finalizar"),
+      response.ok ? "sucesso" : "erro",
+    );
 
     carregarListaEntregas();
     carregarEntregaAtualInicio();
@@ -867,22 +882,32 @@ async function finalizarEntrega(id) {
 function abrirModalEntrega(entrega) {
   entregaAtual = entrega;
 
-  document.getElementById("modalCliente").innerHTML = entrega.cliente_nome || "Cliente";
-  document.getElementById("modalEnderecoBloco").innerHTML = montarBlocoEndereco(entrega);
-  document.getElementById("modalValor").innerHTML = `R$ ${Number(entrega.valor || 0).toFixed(2)}`;
+  document.getElementById("modalCliente").innerHTML =
+    entrega.cliente_nome || "Cliente";
+  document.getElementById("modalEnderecoBloco").innerHTML =
+    montarBlocoEndereco(entrega);
+  document.getElementById("modalValor").innerHTML =
+    `R$ ${Number(entrega.valor || 0).toFixed(2)}`;
 
   const temDescricao = Boolean(entrega.descricao);
   document.getElementById("modalDescricao").innerHTML = entrega.descricao || "";
-  document.getElementById("modalDescricao").style.display = temDescricao ? "block" : "none";
+  document.getElementById("modalDescricao").style.display = temDescricao
+    ? "block"
+    : "none";
 
-  const temDistancia = entrega.distancia !== undefined && entrega.distancia !== null;
-  const temTempo = entrega.tempo_estimado !== undefined && entrega.tempo_estimado !== null;
+  const temDistancia =
+    entrega.distancia !== undefined && entrega.distancia !== null;
+  const temTempo =
+    entrega.tempo_estimado !== undefined && entrega.tempo_estimado !== null;
 
   document.getElementById("modalDistancia").innerHTML = temDistancia
     ? `${entrega.distancia} km`
     : "-";
-  document.getElementById("modalTempo").innerHTML = temTempo ? `${entrega.tempo_estimado} min` : "-";
-  document.getElementById("modalMetricas").style.display = temDistancia || temTempo ? "flex" : "none";
+  document.getElementById("modalTempo").innerHTML = temTempo
+    ? `${entrega.tempo_estimado} min`
+    : "-";
+  document.getElementById("modalMetricas").style.display =
+    temDistancia || temTempo ? "flex" : "none";
 
   iniciarAlertaEntrega();
 
@@ -906,6 +931,8 @@ function abrirModalEntrega(entrega) {
     }
 
     if (tempo <= 0) {
+      // a decisão de expirar é sempre do servidor (verificarTimeouts);
+      // aqui só fechamos o modal pra não travar a tela do entregador
       fecharModalEntrega();
     }
   }, 1000);
@@ -929,8 +956,22 @@ document.getElementById("btnAceitarModal").onclick = async () => {
   fecharModalEntrega();
 };
 
-document.getElementById("btnRecusarModal").onclick = () => {
+async function recusarEntregaAtual(id) {
+  try {
+    await fetch(`${API}/api/entregas/${id}/recusar`, {
+      method: "PUT",
+      headers,
+    });
+  } catch (error) {
+    console.log("Erro ao recusar entrega:", error);
+  }
+}
+
+document.getElementById("btnRecusarModal").onclick = async () => {
+  if (!entregaAtual) return;
+  await recusarEntregaAtual(entregaAtual.id);
   fecharModalEntrega();
+  carregarListaEntregas();
 };
 
 // minimizar / expandir — some com o escurecimento ao minimizar,
@@ -960,7 +1001,10 @@ setInterval(sincronizarContadorMinimizado, 1000);
 // =========================================================
 
 function abrirGoogleMaps(lat, lng) {
-  window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, "_blank");
+  window.open(
+    `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,
+    "_blank",
+  );
 }
 
 function abrirWaze(lat, lng) {
@@ -986,9 +1030,12 @@ function abrirSeletorMapa(lat, lng) {
     </div>
   `;
 
-  modal.querySelector("[data-app='google']").onclick = () => navegarCom("google", lat, lng);
-  modal.querySelector("[data-app='waze']").onclick = () => navegarCom("waze", lat, lng);
-  modal.querySelector("[data-app='apple']").onclick = () => navegarCom("apple", lat, lng);
+  modal.querySelector("[data-app='google']").onclick = () =>
+    navegarCom("google", lat, lng);
+  modal.querySelector("[data-app='waze']").onclick = () =>
+    navegarCom("waze", lat, lng);
+  modal.querySelector("[data-app='apple']").onclick = () =>
+    navegarCom("apple", lat, lng);
   modal.querySelector(".btn-fechar-modal").onclick = () => modal.remove();
 
   document.body.appendChild(modal);
@@ -1072,13 +1119,16 @@ async function carregarFinanceiro() {
     const saldo = Number(data.saldo || 0);
 
     // tela Início — resumo do dia
-    document.getElementById("resumoDiaGanhos").innerHTML = `R$ ${hoje.toFixed(2)}`;
+    document.getElementById("resumoDiaGanhos").innerHTML =
+      `R$ ${hoje.toFixed(2)}`;
 
     // tela Ganhos
     document.getElementById("ganhosHoje").innerHTML = `R$ ${hoje.toFixed(2)}`;
-    document.getElementById("ganhosSemana").innerHTML = `R$ ${semana.toFixed(2)}`;
+    document.getElementById("ganhosSemana").innerHTML =
+      `R$ ${semana.toFixed(2)}`;
     document.getElementById("ganhosMes").innerHTML = `R$ ${mes.toFixed(2)}`;
-    document.getElementById("saldoCarteira").innerHTML = `R$ ${saldo.toFixed(2)}`;
+    document.getElementById("saldoCarteira").innerHTML =
+      `R$ ${saldo.toFixed(2)}`;
 
     // Campos extras: usam o valor da API se existir, senão calculam
     // a partir do cache local de entregas (melhor esforço — o ideal
@@ -1094,14 +1144,17 @@ async function carregarFinanceiro() {
       data.ticketMedio ??
       (entregasConcluidas > 0 ? hoje / entregasConcluidas : 0);
 
-    document.getElementById("entregasConcluidas").innerHTML = entregasConcluidas;
-    document.getElementById("ticketMedio").innerHTML = `R$ ${Number(ticketMedio).toFixed(2)}`;
+    document.getElementById("entregasConcluidas").innerHTML =
+      entregasConcluidas;
+    document.getElementById("ticketMedio").innerHTML =
+      `R$ ${Number(ticketMedio).toFixed(2)}`;
 
     document.getElementById("taxaAceitacao").innerHTML =
       data.taxaAceitacao !== undefined ? `${data.taxaAceitacao}%` : "—";
 
     // quantidade de entregas hoje (card resumo do dia)
-    document.getElementById("resumoDiaQtd").innerHTML = entregasFinalizadasHoje.length;
+    document.getElementById("resumoDiaQtd").innerHTML =
+      entregasFinalizadasHoje.length;
   } catch (error) {
     console.log(error);
   }
@@ -1128,6 +1181,12 @@ function passaNoFiltroDataHoje(entrega) {
 
 let socket;
 
+function entrarSalaEntregador() {
+  if (socket && socket.connected && entregadorId) {
+    socket.emit("entrar_entregador", entregadorId);
+  }
+}
+
 function iniciarSocket() {
   if (typeof io === "undefined") {
     console.warn(
@@ -1143,15 +1202,19 @@ function iniciarSocket() {
 
   socket.on("connect", () => {
     console.log("Socket conectado");
-    socket.emit("entrar_entregador", usuario.id);
+    entrarSalaEntregador();
   });
   socket.on("disconnect", () => console.log("Socket desconectado"));
-  socket.on("connect_error", (err) => console.log("Erro no socket:", err.message));
+  socket.on("connect_error", (err) =>
+    console.log("Erro no socket:", err.message),
+  );
 
   socket.on("nova_entrega", (entrega) => {
     // Atualizar ultimaLista para evitar duplicação quando a aba Entregas for aberta depois
     if (entrega && entrega.id) {
-      const existe = ultimaLista.some((e) => String(e.id) === String(entrega.id));
+      const existe = ultimaLista.some(
+        (e) => String(e.id) === String(entrega.id),
+      );
       if (!existe) {
         ultimaLista.push({ ...entrega });
       }
@@ -1190,13 +1253,11 @@ function iniciarSocket() {
   });
 }
 
-
 async function verificarNovasEntregasGlobal() {
   try {
     const entregas = await buscarTodasEntregas();
 
     detectarNovaEntregaEDisparar(entregas);
-
   } catch (error) {
     console.log(error);
   }
