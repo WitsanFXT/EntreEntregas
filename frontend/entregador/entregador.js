@@ -370,7 +370,7 @@ async function carregarPerfil() {
       data.tipo_veiculo || "-";
     document.getElementById("perfilPlaca").innerHTML = data.placa || "-";
 
-    atualizarStatus(data.online);
+    await forcarOfflineAoAbrir();
 
     if (data.latitude && data.longitude) {
       atualizarMapa(data.latitude, data.longitude);
@@ -390,6 +390,19 @@ document.getElementById("btnConfiguracoes").onclick = () => {
 // =========================================================
 
 let onlineAtual = false;
+
+async function forcarOfflineAoAbrir() {
+  try {
+    await fetch(`${API}/api/entregador/offline`, {
+      method: "POST",
+      headers,
+    });
+  } catch (error) {
+    console.log("Erro ao forçar offline no início:", error);
+  } finally {
+    atualizarStatus(false);
+  }
+}
 
 function atualizarStatus(online) {
   onlineAtual = Boolean(online);
@@ -1108,6 +1121,31 @@ function fazerLogout() {
 // FINANCEIRO / GANHOS
 // =========================================================
 
+let ganhoHojeReal = 0;
+let ganhosOcultos = localStorage.getItem("ganhosOcultos") === "1";
+
+function aplicarVisibilidadeGanhos() {
+  const valor = document.getElementById("resumoDiaGanhos");
+  const botao = document.getElementById("btnOcultarGanhos");
+
+  if (valor) {
+    valor.innerHTML = ganhosOcultos
+      ? "R$ ••••"
+      : `R$ ${ganhoHojeReal.toFixed(2)}`;
+  }
+
+  if (botao) {
+    botao.classList.toggle("oculto", ganhosOcultos);
+    botao.setAttribute("aria-pressed", ganhosOcultos);
+  }
+}
+
+document.getElementById("btnOcultarGanhos").onclick = () => {
+  ganhosOcultos = !ganhosOcultos;
+  localStorage.setItem("ganhosOcultos", ganhosOcultos ? "1" : "0");
+  aplicarVisibilidadeGanhos();
+};
+
 async function carregarFinanceiro() {
   try {
     const response = await fetch(`${API}/api/financeiro/resumo`, { headers });
@@ -1118,9 +1156,8 @@ async function carregarFinanceiro() {
     const mes = Number(data.mes || 0);
     const saldo = Number(data.saldo || 0);
 
-    // tela Início — resumo do dia
-    document.getElementById("resumoDiaGanhos").innerHTML =
-      `R$ ${hoje.toFixed(2)}`;
+    ganhoHojeReal = hoje;
+    aplicarVisibilidadeGanhos();
 
     // tela Ganhos
     document.getElementById("ganhosHoje").innerHTML = `R$ ${hoje.toFixed(2)}`;

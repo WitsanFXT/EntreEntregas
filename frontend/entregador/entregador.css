@@ -289,19 +289,64 @@ button {
    ========================================================= */
 
 .card-resumo-dia {
-  position: fixed;
-  top: 92px;
-  right: 12px;
-  z-index: var(--z-elementos-inicio);
   background: var(--cor-card);
   border: 1px solid var(--cor-borda);
   border-radius: var(--raio);
-  box-shadow: var(--sombra-forte);
+  box-shadow: var(--sombra);
   padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 130px;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.resumo-dia-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.resumo-dia-titulo {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--cor-texto-suave);
+}
+
+.btn-olho {
+  background: none;
+  border: none;
+  padding: 2px;
+  display: flex;
+  color: var(--cor-texto-suave);
+  cursor: pointer;
+}
+
+.btn-olho:hover {
+  color: var(--cor-texto);
+}
+
+.icone-olho {
+  width: 16px;
+  height: 16px;
+}
+
+.icone-olho-fechado {
+  display: none;
+}
+
+.btn-olho.oculto .icone-olho-aberto {
+  display: none;
+}
+
+.btn-olho.oculto .icone-olho-fechado {
+  display: block;
+}
+
+.resumo-dia-linha {
+  display: flex;
+  gap: 22px;
 }
 
 .resumo-dia-item {
