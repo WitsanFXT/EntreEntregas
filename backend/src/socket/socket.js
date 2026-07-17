@@ -24,7 +24,7 @@ function iniciarSocket(server) {
     });
   });
 
-  const iniciarVerificacaoTimeouts = require("../services/VerificarTimeouts");
+  const iniciarVerificacaoTimeouts = require("../services/verificarTimeouts");
   iniciarVerificacaoTimeouts(io);
 
   return io;

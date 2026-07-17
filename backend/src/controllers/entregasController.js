@@ -445,9 +445,6 @@ exports.listarMinhasEntregas = async (req, res) => {
   try {
     const usuarioId = req.usuario.id;
 
-    console.log("QUERY ENTREGAS MINHAS");
-    console.log("USUARIO:", usuarioId);
-
     const { data: entregador, error: errorEntregador } = await supabase
       .from("entregadores")
       .select("id")
@@ -566,6 +563,19 @@ exports.recusarEntrega = async (req, res) => {
       .single();
 
     console.log("ENTREGADOR:", entregador);
+
+    const { data: entregaAtual } = await supabase
+      .from("entregas")
+      .select("id")
+      .eq("id", entregaId)
+      .eq("entregador_id", entregador.id)
+      .single();
+
+    if (!entregaAtual) {
+      return res.status(400).json({
+        message: "Essa entrega não está atribuída a você.",
+      });
+    }
 
     const { error: erroRecusa } = await supabase
       .from("recusas_entrega")

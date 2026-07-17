@@ -1216,11 +1216,15 @@ function passaNoFiltroDataHoje(entrega) {
 //   entrega_finalizada, localizacao_atualizada
 // =========================================================
 
-let socket;
+const socket = io(API);
 
 function entrarSalaEntregador() {
-  if (socket && socket.connected && entregadorId) {
+  if (!entregadorId) return;
+
+  if (socket.connected) {
     socket.emit("entrar_entregador", entregadorId);
+
+    console.log("ENTROU NA SALA:", entregadorId);
   }
 }
 
@@ -1290,6 +1294,10 @@ function iniciarSocket() {
   });
 }
 
+socket.on("nova_entrega", (data) => {
+  console.log("RECEBI NOVA ENTREGA", data);
+});
+
 async function verificarNovasEntregasGlobal() {
   try {
     const entregas = await buscarTodasEntregas();
@@ -1302,7 +1310,6 @@ async function verificarNovasEntregasGlobal() {
 // =========================================================
 // INICIAR SISTEMA
 // =========================================================
-
 iniciarMapa();
 mostrarTela("telaInicio");
 
