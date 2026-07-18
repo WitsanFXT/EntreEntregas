@@ -69,7 +69,8 @@ function mostrarToast(mensagem, tipo = "") {
 // =================================
 
 const navEntregas = document.getElementById("navEntregas");
-const navDashboard = document.getElementById("navDashboard");
+// HTML uses id="navEmpresa" for the dashboard/company button
+const navDashboard = document.getElementById("navEmpresa");
 const telaEntregas = document.getElementById("telaEntregas");
 const telaDashboard = document.getElementById("telaDashboard");
 
@@ -290,13 +291,14 @@ function atualizarBadgesSemEntregador() {
 
   const badgeTopo = document.getElementById("badgeAlertaTopo");
   const qtdTopo = document.getElementById("qtdSemEntregador");
+  // contadorDashboard may not exist in this template; only update if present
   const contadorNav = document.getElementById("contadorDashboard");
 
   qtdTopo.textContent = semEntregador;
-  contadorNav.textContent = semEntregador;
+  if (contadorNav) contadorNav.textContent = semEntregador;
 
   badgeTopo.classList.toggle("mostrar", semEntregador > 0);
-  contadorNav.classList.toggle("mostrar", semEntregador > 0);
+  if (contadorNav) contadorNav.classList.toggle("mostrar", semEntregador > 0);
 }
 
 document.getElementById("badgeAlertaTopo").onclick = () =>

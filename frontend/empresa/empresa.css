@@ -814,820 +814,288 @@ button.acao:disabled {
   .entrega-header {
     flex-direction: column;
   }
-} /* =========================================================
-   PAINEL EMPRESA — CSS
-   Mesmo tema do painel do entregador (dark + verde), adaptado
-   pra um layout de admin: sidebar (desktop) / menu inferior (mobile)
-   ========================================================= */
-
-:root {
-  --cor-primaria: #22c55e;
-  --cor-primaria-escura: #16a34a;
-  --cor-primaria-clara: rgba(34, 197, 94, 0.16);
-  --cor-perigo: #ef4444;
-  --cor-perigo-escura: #dc2626;
-  --cor-perigo-clara: rgba(239, 68, 68, 0.16);
-  --cor-alerta: #f59e0b;
-  --cor-alerta-escura: #d97706;
-  --cor-alerta-clara: rgba(245, 158, 11, 0.16);
-  --cor-info: #3b82f6;
-  --cor-info-clara: rgba(59, 130, 246, 0.16);
-  --cor-fundo: #0f1115;
-  --cor-card: #1a1d24;
-  --cor-card-alt: #22262f;
-  --cor-texto: #f1f5f9;
-  --cor-texto-suave: #94a3b8;
-  --cor-borda: #2c313c;
-  --sombra: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
-  --sombra-forte: 0 8px 28px rgba(0, 0, 0, 0.55);
-  --raio: 14px;
-  --altura-menu: 64px;
-  --largura-sidebar: 240px;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-
-  --z-menu: 250;
-  --z-toast: 300;
-  --z-overlay-modal: 9998;
-  --z-modal: 9999;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  min-height: 100%;
-}
-
-body {
-  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: var(--cor-fundo);
-  color: var(--cor-texto);
-  -webkit-font-smoothing: antialiased;
-  min-height: 100dvh;
-  padding-bottom: calc(var(--altura-menu) + var(--safe-bottom) + 16px);
-}
-
-button {
-  font-family: inherit;
-}
-
-input,
-textarea,
-select {
-  font-family: inherit;
-}
-
-/* =========================================================
-   TOPO — identidade da empresa
-   ========================================================= */
-
-.topo-empresa {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: rgba(26, 29, 36, 0.92);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--cor-borda);
-  padding: 14px 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.topo-empresa-identidade h1 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.topo-empresa-identidade p {
-  margin: 3px 0 0;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--cor-texto-suave);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.topo-empresa-identidade p::before {
-  content: "";
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--cor-primaria);
-  flex-shrink: 0;
-}
-
-.badge-alerta-topo {
-  display: none;
-  align-items: center;
-  gap: 6px;
-  background: var(--cor-alerta-clara);
-  color: var(--cor-alerta);
-  border: 1px solid var(--cor-alerta);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 0.74rem;
-  font-weight: 700;
-  cursor: pointer;
-  animation: pulsoBadge 1.8s ease-in-out infinite;
-}
-
-.badge-alerta-topo.mostrar {
-  display: inline-flex;
-}
-
-@keyframes pulsoBadge {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.35);
-  }
-  50% {
-    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
-  }
-}
-
-/* =========================================================
-   LAYOUT — sidebar (desktop) + conteúdo
-   ========================================================= */
-
-.app-shell {
-  display: flex;
-  min-height: 100dvh;
-}
+/* ==================================================
+   MELHORIAS VISUAIS
+================================================== */
 
 .conteudo-principal {
-  flex: 1;
-  min-width: 0;
-  max-width: 640px;
-  margin: 0 auto;
-  width: 100%;
-  padding: 18px 16px 24px;
+  max-width: 1100px;
 }
-
-/* =========================================================
-   NAVEGAÇÃO — menu inferior (mobile) / sidebar (desktop)
-   ========================================================= */
-
-.menu-inferior {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: var(--altura-menu);
-  background: var(--cor-card);
-  border-top: 1px solid var(--cor-borda);
-  padding-bottom: var(--safe-bottom);
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  z-index: var(--z-menu);
-  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.25);
-}
-
-.menu-inferior button {
-  position: relative;
-  background: none;
-  border: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  font-size: 1.2rem;
-  color: var(--cor-texto-suave);
-  cursor: pointer;
-  flex: 1;
-  padding: 6px 0;
-}
-
-.menu-inferior button span {
-  font-size: 0.68rem;
-  font-weight: 600;
-}
-
-.menu-inferior button.ativo {
-  color: var(--cor-primaria);
-}
-
-.menu-inferior button .contador {
-  position: absolute;
-  top: -2px;
-  right: 22%;
-  background: var(--cor-alerta);
-  color: #0f1115;
-  font-size: 0.62rem;
-  font-weight: 800;
-  border-radius: 999px;
-  padding: 1px 5px;
-  display: none;
-}
-
-.menu-inferior button .contador.mostrar {
-  display: inline-block;
-}
-
-/* =========================================================
-   TELAS — Entregas / Dashboard
-   ========================================================= */
-
-.tela-app {
-  display: none;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.tela-app.ativa {
-  display: flex;
-}
-
-/* =========================================================
-   CARD BASE
-   ========================================================= */
 
 .card {
-  background: var(--cor-card);
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio);
-  box-shadow: var(--sombra);
-  padding: 18px;
+  transition: 0.25s;
 }
 
-.card h2,
-.card h3 {
-  margin: 0 0 16px;
-  font-size: 1.02rem;
-  font-weight: 700;
-  color: var(--cor-texto);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.card h4 {
-  margin: 0 0 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--cor-texto-suave);
-}
-
-.field-label {
-  display: block;
-  font-size: 0.74rem;
-  font-weight: 700;
-  color: var(--cor-texto-suave);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  margin: 0 0 6px 2px;
-}
-
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-/* =========================================================
-   INPUTS
-   ========================================================= */
-
-input,
-textarea {
-  width: 100%;
-  padding: 12px 14px;
-  margin-bottom: 14px;
-  border: 1.5px solid var(--cor-borda);
-  border-radius: 10px;
-  font-size: 0.92rem;
-  color: var(--cor-texto);
-  background-color: var(--cor-card-alt);
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: #626b7c;
-}
-
-input:focus,
-textarea:focus {
-  outline: none;
-  border-color: var(--cor-primaria);
-  box-shadow: 0 0 0 4px var(--cor-primaria-clara);
-}
-
-textarea {
-  min-height: 90px;
-  resize: vertical;
-  line-height: 1.5;
-}
-
-.gps-box {
-  background: var(--cor-card-alt);
-  border: 1px solid var(--cor-borda);
-  border-radius: 12px;
-  padding: 16px;
-  margin: 4px 0 18px;
-}
-
-.gps-coords-ok {
-  font-size: 0.78rem;
-  color: var(--cor-primaria);
-  font-weight: 600;
-  margin: -6px 0 12px 2px;
-  min-height: 1em;
-}
-
-/* =========================================================
-   BOTÕES
-   ========================================================= */
-
-button.acao {
-  width: 100%;
-  padding: 13px 18px;
-  border: none;
-  border-radius: 10px;
-  font-size: 0.92rem;
-  font-weight: 700;
-  cursor: pointer;
-  color: #fff;
-  transition:
-    transform 0.15s ease,
-    filter 0.15s ease,
-    opacity 0.15s ease;
-}
-
-button.acao:active {
-  transform: scale(0.98);
-}
-
-button.acao:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-primary {
-  background: linear-gradient(
-    135deg,
-    var(--cor-primaria),
-    var(--cor-primaria-escura)
-  );
-  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.28);
-}
-
-.btn-primary:hover {
-  filter: brightness(1.06);
-}
-
-.btn-secondary {
-  background: var(--cor-card-alt);
-  color: var(--cor-texto);
-  border: 1.5px solid var(--cor-borda);
-  box-shadow: none;
-}
-
-.btn-secondary:hover {
-  border-color: var(--cor-texto-suave);
-}
-
-.btn-danger {
-  background: var(--cor-card-alt);
-  color: var(--cor-perigo);
-  border: 1.5px solid var(--cor-perigo);
-  box-shadow: none;
-}
-
-.btn-danger:hover {
-  background: rgba(239, 68, 68, 0.12);
-}
-
-.btn-solucionar {
-  width: auto;
-  padding: 8px 14px;
-  font-size: 0.8rem;
-  border-radius: 999px;
-  background: linear-gradient(
-    135deg,
-    var(--cor-alerta),
-    var(--cor-alerta-escura)
-  );
-  box-shadow: 0 3px 8px rgba(217, 119, 6, 0.3);
-}
-
-/* =========================================================
-   ABAS INTERNAS (Relatório / Configurações)
-   ========================================================= */
-
-.tabs-internas {
-  display: flex;
-  gap: 8px;
-}
-
-.tab-interna {
-  flex: 1;
-  border: none;
-  border-radius: 12px;
-  padding: 10px 8px;
-  background: var(--cor-card-alt);
-  color: var(--cor-texto-suave);
-  font-weight: 700;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-.tab-interna.ativa {
-  background: var(--cor-primaria);
-  color: #04150a;
-}
-
-.painel-interno {
-  display: none;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.painel-interno.ativa {
-  display: flex;
-}
-
-/* =========================================================
-   LISTA DE ENTREGAS
-   ========================================================= */
-
-#listaEntregas {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.empty-state {
-  text-align: center;
-  color: var(--cor-texto-suave);
-  font-size: 0.88rem;
-  padding: 28px 0;
-  margin: 0;
-}
-
-.entrega-card {
-  background: var(--cor-card-alt);
-  border: 1px solid var(--cor-borda);
-  border-left: 4px solid var(--cor-primaria);
-  border-radius: 12px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  animation: entrarCard 0.2s ease-out;
-}
-
-.entrega-card.sem-entregador {
-  border-left-color: var(--cor-alerta);
-}
-
-@keyframes entrarCard {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.entrega-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.entrega-cliente {
-  font-weight: 700;
-  color: var(--cor-texto);
-  font-size: 0.95rem;
-}
-
-.entrega-info {
-  margin: 0;
-  color: var(--cor-texto-suave);
-  font-size: 0.84rem;
-  line-height: 1.5;
-}
-
-.entrega-coords {
-  display: flex;
-  gap: 16px;
-  font-size: 0.74rem;
-  color: #626b7c;
-}
-
-.entrega-footer {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-}
-
-.status-pendente {
-  background: var(--cor-info-clara);
-  color: var(--cor-info);
-}
-.status-aceita,
-.status-aceito,
-.status-em_rota,
-.status-a_caminho {
-  background: var(--cor-info-clara);
-  color: var(--cor-info);
-}
-.status-entregue,
-.status-finalizada,
-.status-concluida,
-.status-concluido {
-  background: var(--cor-primaria-clara);
-  color: var(--cor-primaria);
-}
-.status-cancelada,
-.status-cancelado {
-  background: var(--cor-card);
-  color: var(--cor-texto-suave);
-}
-.status-sem_entregador {
-  background: var(--cor-alerta-clara);
-  color: var(--cor-alerta);
-  animation: pulsoBadge 1.8s ease-in-out infinite;
-}
-
-/* =========================================================
-   RELATÓRIO — grid de indicadores
-   ========================================================= */
-
-.grid-relatorio {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+.card:hover {
+  border-color: #3a404d;
 }
 
 .stat-card {
-  background: var(--cor-card-alt);
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio);
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.stat-card-destaque {
-  grid-column: 1 / -1;
-  background: linear-gradient(135deg, var(--cor-primaria-clara), transparent);
-  border-color: var(--cor-primaria);
-}
-
-.stat-label {
-  font-size: 0.72rem;
-  color: var(--cor-texto-suave);
-  font-weight: 600;
+  min-height: 110px;
+  justify-content: center;
 }
 
 .stat-card strong {
-  font-size: 1.2rem;
-  color: var(--cor-texto);
+  font-size: 1.8rem;
+  margin-top: 4px;
 }
 
-.stat-card-destaque strong {
-  color: var(--cor-primaria);
-  font-size: 1.7rem;
+.entrega-card {
+  transition: 0.25s;
 }
 
-.stat-card.alerta strong {
-  color: var(--cor-alerta);
+.entrega-card:hover {
+  transform: translateY(-2px);
+  border-color: #3a404d;
 }
 
-.stat-card.perigo strong {
-  color: var(--cor-perigo);
+.gps-box {
+  background: #20252f;
 }
 
-/* =========================================================
-   OVERLAY + MODAL — sem entregador
-   ========================================================= */
+.tab-interna {
+  transition: 0.2s;
+}
+
+.tab-interna:hover {
+  background: #2b303b;
+  color: white;
+}
+
+.tab-interna.ativa {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+}
+
+@media (min-width: 900px) {
+  .conteudo-principal {
+    padding: 32px;
+    max-width: none;
+  }
+
+  .tela-app {
+    max-width: 1100px;
+    margin: auto;
+  }
+
+  .grid-relatorio {
+    grid-template-columns: repeat(3, minmax(220px, 1fr));
+  }
+
+  .card {
+    padding: 24px;
+  }
+}
+
+/* ==========================================
+   CORREÇÕES GERAIS
+========================================== */
+
+html,
+body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+}
+
+/* ==========================================
+   CONTEÚDO
+========================================== */
+
+.conteudo-principal {
+  flex: 1;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ==========================================
+   INPUTS
+========================================== */
+
+.field-row input,
+.field-row textarea,
+.field-row select {
+  margin-bottom: 12px; /* espaçamento entre inputs dentro de .field-row */
+}
+
+.field-row {
+  margin-bottom: 14px;
+}
+
+/* ==========================================
+   CARDS
+========================================== */
+
+.card {
+  overflow: hidden;
+}
+
+.card + .card {
+  margin-top: 16px;
+}
+
+/* ==========================================
+   ENTREGAS
+========================================== */
+
+#listaEntregas {
+  max-height: 700px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+#listaEntregas::-webkit-scrollbar {
+  width: 6px;
+}
+
+#listaEntregas::-webkit-scrollbar-thumb {
+  background: #394150;
+  border-radius: 999px;
+}
+
+.entrega-card {
+  width: 100%;
+}
+
+.entrega-header {
+  width: 100%;
+}
+
+.entrega-footer {
+  margin-top: 10px;
+}
+
+/* ==========================================
+   DASHBOARD
+========================================== */
+
+.grid-relatorio {
+  align-items: stretch;
+}
+
+.stat-card {
+  min-height: 130px;
+}
+
+.stat-card strong {
+  font-size: 2rem;
+}
+
+/* ==========================================
+   BOTÕES
+========================================== */
+
+button.acao {
+  min-height: 48px;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-danger {
+  transition:
+    transform 0.15s,
+    filter 0.15s,
+    box-shadow 0.15s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+}
+
+/* ==========================================
+   MODAL
+========================================== */
 
 .overlay-modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.72);
-  z-index: var(--z-overlay-modal);
-}
-
-.overlay-modal.ativo {
-  display: block;
+  backdrop-filter: blur(4px);
 }
 
 .modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  z-index: var(--z-modal);
-}
-
-.modal.ativo {
-  display: flex;
+  z-index: 99999;
 }
 
 .modal-content {
-  background: var(--cor-card);
-  border: 1px solid var(--cor-borda);
-  border-radius: 20px;
-  padding: 24px;
-  width: 100%;
-  max-width: 380px;
-  box-shadow: var(--sombra-forte);
-  animation: entrarModal 0.2s ease-out;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
-@keyframes entrarModal {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.modal-content h2 {
-  margin: 0 0 8px;
-  font-size: 1.05rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.modal-content p {
-  margin: 0 0 20px;
-  font-size: 0.86rem;
-  color: var(--cor-texto-suave);
-  line-height: 1.5;
-}
-
-.modal-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* =========================================================
-   TOASTS
-   ========================================================= */
+/* ==========================================
+   TOAST
+========================================== */
 
 .toast-container {
-  position: fixed;
-  bottom: calc(var(--altura-menu) + 16px);
-  left: 12px;
-  right: 12px;
-  z-index: var(--z-toast);
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 8px;
-  align-items: center;
   pointer-events: none;
 }
 
 .toast {
-  background: var(--cor-card-alt);
-  border: 1px solid var(--cor-borda);
-  color: var(--cor-texto);
-  padding: 10px 16px;
-  border-radius: 999px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  box-shadow: var(--sombra-forte);
-  opacity: 0;
-  transform: translateY(10px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-  max-width: 100%;
-  text-align: center;
+  pointer-events: auto;
 }
 
-.toast.mostrar {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.toast.sucesso {
-  border-color: var(--cor-primaria);
-}
-.toast.erro {
-  border-color: var(--cor-perigo);
-}
-
-/* =========================================================
-   RESPONSIVO — DESKTOP (sidebar em vez de menu inferior)
-   ========================================================= */
+/* ==========================================
+   DESKTOP
+========================================== */
 
 @media (min-width: 900px) {
-  body {
-    padding-bottom: 0;
+  .app-shell {
+    display: flex;
+    align-items: flex-start;
   }
 
   .menu-inferior {
     position: sticky;
     top: 0;
-    left: auto;
-    right: auto;
-    height: 100dvh;
-    width: var(--largura-sidebar);
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: stretch;
-    gap: 4px;
-    padding: 20px 12px;
-    border-top: none;
-    border-right: 1px solid var(--cor-borda);
-  }
-
-  .menu-inferior button {
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 10px;
-    padding: 11px 12px;
-    border-radius: 10px;
-    font-size: 0.9rem;
-  }
-
-  .menu-inferior button span {
-    font-size: 0.85rem;
-  }
-
-  .menu-inferior button.ativo {
-    background: var(--cor-primaria-clara);
-  }
-
-  .menu-inferior button .contador {
-    top: 6px;
-    right: 10px;
-  }
-
-  .app-shell {
-    flex-direction: row;
+    height: 100vh;
+    flex-shrink: 0;
   }
 
   .conteudo-principal {
-    max-width: 720px;
-    padding: 24px 32px 32px;
+    padding: 32px;
+  }
+
+  .tela-app {
+    width: 100%;
+    max-width: 1300px;
   }
 
   .grid-relatorio {
     grid-template-columns: repeat(3, 1fr);
   }
-
-  .toast-container {
-    bottom: 20px;
-  }
 }
 
-/* =========================================================
-   TELAS PEQUENAS
-   ========================================================= */
+/* ==========================================
+   MOBILE
+========================================== */
 
 @media (max-width: 600px) {
+  .card {
+    padding: 16px;
+  }
+
   .field-row {
     grid-template-columns: 1fr;
-    gap: 0;
   }
 
-  input,
-  textarea,
-  button.acao {
-    font-size: 16px; /* evita zoom automático no iOS */
+  .grid-relatorio {
+    grid-template-columns: 1fr;
   }
 
-  .entrega-header {
-    flex-direction: column;
+  .modal-content {
+    max-width: 100%;
+    border-radius: 18px;
+  }
+
+  .badge-alerta-topo {
+    font-size: 0.68rem;
+    padding: 5px 10px;
+  }
+
+  .topo-empresa-identidade h1 {
+    font-size: 0.95rem;
   }
 }
