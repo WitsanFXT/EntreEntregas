@@ -19,6 +19,12 @@ function iniciarSocket(server) {
       console.log(`Entregador ${entregadorId} entrou na sala`);
     });
 
+    socket.on("entrar_empresa", (empresaId) => {
+      socket.join(`empresa:${empresaId}`);
+
+      console.log(`Empresa ${empresaId} entrou na sala`);
+    });
+
     socket.on("disconnect", () => {
       console.log("Socket desconectado:", socket.id);
     });

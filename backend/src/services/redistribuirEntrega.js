@@ -2,6 +2,8 @@ const supabase = require("../config/supabase");
 const calcularDistancia = require("./distanciaService");
 const { getIO } = require("../socket/socket");
 
+const distribuirEntrega = require("../services/distribuicaoService");
+
 const LIMITE_RODADAS = 3;
 
 async function redistribuirEntrega(entregaId) {
@@ -62,7 +64,15 @@ async function redistribuirEntrega(entregaId) {
           .eq("id", entregaId);
 
         // avisa a empresa que precisa intervir manualmente
-        getIO().emit("entrega_sem_entregador", { id: entregaId });
+        const { data: entregaCompleta } = await supabase
+          .from("entregas")
+          .select("*")
+          .eq("id", entregaId)
+          .single();
+
+        getIO()
+          .to(`empresa:${entregaCompleta.empresa_id}`)
+          .emit("entrega_sem_entregador", entregaCompleta);
 
         return null;
       }
