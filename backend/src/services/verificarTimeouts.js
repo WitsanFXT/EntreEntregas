@@ -49,34 +49,6 @@ async function verificarTimeouts(io) {
       }
     }
 
-    for (const entrega of expiradas) {
-      console.log(
-        `Timeout: entrega ${entrega.id} sem resposta de ${entrega.entregador_id}, redistribuindo...`,
-      );
-
-      // registra como recusa automática, senão o mesmo entregador
-      // pode receber a mesma entrega de novo antes da fila acabar
-      await supabase.from("recusas_entrega").insert({
-        entrega_id: entrega.id,
-        entregador_id: entrega.entregador_id,
-      });
-
-      const novoEntregador = await redistribuirEntrega(entrega.id);
-
-      if (novoEntregador) {
-        const { data: entregaAtualizada } = await supabase
-          .from("entregas")
-          .select("*")
-          .eq("id", entrega.id)
-          .single();
-
-        io.to(`entregador:${novoEntregador.id}`).emit(
-          "nova_entrega",
-          entregaAtualizada,
-        );
-      }
-    }
-
     // entregas que "descansaram" depois que todos recusaram: reinicia a fila do zero
     const { data: prontasParaReiniciar, error: erroReiniciar } = await supabase
       .from("entregas")

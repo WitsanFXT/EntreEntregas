@@ -1216,8 +1216,6 @@ function passaNoFiltroDataHoje(entrega) {
 //   entrega_finalizada, localizacao_atualizada
 // =========================================================
 
-const socket = io(API);
-
 function entrarSalaEntregador() {
   if (!entregadorId) return;
 
@@ -1227,6 +1225,8 @@ function entrarSalaEntregador() {
     console.log("ENTROU NA SALA:", entregadorId);
   }
 }
+
+let socket = null;
 
 function iniciarSocket() {
   if (typeof io === "undefined") {
@@ -1251,6 +1251,7 @@ function iniciarSocket() {
   );
 
   socket.on("nova_entrega", (entrega) => {
+    console.log("SOCKET RECEBEU:", entrega.id);
     // Atualizar ultimaLista para evitar duplicação quando a aba Entregas for aberta depois
     if (entrega && entrega.id) {
       const existe = ultimaLista.some(
@@ -1293,10 +1294,6 @@ function iniciarSocket() {
     }
   });
 }
-
-socket.on("nova_entrega", (data) => {
-  console.log("RECEBI NOVA ENTREGA", data);
-});
 
 async function verificarNovasEntregasGlobal() {
   try {
