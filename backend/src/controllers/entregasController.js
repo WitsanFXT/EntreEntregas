@@ -1,10 +1,7 @@
 const supabase = require("../config/supabase");
 
-const { getIO } = require("../socket/socket");
-
 const redistribuirEntrega = require("../services/redistribuirEntrega");
 
-console.log("ROTA RECUSAR CHAMADA");
 // =====================================
 // CRIAR ENTREGA
 // =====================================
@@ -97,21 +94,18 @@ exports.criarEntrega = async (req, res) => {
 
       .single();
 
-    const distribuirEntrega = require("../services/distribuicaoService");
-
     if (error) {
       console.log(error);
 
       return res.status(400).json(error);
     }
 
-    const entregadorEscolhido = await distribuirEntrega(entrega.id);
+    const distribuirEntrega = require("../services/distribuicaoService");
 
-    if (entregadorEscolhido) {
-      getIO()
-        .to(`entregador:${entregadorEscolhido.id}`)
-        .emit("nova_entrega", entrega);
-    }
+    // distribuirEntrega já grava o entregador_id no banco — o
+    // entregador escolhido recebe isso via Realtime automaticamente,
+    // não precisa mais emitir evento nenhum aqui.
+    await distribuirEntrega(entrega.id);
 
     return res.status(201).json({
       message: "Entrega criada com sucesso.",
@@ -216,10 +210,6 @@ exports.listarEntregasEntregador = async (req, res) => {
 
 exports.aceitarEntrega = async (req, res) => {
   try {
-    console.log("======== ACEITAR ENTREGA ========");
-    console.log("Usuario:", req.usuario);
-    console.log("Entrega:", req.params.id);
-
     const entregaId = req.params.id;
 
     const usuarioId = req.usuario.id;
@@ -252,10 +242,6 @@ exports.aceitarEntrega = async (req, res) => {
       .eq("entregador_id", entregador.id)
       .single();
 
-    console.log("ENTREGADOR:", entregador.id);
-    console.log("ENTREGA ENCONTRADA:", entrega);
-    console.log("ERRO:", error);
-
     if (error || !entrega || entrega.length === 0) {
       return res.status(400).json({
         message: "Entrega indisponível.",
@@ -282,8 +268,6 @@ exports.aceitarEntrega = async (req, res) => {
         message: "Erro ao aceitar entrega.",
       });
     }
-
-    getIO().emit("entrega_aceita", atualizada);
 
     return res.json({
       message: "Entrega aceita com sucesso.",
@@ -322,8 +306,6 @@ exports.retirarEntrega = async (req, res) => {
     if (error) {
       return res.status(400).json(error);
     }
-
-    getIO().emit("entrega_retirada", data);
 
     return res.json({
       message: "Pedido retirado.",
@@ -423,10 +405,6 @@ exports.finalizarEntrega = async (req, res) => {
 
       .eq("id", entrega.entregador_id);
 
-    getIO().emit("entrega_finalizada", {
-      id: entregaId,
-      entregador_id: entrega.entregador_id,
-    });
     return res.json({
       message: "Entrega finalizada.",
 
@@ -452,7 +430,6 @@ exports.listarMinhasEntregas = async (req, res) => {
       .single();
 
     if (errorEntregador || !entregador) {
-      console.log("ERRO SUPABASE:", errorEntregador);
       return res.status(404).json({
         message: "Entregador não encontrado",
       });
@@ -470,8 +447,6 @@ exports.listarMinhasEntregas = async (req, res) => {
       )
       .eq("entregador_id", entregador.id)
       .order("created_at", { ascending: false });
-
-    console.log("ENTREGADOR LOGADO:", entregador.id);
 
     if (error) {
       console.log("ERRO SUPABASE:", error);
@@ -549,20 +524,14 @@ exports.dashboardEntregador = async (req, res) => {
 
 exports.recusarEntrega = async (req, res) => {
   try {
-    console.log("===== RECUSAR ENTREGA =====");
     const entregaId = req.params.id;
     const usuarioId = req.usuario.id;
-
-    console.log("ENTREGA:", entregaId);
-    console.log("USUARIO:", usuarioId);
 
     const { data: entregador } = await supabase
       .from("entregadores")
       .select("id")
       .eq("usuario_id", usuarioId)
       .single();
-
-    console.log("ENTREGADOR:", entregador);
 
     const { data: entregaAtual } = await supabase
       .from("entregas")
@@ -589,19 +558,9 @@ exports.recusarEntrega = async (req, res) => {
       return res.status(400).json({ message: "Erro ao registrar recusa." });
     }
 
-    const novoEntregador = await redistribuirEntrega(entregaId);
-
-    if (novoEntregador) {
-      const { data: entregaAtualizada } = await supabase
-        .from("entregas")
-        .select("*")
-        .eq("id", entregaId)
-        .single();
-
-      getIO()
-        .to(`entregador:${novoEntregador.id}`)
-        .emit("nova_entrega", entregaAtualizada);
-    }
+    // redistribuirEntrega já grava o novo entregador_id no banco —
+    // ele recebe a corrida via Realtime, sem precisar de emit aqui.
+    await redistribuirEntrega(entregaId);
 
     return res.json({
       message: "Entrega recusada.",

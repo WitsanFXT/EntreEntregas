@@ -1,6 +1,5 @@
 const supabase = require("../config/supabase");
 const calcularDistancia = require("./distanciaService");
-const { getIO } = require("../socket/socket");
 
 const distribuirEntrega = require("../services/distribuicaoService");
 
@@ -53,6 +52,9 @@ async function redistribuirEntrega(entregaId) {
           `Entrega ${entregaId} sem entregador após ${rodadas} rodadas — desistindo`,
         );
 
+        // Essa mudança de status pra "sem_entregador" é o que o
+        // navegador da empresa detecta via Realtime — não precisa
+        // mais de getIO().emit(...) aqui.
         await supabase
           .from("entregas")
           .update({
@@ -62,17 +64,6 @@ async function redistribuirEntrega(entregaId) {
             rodadas_tentadas: rodadas,
           })
           .eq("id", entregaId);
-
-        // avisa a empresa que precisa intervir manualmente
-        const { data: entregaCompleta } = await supabase
-          .from("entregas")
-          .select("*")
-          .eq("id", entregaId)
-          .single();
-
-        getIO()
-          .to(`empresa:${entregaCompleta.empresa_id}`)
-          .emit("entrega_sem_entregador", entregaCompleta);
 
         return null;
       }
@@ -111,6 +102,8 @@ async function redistribuirEntrega(entregaId) {
 
     const proximo = ordenados[0];
 
+    // Grava o novo entregador_id — o Realtime do lado do entregador
+    // detecta essa UPDATE e abre o modal sozinho no front dele.
     await supabase
       .from("entregas")
       .update({
@@ -121,8 +114,6 @@ async function redistribuirEntrega(entregaId) {
 
     console.log(`Entrega ${entregaId} redistribuída para ${proximo.id}`);
 
-    // quem notifica o entregador é sempre quem chamou (controller/verificarTimeouts),
-    // usando o retorno desta função — evita duplicar o modal
     return proximo;
   } catch (error) {
     console.log(error);

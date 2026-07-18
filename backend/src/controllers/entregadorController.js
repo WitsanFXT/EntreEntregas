@@ -1,4 +1,6 @@
 const supabase = require("../config/supabase");
+const distribuirEntrega = require("../services/distribuicaoService");
+const { gerarTokenRealtime } = require("../services/supabaseRealtimeToken");
 
 // ======================================
 // FICAR ONLINE
@@ -18,35 +20,23 @@ exports.online = async (req, res) => {
       .select()
       .single();
 
+    if (error) {
+      return res.status(400).json({
+        message: "Erro ao ficar online.",
+      });
+    }
+
+    // Tenta encaixar esse entregador em entregas pendentes sem dono.
+    // Não emite mais evento nenhum — a mudança de entregador_id na
+    // tabela já dispara o Realtime pro navegador dele automaticamente.
     const { data: entregasPendentes } = await supabase
       .from("entregas")
       .select("id")
       .eq("status", "pendente")
       .is("entregador_id", null);
 
-    const distribuirEntrega = require("../services/distribuicaoService");
-    const { getIO } = require("../socket/socket");
-
     for (const entrega of entregasPendentes || []) {
-      const escolhido = await distribuirEntrega(entrega.id);
-
-      if (escolhido) {
-        const { data: entregaAtualizada } = await supabase
-          .from("entregas")
-          .select("*")
-          .eq("id", entrega.id)
-          .single();
-
-        getIO()
-          .to(`entregador:${escolhido.id}`)
-          .emit("nova_entrega", entregaAtualizada);
-      }
-    }
-
-    if (error) {
-      return res.status(400).json({
-        message: "Erro ao ficar online.",
-      });
+      await distribuirEntrega(entrega.id);
     }
 
     res.json({
@@ -222,5 +212,36 @@ exports.minhasEntregas = async (req, res) => {
     return res.status(500).json({
       message: "Erro interno",
     });
+  }
+};
+
+// ======================================
+// TOKEN PRA REALTIME (Supabase)
+// GET /api/entregador/token-realtime
+// ======================================
+
+exports.tokenRealtime = async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+
+    const { data: entregador, error } = await supabase
+      .from("entregadores")
+      .select("id")
+      .eq("usuario_id", usuarioId)
+      .single();
+
+    if (error || !entregador) {
+      return res.status(404).json({ message: "Entregador não encontrado." });
+    }
+
+    const token = gerarTokenRealtime({
+      sub: usuarioId,
+      entregador_id: entregador.id,
+    });
+
+    return res.json({ token });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Erro ao gerar token." });
   }
 };

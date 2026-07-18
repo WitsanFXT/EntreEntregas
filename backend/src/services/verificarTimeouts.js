@@ -4,8 +4,7 @@ const distribuirEntrega = require("./distribuicaoService");
 
 const TIMEOUT_MS = 30 * 1000;
 
-async function verificarTimeouts(io) {
-  console.log("TICK verificarTimeouts", new Date().toISOString());
+async function verificarTimeouts() {
   try {
     const limite = new Date(Date.now() - TIMEOUT_MS).toISOString();
 
@@ -32,20 +31,9 @@ async function verificarTimeouts(io) {
           entregador_id: entrega.entregador_id,
         });
 
-        const novoEntregador = await redistribuirEntrega(entrega.id);
-
-        if (novoEntregador) {
-          const { data: entregaAtualizada } = await supabase
-            .from("entregas")
-            .select("*")
-            .eq("id", entrega.id)
-            .single();
-
-          io.to(`entregador:${novoEntregador.id}`).emit(
-            "nova_entrega",
-            entregaAtualizada,
-          );
-        }
+        // redistribuirEntrega já grava o novo entregador_id — quem
+        // recebe a corrida percebe isso via Realtime automaticamente.
+        await redistribuirEntrega(entrega.id);
       }
     }
 
@@ -62,22 +50,9 @@ async function verificarTimeouts(io) {
       console.log("ERRO AO BUSCAR prontasParaReiniciar:", erroReiniciar);
     }
 
-    // DEBUG temporário — remover depois de confirmar o problema
-    const { data: debugPendentesSemDono } = await supabase
-      .from("entregas")
-      .select("id, reinicio_em, rodadas_tentadas")
-      .eq("status", "pendente")
-      .is("entregador_id", null);
-
-    if (debugPendentesSemDono && debugPendentesSemDono.length > 0) {
-      console.log("DEBUG pendentes sem dono agora:", new Date().toISOString());
-      console.log(debugPendentesSemDono);
-    }
-
     for (const entrega of prontasParaReiniciar || []) {
       console.log(`Reiniciando fila da entrega ${entrega.id}`);
 
-      // zera as recusas antigas pra dar uma rodada nova completa
       await supabase
         .from("recusas_entrega")
         .delete()
@@ -88,28 +63,15 @@ async function verificarTimeouts(io) {
         .update({ reinicio_em: null })
         .eq("id", entrega.id);
 
-      const escolhido = await distribuirEntrega(entrega.id);
-
-      if (escolhido) {
-        const { data: entregaAtualizada } = await supabase
-          .from("entregas")
-          .select("*")
-          .eq("id", entrega.id)
-          .single();
-
-        io.to(`entregador:${escolhido.id}`).emit(
-          "nova_entrega",
-          entregaAtualizada,
-        );
-      }
+      await distribuirEntrega(entrega.id);
     }
   } catch (error) {
     console.log("Erro no verificarTimeouts:", error);
   }
 }
 
-function iniciarVerificacaoTimeouts(io) {
-  setInterval(() => verificarTimeouts(io), 5000);
+function iniciarVerificacaoTimeouts() {
+  setInterval(verificarTimeouts, 5000);
   console.log("Verificação de timeout de entregas iniciada (30s).");
 }
 

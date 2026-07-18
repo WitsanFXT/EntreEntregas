@@ -1,11 +1,9 @@
 require("dotenv").config();
 
 const express = require("express");
-
 const cors = require("cors");
-const http = require("http");
 
-const { iniciarSocket } = require("./socket/socket");
+const iniciarVerificacaoTimeouts = require("./services/verificarTimeouts");
 
 const authRoutes = require("./routes/authRoutes");
 const perfilRoutes = require("./routes/perfilRoutes");
@@ -15,10 +13,6 @@ const entregasRoutes = require("./routes/entregasRoutes");
 const financeiroRoutes = require("./routes/financeiroRoutes");
 
 const app = express();
-
-const server = http.createServer(app);
-
-iniciarSocket(server);
 
 app.use(
   cors({
@@ -35,8 +29,13 @@ app.use("/api/entregador", entregadorRoutes);
 app.use("/api/entregas", entregasRoutes);
 app.use("/api/financeiro", financeiroRoutes);
 
-server.listen(process.env.PORT, () => {
-  console.log(`Servidor rodando na porta ${process.env.PORT}`);
+// Job de expiração/redistribuição de entregas. Não depende mais de
+// socket nenhum — só lê/grava no banco, e quem escuta (empresa e
+// entregador) recebe as mudanças via Supabase Realtime.
+iniciarVerificacaoTimeouts();
+
+app.listen(process.env.PORT || 5500, () => {
+  console.log(`Servidor rodando na porta ${process.env.PORT || 5500}`);
 });
 
 module.exports = app;
