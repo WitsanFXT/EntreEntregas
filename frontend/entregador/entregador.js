@@ -745,6 +745,7 @@ async function carregarEntregaAtualInicio() {
     atualizarEnderecoTopo(enderecoDestino);
     mostrarMarcadoresEntrega(principal);
 
+    console.log("ENTREGA ATUAL:", principal);
     // >>> SUA SUBSTITUIÇÃO COMEÇA AQUI >>>
     container.innerHTML = `
 <div class="entrega-atual">
@@ -841,7 +842,12 @@ async function carregarEntregaAtualInicio() {
       btn.onclick = () => finalizarEntrega(btn.dataset.id);
     });
     container.querySelectorAll("[data-acao='navegar']").forEach((btn) => {
-      btn.onclick = () => abrirSeletorMapa(btn.dataset.lat, btn.dataset.lng);
+      btn.onclick = () => {
+        console.log("LAT:", btn.dataset.lat);
+        console.log("LNG:", btn.dataset.lng);
+
+        abrirSeletorMapa(btn.dataset.lat, btn.dataset.lng);
+      };
     });
   } catch (error) {
     console.log(error);
