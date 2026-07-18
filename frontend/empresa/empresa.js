@@ -20,7 +20,19 @@ const headers = {
   "Content-Type": "application/json",
 };
 
-const socket = io(API);
+// =================================
+// SUPABASE REALTIME
+// =================================
+
+const SUPABASE_URL = "https://gnrhxvbyxnixnrppwnul.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_FzazGW0YE3mAcFO6NlUk6g_e5_pq_Nw";
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+);
 
 // Guarda a última lista de entregas em cache (usada pelo relatório e
 // pra reabrir o modal "sem entregador" a partir da lista).
@@ -343,6 +355,57 @@ async function carregarEntregas() {
 }
 
 // =================================
+// realtime supabase
+// =================================
+async function iniciarRealtime() {
+  try {
+    const response = await fetch(`${API}/api/empresa/token-realtime`, {
+      headers,
+    });
+
+    const { token: tokenRealtime } = await response.json();
+
+    if (!tokenRealtime) {
+      console.log("Token realtime não recebido");
+      return;
+    }
+
+    supabaseClient.realtime.setAuth(tokenRealtime);
+
+    supabaseClient
+      .channel(`empresa-${Date.now()}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "entregas",
+          filter: `empresa_id=eq.${empresaAtual.id}`,
+        },
+        (payload) => {
+          const entrega = payload.new;
+
+          console.log("Atualização realtime:", entrega);
+
+          carregarEntregas();
+
+          if (entrega && entrega.status === "sem_entregador") {
+            abrirModalSemEntregador(entrega);
+          }
+        },
+      )
+      .subscribe((status) => {
+        console.log("Realtime empresa:", status);
+
+        document.getElementById("statusConexao").textContent =
+          status === "SUBSCRIBED" ? "Conectado" : "Reconectando...";
+      });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+// =================================
 // RELATÓRIO (calculado a partir das entregas já carregadas)
 // =================================
 
@@ -481,7 +544,7 @@ document.getElementById("btnSalvarConfiguracoes").onclick = async () => {
 };
 
 // =================================
-// CONECTAR EMPRESA AO SOCKET
+// CONECTAR EMPRESA AO REALTIME SUPABASE (GET /api/empresa/me)
 // =================================
 
 async function conectarEmpresa() {
@@ -498,13 +561,14 @@ async function conectarEmpresa() {
     }
 
     empresaAtual = empresa;
+
     document.getElementById("nomeEmpresaTopo").textContent =
       empresa.nome_fantasia || "Painel da empresa";
 
-    socket.emit("entrar_empresa", empresa.id);
-    console.log("Empresa entrou na sala:", empresa.id);
+    console.log("Empresa conectada:", empresa.id);
   } catch (error) {
     console.log(error);
+
     document.getElementById("statusConexao").textContent = "Erro ao conectar";
   }
 }
@@ -597,43 +661,30 @@ document.getElementById("btnExterno").onclick = function () {
   acaoModal(this, "externo", "Entrega marcada como externa");
 };
 
-// =================================
-// SOCKET: ENTREGA SEM ENTREGADOR
-// =================================
-
-socket.on("entrega_sem_entregador", (entrega) => {
-  entregasCache.set(entrega.id ?? entrega._id, entrega);
-  atualizarBadgesSemEntregador();
-  abrirModalSemEntregador(entrega);
-  carregarEntregas();
-});
-
-socket.on("connect", () => {
-  document.getElementById("statusConexao").textContent = "Conectado";
-});
-
-socket.on("disconnect", () => {
-  document.getElementById("statusConexao").textContent = "Desconectado";
-});
-
 // ================================
 // LOGOUT
 // ================================
 
-document.getElementById("btnLogout").addEventListener("click", () => {
-  const confirmar = confirm("Deseja realmente sair da conta?");
+const btnLogout = document.getElementById("btnLogout");
 
-  if (!confirmar) return;
+if (btnLogout) {
+  btnLogout.addEventListener("click", () => {
+    const confirmar = confirm("Deseja realmente sair da conta?");
 
-  localStorage.removeItem("token");
-  localStorage.removeItem("usuario");
+    if (!confirmar) return;
 
-  window.location.href = "../login/login.html";
-});
+    localStorage.removeItem("token");
+    localStorage.removeItem("usuario");
+
+    window.location.href = "../login/login.html";
+  });
+}
 
 // =================================
 // INICIALIZAÇÃO
 // =================================
-
-conectarEmpresa();
-carregarEntregas();
+(async () => {
+  await conectarEmpresa();
+  await carregarEntregas();
+  await iniciarRealtime();
+})();

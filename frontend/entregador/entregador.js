@@ -22,6 +22,20 @@ const headers = {
 };
 
 // =========================================================
+// SUPABASE REALTIME (substitui o Socket.IO)
+// =========================================================
+
+// Publishable key — pública, ok deixar no front (RLS protege os dados).
+const SUPABASE_URL = "https://gnrhxvbyxnixnrppwnul.supabase.co"; // <-- ajuste
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_FzazGW0YE3mAcFO6NlUk6g_e5_pq_Nw";
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+);
+
+// =========================================================
 // ESTADO GLOBAL
 // =========================================================
 
@@ -355,7 +369,7 @@ async function carregarPerfil() {
     const data = await response.json();
 
     entregadorId = data.id;
-    entrarSalaEntregador();
+    iniciarRealtimeEntregador();
 
     document.getElementById("nomeUsuario").innerHTML =
       data.nome || "Entregador";
@@ -1210,89 +1224,94 @@ function passaNoFiltroDataHoje(entrega) {
 }
 
 // =========================================================
-// SOCKET.IO — substitui o polling por setInterval
-// Eventos esperados do backend:
-//   nova_entrega, entrega_aceita, entrega_retirada,
-//   entrega_finalizada, localizacao_atualizada
+// SUPABASE REALTIME — substitui o Socket.IO
+// A tabela `entregas` tem RLS: esse entregador só recebe as
+// linhas onde entregador_id é o dele mesmo (ver token-realtime).
 // =========================================================
 
-function entrarSalaEntregador() {
-  if (!entregadorId) return;
+let realtimeChannel = null;
+let realtimeIniciado = false;
 
-  if (socket.connected) {
-    socket.emit("entrar_entregador", entregadorId);
-
-    console.log("ENTROU NA SALA:", entregadorId);
-  }
+async function obterTokenRealtime() {
+  const response = await fetch(`${API}/api/entregador/token-realtime`, {
+    headers,
+  });
+  const data = await response.json();
+  return data.token || null;
 }
 
-let socket = null;
+async function iniciarRealtimeEntregador() {
+  if (!entregadorId || realtimeIniciado) return;
+  realtimeIniciado = true;
 
-function iniciarSocket() {
-  if (typeof io === "undefined") {
-    console.warn(
-      "Socket.IO não carregado — verifique a tag <script> do socket.io.min.js no HTML.",
-    );
-    return;
+  try {
+    const tokenRealtime = await obterTokenRealtime();
+
+    if (!tokenRealtime) {
+      console.warn("Sem token de realtime — ficando só no polling de 5s.");
+      return;
+    }
+
+    supabaseClient.realtime.setAuth(tokenRealtime);
+
+    realtimeChannel = supabaseClient
+      .channel(`entregador-${entregadorId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "entregas",
+          filter: `entregador_id=eq.${entregadorId}`,
+        },
+        (payload) => {
+          const entrega = payload.new;
+          if (!entrega) return;
+
+          console.log("REALTIME RECEBEU:", entrega.id, entrega.status);
+
+          if (entrega.status === "pendente") {
+            // nova corrida atribuída a esse entregador (ou redistribuída)
+            if (entrega.id) {
+              const existe = ultimaLista.some(
+                (e) => String(e.id) === String(entrega.id),
+              );
+              if (!existe) ultimaLista.push({ ...entrega });
+              ultimoPedidoNotificado = String(entrega.id);
+            }
+
+            mostrarTela("telaInicio");
+            abrirModalEntrega(entrega);
+            return;
+          }
+
+          if (entrega.status === "aceita" || entrega.status === "retirada") {
+            carregarListaEntregas();
+            carregarEntregaAtualInicio();
+            return;
+          }
+
+          if (entrega.status === "finalizada") {
+            carregarListaEntregas();
+            carregarEntregaAtualInicio();
+            carregarFinanceiro();
+            return;
+          }
+
+          if (entrega.status === "cancelada") {
+            toast("Uma entrega foi cancelada pela empresa", "erro");
+            fecharModalEntrega();
+            carregarListaEntregas();
+            carregarEntregaAtualInicio();
+          }
+        },
+      )
+      .subscribe((status) => {
+        console.log("Realtime entregador:", status);
+      });
+  } catch (error) {
+    console.log("Erro ao iniciar realtime:", error);
   }
-
-  socket = io(API || window.location.origin, {
-    auth: { token },
-    transports: ["websocket"],
-  });
-
-  socket.on("connect", () => {
-    console.log("Socket conectado");
-    entrarSalaEntregador();
-  });
-  socket.on("disconnect", () => console.log("Socket desconectado"));
-  socket.on("connect_error", (err) =>
-    console.log("Erro no socket:", err.message),
-  );
-
-  socket.on("nova_entrega", (entrega) => {
-    console.log("SOCKET RECEBEU:", entrega.id);
-    // Atualizar ultimaLista para evitar duplicação quando a aba Entregas for aberta depois
-    if (entrega && entrega.id) {
-      const existe = ultimaLista.some(
-        (e) => String(e.id) === String(entrega.id),
-      );
-      if (!existe) {
-        ultimaLista.push({ ...entrega });
-      }
-    }
-
-    // Marcar como notificada para não reabrir em carregarListaEntregas()
-    if (entrega && entrega.id) {
-      ultimoPedidoNotificado = String(entrega.id);
-    }
-
-    // Mostrar tela inicial e abrir modal
-    mostrarTela("telaInicio");
-    abrirModalEntrega(entrega);
-  });
-
-  socket.on("entrega_aceita", () => {
-    carregarListaEntregas();
-    carregarEntregaAtualInicio();
-  });
-
-  socket.on("entrega_retirada", () => {
-    carregarListaEntregas();
-    carregarEntregaAtualInicio();
-  });
-
-  socket.on("entrega_finalizada", () => {
-    carregarListaEntregas();
-    carregarEntregaAtualInicio();
-    carregarFinanceiro();
-  });
-
-  socket.on("localizacao_atualizada", (dados) => {
-    if (dados?.latitude && dados?.longitude) {
-      atualizarMapa(dados.latitude, dados.longitude);
-    }
-  });
 }
 
 async function verificarNovasEntregasGlobal() {
@@ -1322,4 +1341,5 @@ carregarEntregaAtualInicio();
 carregarFinanceiro();
 
 iniciarGPS();
-iniciarSocket();
+// iniciarRealtimeEntregador() já é chamado dentro de carregarPerfil()
+// assim que o entregadorId é conhecido — não precisa chamar de novo aqui.
