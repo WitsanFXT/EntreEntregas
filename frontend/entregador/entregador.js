@@ -747,70 +747,90 @@ async function carregarEntregaAtualInicio() {
 
     // >>> SUA SUBSTITUIÇÃO COMEÇA AQUI >>>
     container.innerHTML = `
-    <div class="entrega-atual">
+<div class="entrega-atual">
 
-      <div class="entrega-atual-topo">
-          <span class="entrega-atual-status">
-              ${emColeta ? "🟡 Aguardando coleta" : "🟢 Em rota"}
-          </span>
-      </div>
+  <div class="entrega-atual-topo">
+      <span class="entrega-atual-status">
+          ${emColeta ? "🟡 Aguardando coleta" : "🟢 Em rota"}
+      </span>
+  </div>
 
-      <div class="destino-atual">
-        <span class="tipo-destino">${emColeta ? "📍 Coleta" : "🏠 Entrega"}</span>
-        <h3>${nomeDestino}</h3>
-        ${montarBlocoEndereco(enderecoDestino)}
-      </div>
+  <div class="destino-atual">
+    <span class="tipo-destino">
+      ${emColeta ? "📦 Coleta" : "🏠 Entrega"}
+    </span>
 
-      <p class="entrega-atual-valor">
-          💰 R$ ${Number(principal.valor || 0).toFixed(2)}
-      </p>
+    <h3>${nomeDestino}</h3>
 
-      <div class="entrega-atual-botoes">
-        ${
-          principal.status === "aceita"
-            ? `
-              <div class="acoes-principais">
-                <button class="btn-retirar" data-acao="retirar" data-id="${principal.id}">
-                  📦 Retirei pedido
-                </button>
-              </div>
-              <div class="acoes-navegacao">
-                ${
-                  principal.empresas?.latitude && principal.empresas?.longitude
-                    ? `<button class="btn-mapa" data-acao="navegar" data-lat="${
-                        principal.status === "aceita"
-                          ? principal.empresas.latitude
-                          : principal.latitude
-                      }"
+    ${montarBlocoEndereco(enderecoDestino)}
+  </div>
 
-data-lng="${
-                        principal.status === "aceita"
-                          ? principal.empresas.longitude
-                          : principal.longitude
-                      }">🧭 Navegar</button>`
-                    : ""
-                }
-              </div>
-            `
-            : `
-              <div class="acoes-principais">
-                <button class="btn-finalizar" data-acao="finalizar" data-id="${principal.id}">
-                  ✅ Finalizar
-                </button>
-              </div>
-              <div class="acoes-navegacao">
-                ${
-                  principal.empresas?.latitude && principal.empresas?.longitude
-                    ? `<button class="btn-mapa" data-acao="navegar" data-lat="${principal.empresas.latitude}" data-lng="${principal.empresas.longitude}">🧭 Navegar</button>`
-                    : ""
-                }
-              </div>
-            `
-        }
-      </div>
+  <p class="entrega-atual-valor">
+      💰 R$ ${Number(principal.valor || 0).toFixed(2)}
+  </p>
 
-    </div>
-    `;
+  <div class="entrega-atual-botoes">
+
+    ${
+      principal.status === "aceita"
+        ? `
+          <div class="acoes-principais">
+            <button
+              class="btn-retirar"
+              data-acao="retirar"
+              data-id="${principal.id}">
+              📦 Retirei pedido
+            </button>
+          </div>
+
+          <div class="acoes-navegacao">
+            ${
+              principal.empresas?.latitude && principal.empresas?.longitude
+                ? `
+                  <button
+                    class="btn-mapa"
+                    data-acao="navegar"
+                    data-lat="${principal.empresas.latitude}"
+                    data-lng="${principal.empresas.longitude}">
+                    📦 Ir para coleta
+                  </button>
+                `
+                : ""
+            }
+          </div>
+        `
+        : `
+          <div class="acoes-principais">
+            <button
+              class="btn-finalizar"
+              data-acao="finalizar"
+              data-id="${principal.id}">
+              ✅ Finalizar
+            </button>
+          </div>
+
+          <div class="acoes-navegacao">
+            ${
+              principal.latitude && principal.longitude
+                ? `
+                  <button
+                    class="btn-mapa"
+                    data-acao="navegar"
+                    data-lat="${principal.latitude}"
+                    data-lng="${principal.longitude}">
+                    🏠 Ir para entrega
+                  </button>
+                `
+                : ""
+            }
+          </div>
+        `
+    }
+
+  </div>
+
+</div>
+`;
     // <<< SUA SUBSTITUIÇÃO TERMINA AQUI <<<
 
     // Mantém a ligação dos eventos de clique nos novos botões gerados

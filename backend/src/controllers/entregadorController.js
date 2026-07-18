@@ -187,10 +187,13 @@ exports.minhasEntregas = async (req, res) => {
         `
         *,
         empresas (
-            id,
-            nome_fantasia,
-            latitude,
-            longitude
+      id,
+      nome_fantasia,
+      endereco,
+      bairro,
+      cidade,
+      latitude,
+      longitude
         )
     `,
       )

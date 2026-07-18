@@ -34,6 +34,9 @@ app.use("/api/financeiro", financeiroRoutes);
 // entregador) recebe as mudanças via Supabase Realtime.
 iniciarVerificacaoTimeouts();
 
+console.log("SUPABASE KEY PREFIX:");
+console.log(process.env.SUPABASE_KEY?.substring(0, 20));
+
 app.listen(process.env.PORT || 5500, () => {
   console.log(`Servidor rodando na porta ${process.env.PORT || 5500}`);
 });
