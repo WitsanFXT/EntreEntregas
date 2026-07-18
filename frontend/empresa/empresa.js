@@ -616,6 +616,21 @@ socket.on("disconnect", () => {
   document.getElementById("statusConexao").textContent = "Desconectado";
 });
 
+// ================================
+// LOGOUT
+// ================================
+
+document.getElementById("btnLogout").addEventListener("click", () => {
+  const confirmar = confirm("Deseja realmente sair da conta?");
+
+  if (!confirmar) return;
+
+  localStorage.removeItem("token");
+  localStorage.removeItem("usuario");
+
+  window.location.href = "../login/login.html";
+});
+
 // =================================
 // INICIALIZAÇÃO
 // =================================

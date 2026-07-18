@@ -1099,3 +1099,14 @@ button.acao {
     font-size: 0.95rem;
   }
 }
+
+@media (min-width: 900px) {
+  #btnLogout {
+    margin-top: auto;
+    color: #ef4444;
+  }
+
+  #btnLogout:hover {
+    background: rgba(239, 68, 68, 0.12);
+  }
+}
