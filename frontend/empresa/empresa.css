@@ -1573,3 +1573,395 @@ button.acao:disabled {
 .item-bairro:hover {
   background: #f1f1f1;
 }
+
+/* ======================================================
+   TELA CARDÁPIO — personalização, categorias, produtos
+   e prévia de como o cliente final vê a loja
+====================================================== */
+
+.card-subtitulo {
+  margin: -10px 0 18px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.card-header {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cardapio-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cardapio-actions .acao {
+  width: auto;
+  min-height: 40px;
+  padding: 10px 18px;
+}
+
+/* ---------- Personalização da loja (logo + banner) ---------- */
+
+.personalizacao-grid {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.upload-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.upload-preview {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  border: 1.5px dashed var(--border);
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 10px;
+  font-size: 2.2rem;
+}
+
+.upload-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-preview-banner {
+  aspect-ratio: 16 / 5;
+  border-radius: 12px;
+}
+
+.upload-preview-banner span {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 0 12px;
+  text-align: center;
+}
+
+.btn-upload {
+  width: 100%;
+  min-height: 40px;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .personalizacao-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-preview {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+/* ---------- Categorias (chips) ---------- */
+
+.categorias-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 4px 0 22px;
+}
+
+.categoria-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 16px;
+  border-radius: 999px;
+  background: #f4f5f7;
+  border: 1.5px solid var(--border);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.categoria-chip:hover {
+  border-color: var(--brand-primary);
+}
+
+.categoria-chip.ativa {
+  background: linear-gradient(135deg, #ff7a00, #ff5500);
+  border-color: transparent;
+  color: #fff;
+}
+
+.categoria-chip .categoria-chip-excluir {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+  font-size: 0.75rem;
+  line-height: 1;
+  border: none;
+  cursor: pointer;
+}
+
+.categoria-chip.ativa .categoria-chip-excluir {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.categoria-chip .categoria-chip-excluir:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* ---------- Grid de produtos ---------- */
+
+.produtos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.produto-card {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition:
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.produto-card:hover {
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
+}
+
+.produto-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #f4f5f7;
+}
+
+.produto-card-body {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.produto-card h4 {
+  font-size: 0.98rem;
+  margin: 0;
+}
+
+.produto-card small {
+  color: var(--brand-primary);
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.produto-card p {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  margin: 2px 0 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.produto-card strong {
+  font-size: 1.02rem;
+  margin-top: auto;
+}
+
+.produto-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.produto-card-actions button {
+  flex: 1;
+  min-height: 36px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.produto-card-actions button:hover {
+  opacity: 0.85;
+}
+
+.btn-editar {
+  background: #eef1ff;
+  color: #3346d1;
+}
+
+.btn-excluir {
+  background: #fdeceb;
+  color: var(--danger);
+}
+
+/* ---------- Prévia do cardápio (visão do cliente) ---------- */
+
+.preview-cardapio-frame {
+  display: flex;
+  justify-content: center;
+}
+
+.preview-cardapio {
+  width: 100%;
+  max-width: 380px;
+  border-radius: 24px;
+  border: 8px solid #1c1c1e;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: var(--shadow-modal);
+}
+
+.preview-cardapio .empty-state {
+  padding: 40px 20px;
+}
+
+.preview-banner {
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  object-fit: cover;
+  background: linear-gradient(135deg, #ffb570, #ff6b00);
+  display: block;
+}
+
+.preview-loja-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 6px;
+  margin-top: -28px;
+}
+
+.preview-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  border: 3px solid #fff;
+  background: #f4f5f7;
+  object-fit: cover;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.preview-loja-info h4 {
+  font-size: 1rem;
+}
+
+.preview-loja-info span {
+  font-size: 0.75rem;
+  color: var(--success);
+  font-weight: 700;
+}
+
+.preview-categorias {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 16px;
+}
+
+.preview-categoria-pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #f4f5f7;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.preview-produtos {
+  padding: 4px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preview-produto-item {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.preview-produto-item:last-child {
+  border-bottom: none;
+}
+
+.preview-produto-item img {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #f4f5f7;
+}
+
+.preview-produto-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.preview-produto-info h5 {
+  font-size: 0.88rem;
+  margin-bottom: 2px;
+}
+
+.preview-produto-info p {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.preview-produto-info strong {
+  font-size: 0.85rem;
+  color: var(--brand-primary);
+}
+
+@media (max-width: 640px) {
+  .cardapio-actions {
+    width: 100%;
+  }
+
+  .cardapio-actions .acao {
+    flex: 1;
+  }
+}

@@ -52,7 +52,7 @@
             >
           </button>
 
-          <button class="menu-item em-breve" type="button" title="Em breve">
+          <button id="navCardapio" class="menu-item" data-tela="cardapio">
             🍔 Cardápio
           </button>
 
@@ -329,6 +329,226 @@
             </div>
           </section>
         </section>
+
+        <!-- ===================================================
+             TELA CARDAPÍO
+             Área onde o parceiro monta o cardápio que será
+             exibido para o cliente final na loja.
+        ==================================================== -->
+        <section id="telaCardapio" class="tela-app">
+          <div class="page-header">
+            <h2>🍔 Meu Cardápio</h2>
+          </div>
+
+          <!-- PERSONALIZAÇÃO DA LOJA -->
+          <section class="card">
+            <div class="card-header">
+              <h3>🎨 Personalização da Loja</h3>
+            </div>
+            <p class="card-subtitulo">
+              Essas imagens aparecem no topo do cardápio exibido para o cliente.
+            </p>
+
+            <div class="personalizacao-grid">
+              <div class="upload-box upload-logo">
+                <label class="field-label" for="logoLoja">Logo da loja</label>
+                <div class="upload-preview" id="previewLogo">
+                  <img id="previewLogoImg" alt="Logo da loja" hidden />
+                  <span id="previewLogoPlaceholder">🏬</span>
+                </div>
+                <label for="logoLoja" class="acao btn-secondary btn-upload">
+                  Escolher logo
+                </label>
+                <input type="file" id="logoLoja" accept="image/*" hidden />
+              </div>
+
+              <div class="upload-box upload-banner">
+                <label class="field-label" for="bannerLoja"
+                  >Banner do cardápio</label
+                >
+                <div
+                  class="upload-preview upload-preview-banner"
+                  id="previewBanner"
+                >
+                  <img id="previewBannerImg" alt="Banner da loja" hidden />
+                  <span id="previewBannerPlaceholder"
+                    >Nenhum banner selecionado</span
+                  >
+                </div>
+                <label for="bannerLoja" class="acao btn-secondary btn-upload">
+                  Escolher banner
+                </label>
+                <input type="file" id="bannerLoja" accept="image/*" hidden />
+              </div>
+            </div>
+
+            <button
+              id="btnSalvarPersonalizacao"
+              type="button"
+              class="acao btn-primary"
+            >
+              Salvar personalização
+            </button>
+          </section>
+
+          <!-- CATEGORIAS E PRODUTOS -->
+          <section class="card">
+            <div class="card-header">
+              <h3>📋 Categorias e Produtos</h3>
+              <div class="cardapio-actions">
+                <button
+                  id="btnNovaCategoria"
+                  type="button"
+                  class="acao btn-secondary"
+                >
+                  + Nova Categoria
+                </button>
+
+                <button
+                  id="btnNovoProduto"
+                  type="button"
+                  class="acao btn-primary"
+                >
+                  + Novo Produto
+                </button>
+              </div>
+            </div>
+
+            <div id="listaCategorias" class="categorias-lista">
+              <p class="empty-state">Carregando categorias...</p>
+            </div>
+
+            <div id="listaProdutos" class="produtos-grid">
+              <p class="empty-state">Carregando produtos...</p>
+            </div>
+          </section>
+
+          <!-- PRÉVIA DO CARDÁPIO (o que o cliente final vai ver) -->
+          <section class="card">
+            <div class="card-header">
+              <h3>👀 Prévia do cardápio do cliente</h3>
+            </div>
+            <p class="card-subtitulo">
+              É assim que sua loja vai aparecer para quem for fazer o pedido.
+            </p>
+
+            <div class="preview-cardapio-frame">
+              <div class="preview-cardapio" id="previewCardapio">
+                <p class="empty-state">
+                  Adicione categorias e produtos para ver a prévia.
+                </p>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <!-- ================= MODAL: CATEGORIA ================= -->
+        <div id="overlayCategoria" class="overlay-modal"></div>
+
+        <div id="modalCategoria" class="modal">
+          <div class="modal-content">
+            <h2 id="modalCategoriaTitulo">🏷️ Nova categoria</h2>
+            <p>Organize seus produtos em categorias, ex: Lanches, Bebidas.</p>
+
+            <label class="field-label" for="categoria_nome"
+              >Nome da categoria</label
+            >
+            <input id="categoria_nome" type="text" placeholder="Ex: Lanches" />
+
+            <div class="modal-actions">
+              <button
+                id="btnSalvarCategoria"
+                type="button"
+                class="acao btn-primary"
+              >
+                Salvar categoria
+              </button>
+              <button
+                id="btnCancelarCategoria"
+                type="button"
+                class="acao btn-secondary"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= MODAL: PRODUTO ================= -->
+        <div id="overlayProduto" class="overlay-modal"></div>
+
+        <div id="modalProduto" class="modal">
+          <div class="modal-content">
+            <h2 id="modalProdutoTitulo">🍟 Novo produto</h2>
+            <p>Preencha os dados do produto que vai aparecer no cardápio.</p>
+
+            <label class="field-label" for="produto_nome"
+              >Nome do produto</label
+            >
+            <input
+              id="produto_nome"
+              type="text"
+              placeholder="Ex: X-Burgão Especial"
+            />
+
+            <label class="field-label" for="produto_descricao">Descrição</label>
+            <textarea
+              id="produto_descricao"
+              placeholder="Ex: Pão brioche, blend 180g, queijo cheddar e molho da casa"
+            ></textarea>
+
+            <div class="field-row">
+              <div>
+                <label class="field-label" for="produto_preco"
+                  >Preço (R$)</label
+                >
+                <input
+                  id="produto_preco"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0,00"
+                />
+              </div>
+              <div>
+                <label class="field-label" for="produto_categoria"
+                  >Categoria</label
+                >
+                <select id="produto_categoria">
+                  <option value="" disabled selected>
+                    Selecione uma categoria
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <label class="field-label" for="produto_imagem_url"
+              >URL da imagem</label
+            >
+            <input
+              id="produto_imagem_url"
+              type="text"
+              placeholder="https://exemplo.com/imagem-do-produto.jpg"
+            />
+
+            <div class="modal-actions">
+              <button
+                id="btnSalvarProduto"
+                type="button"
+                class="acao btn-primary"
+              >
+                Salvar produto
+              </button>
+              <button
+                id="btnCancelarProduto"
+                type="button"
+                class="acao btn-secondary"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
 
         <!-- ===================================================
              TELA CONFIGURAÇÕES

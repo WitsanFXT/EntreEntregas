@@ -95,6 +95,10 @@ const TITULOS_TELA = {
   dashboard: { titulo: "Painel Geral", crumb: "Dashboard" },
   pedidos: { titulo: "Pedidos", crumb: "Pedidos" },
   entregas: { titulo: "Entregas", crumb: "Entregas" },
+  cardapio: {
+    titulo: "Cardápio",
+    crumb: "Cardápio",
+  },
   configuracoes: { titulo: "Configurações", crumb: "Configurações" },
 };
 
@@ -1090,6 +1094,559 @@ async function carregarDashboardKpis() {
 }
 
 // =================================
+// CARDAPIO
+// =================================
+// Tudo que acontece aqui alimenta o cardápio que o cliente
+// final vê na loja (categorias, produtos, logo e banner).
+
+let categoriasCache = [];
+let produtosCache = [];
+let categoriaSelecionadaId = null; // null = mostra todos os produtos
+let produtoEmEdicaoId = null; // null = criando produto novo
+let categoriaEmEdicaoId = null; // null = criando categoria nova
+
+const PLACEHOLDER_IMG =
+  "data:image/svg+xml;charset=UTF-8," +
+  encodeURIComponent(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="300" height="225" viewBox="0 0 300 225">
+      <rect width="300" height="225" fill="#f0f1f4"/>
+      <g fill="#c3c5cf">
+        <circle cx="150" cy="95" r="28"/>
+        <path d="M60 175 Q150 100 240 175 Z"/>
+      </g>
+      <text x="150" y="205" font-family="Arial, sans-serif" font-size="13" fill="#9799a6" text-anchor="middle">Sem imagem</text>
+    </svg>
+  `);
+
+// ---------- Categorias ----------
+
+async function carregarCategorias() {
+  const lista = document.getElementById("listaCategorias");
+
+  try {
+    const response = await fetch(`${API}/api/cardapio/categorias`, {
+      headers,
+    });
+
+    const categorias = await response.json();
+
+    if (!response.ok) {
+      throw new Error(categorias?.message || "Erro ao carregar categorias");
+    }
+
+    categoriasCache = Array.isArray(categorias) ? categorias : [];
+
+    // se a categoria selecionada foi excluída em outro lugar, limpa o filtro
+    if (
+      categoriaSelecionadaId &&
+      !categoriasCache.some((cat) => cat.id === categoriaSelecionadaId)
+    ) {
+      categoriaSelecionadaId = null;
+    }
+
+    renderizarCategorias();
+    atualizarPreviewCardapio();
+  } catch (error) {
+    console.error(error);
+    lista.innerHTML = `<p class="empty-state">Não foi possível carregar as categorias.</p>`;
+    mostrarToast("Erro ao carregar categorias", "erro");
+  }
+}
+
+function renderizarCategorias() {
+  const lista = document.getElementById("listaCategorias");
+
+  if (categoriasCache.length === 0) {
+    lista.innerHTML = `<p class="empty-state">Nenhuma categoria ainda. Crie a primeira categoria para começar.</p>`;
+    return;
+  }
+
+  lista.innerHTML = "";
+
+  // chip "Todos" pra limpar o filtro de produtos
+  const chipTodos = document.createElement("button");
+  chipTodos.type = "button";
+  chipTodos.className = `categoria-chip${categoriaSelecionadaId === null ? " ativa" : ""}`;
+  chipTodos.textContent = "Todos";
+  chipTodos.onclick = () => {
+    categoriaSelecionadaId = null;
+    renderizarCategorias();
+    renderizarProdutos();
+  };
+  lista.appendChild(chipTodos);
+
+  categoriasCache.forEach((cat) => {
+    const chip = document.createElement("div");
+    chip.className = `categoria-chip${categoriaSelecionadaId === cat.id ? " ativa" : ""}`;
+
+    const nomeSpan = document.createElement("span");
+    nomeSpan.textContent = cat.nome;
+    nomeSpan.onclick = () => {
+      categoriaSelecionadaId = cat.id;
+      renderizarCategorias();
+      renderizarProdutos();
+    };
+
+    const btnExcluir = document.createElement("button");
+    btnExcluir.type = "button";
+    btnExcluir.className = "categoria-chip-excluir";
+    btnExcluir.title = "Excluir categoria";
+    btnExcluir.textContent = "✕";
+    btnExcluir.onclick = (evento) => {
+      evento.stopPropagation();
+      excluirCategoria(cat.id);
+    };
+
+    chip.appendChild(nomeSpan);
+    chip.appendChild(btnExcluir);
+    lista.appendChild(chip);
+  });
+}
+
+function abrirModalCategoria() {
+  categoriaEmEdicaoId = null;
+  document.getElementById("modalCategoriaTitulo").textContent =
+    "🏷️ Nova categoria";
+  document.getElementById("categoria_nome").value = "";
+  document.getElementById("overlayCategoria").classList.add("ativo");
+  document.getElementById("modalCategoria").classList.add("ativo");
+}
+
+function fecharModalCategoria() {
+  document.getElementById("overlayCategoria").classList.remove("ativo");
+  document.getElementById("modalCategoria").classList.remove("ativo");
+}
+
+document.getElementById("btnNovaCategoria").onclick = abrirModalCategoria;
+document.getElementById("btnCancelarCategoria").onclick = fecharModalCategoria;
+document.getElementById("overlayCategoria").onclick = fecharModalCategoria;
+
+document.getElementById("btnSalvarCategoria").onclick = async () => {
+  const nome = document.getElementById("categoria_nome").value.trim();
+
+  if (!nome) {
+    mostrarToast("Digite o nome da categoria", "erro");
+    return;
+  }
+
+  const botao = document.getElementById("btnSalvarCategoria");
+  botao.disabled = true;
+
+  try {
+    const editando = Boolean(categoriaEmEdicaoId);
+    const url = editando
+      ? `${API}/api/cardapio/categorias/${categoriaEmEdicaoId}`
+      : `${API}/api/cardapio/categorias`;
+
+    const response = await fetch(url, {
+      method: editando ? "PUT" : "POST",
+      headers,
+      body: JSON.stringify({ nome }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.message || "Erro ao salvar categoria");
+    }
+
+    mostrarToast(
+      editando ? "Categoria atualizada!" : "Categoria criada!",
+      "sucesso",
+    );
+
+    fecharModalCategoria();
+    await carregarCategorias();
+  } catch (error) {
+    console.error(error);
+    mostrarToast(error.message || "Erro ao salvar categoria", "erro");
+  } finally {
+    botao.disabled = false;
+  }
+};
+
+async function excluirCategoria(id) {
+  if (
+    !confirm(
+      "Excluir esta categoria? Os produtos vinculados a ela deixarão de estar categorizados.",
+    )
+  ) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API}/api/cardapio/categorias/${id}`, {
+      method: "DELETE",
+      headers,
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data?.message || "Erro ao excluir categoria");
+    }
+
+    mostrarToast("Categoria excluída", "sucesso");
+
+    if (categoriaSelecionadaId === id) categoriaSelecionadaId = null;
+
+    await carregarCategorias();
+    await carregarProdutos();
+  } catch (error) {
+    console.error(error);
+    mostrarToast(error.message || "Erro ao excluir categoria", "erro");
+  }
+}
+
+function preencherSelectCategorias(categoriaSelecionada = "") {
+  const select = document.getElementById("produto_categoria");
+  const opcaoPadrao =
+    '<option value="" disabled>Selecione uma categoria</option>';
+
+  select.innerHTML =
+    opcaoPadrao +
+    categoriasCache
+      .map((cat) => `<option value="${cat.id}">${cat.nome}</option>`)
+      .join("");
+
+  select.value = categoriaSelecionada || "";
+  if (!select.value) select.selectedIndex = 0;
+}
+
+// ---------- Produtos ----------
+
+async function carregarProdutos() {
+  const lista = document.getElementById("listaProdutos");
+
+  try {
+    const response = await fetch(`${API}/api/cardapio/produtos`, {
+      headers,
+    });
+
+    const produtos = await response.json();
+
+    if (!response.ok) {
+      throw new Error(produtos?.message || "Erro ao carregar produtos");
+    }
+
+    produtosCache = Array.isArray(produtos) ? produtos : [];
+
+    renderizarProdutos();
+    atualizarPreviewCardapio();
+  } catch (error) {
+    console.error(error);
+    lista.innerHTML = `<p class="empty-state">Não foi possível carregar os produtos.</p>`;
+    mostrarToast("Erro ao carregar produtos", "erro");
+  }
+}
+
+function renderizarProdutos() {
+  const lista = document.getElementById("listaProdutos");
+
+  const produtosFiltrados = categoriaSelecionadaId
+    ? produtosCache.filter(
+        (produto) =>
+          produto.categoria_id === categoriaSelecionadaId ||
+          produto.categorias?.id === categoriaSelecionadaId,
+      )
+    : produtosCache;
+
+  if (produtosFiltrados.length === 0) {
+    lista.innerHTML = `<p class="empty-state">Nenhum produto aqui ainda. Clique em "Novo Produto" para adicionar.</p>`;
+    return;
+  }
+
+  lista.innerHTML = "";
+
+  produtosFiltrados.forEach((produto) => {
+    const card = document.createElement("div");
+    card.className = "produto-card";
+    card.innerHTML = `
+      <img
+        src="${produto.imagem_url || PLACEHOLDER_IMG}"
+        alt="${produto.nome}"
+        onerror="this.src='${PLACEHOLDER_IMG}'"
+      >
+
+      <div class="produto-card-body">
+        <small>${produto.categorias?.nome || "Sem categoria"}</small>
+        <h4>${produto.nome}</h4>
+        <p>${produto.descricao || ""}</p>
+        <strong>R$ ${Number(produto.preco || 0).toFixed(2)}</strong>
+
+        <div class="produto-card-actions">
+          <button class="btn-editar" type="button">Editar</button>
+          <button class="btn-excluir" type="button">Excluir</button>
+        </div>
+      </div>
+    `;
+
+    card
+      .querySelector(".btn-editar")
+      .addEventListener("click", () => editarProduto(produto.id));
+    card
+      .querySelector(".btn-excluir")
+      .addEventListener("click", () => excluirProduto(produto.id));
+
+    lista.appendChild(card);
+  });
+}
+
+function abrirModalProduto() {
+  produtoEmEdicaoId = null;
+  document.getElementById("modalProdutoTitulo").textContent = "🍟 Novo produto";
+  document.getElementById("produto_nome").value = "";
+  document.getElementById("produto_descricao").value = "";
+  document.getElementById("produto_preco").value = "";
+  document.getElementById("produto_imagem_url").value = "";
+  preencherSelectCategorias();
+
+  document.getElementById("overlayProduto").classList.add("ativo");
+  document.getElementById("modalProduto").classList.add("ativo");
+}
+
+function fecharModalProduto() {
+  document.getElementById("overlayProduto").classList.remove("ativo");
+  document.getElementById("modalProduto").classList.remove("ativo");
+}
+
+document.getElementById("btnNovoProduto").onclick = abrirModalProduto;
+document.getElementById("btnCancelarProduto").onclick = fecharModalProduto;
+document.getElementById("overlayProduto").onclick = fecharModalProduto;
+
+document.getElementById("btnSalvarProduto").onclick = async () => {
+  const body = {
+    nome: document.getElementById("produto_nome").value.trim(),
+    descricao: document.getElementById("produto_descricao").value.trim(),
+    preco: Number(document.getElementById("produto_preco").value),
+    categoria_id: document.getElementById("produto_categoria").value,
+    imagem_url: document.getElementById("produto_imagem_url").value.trim(),
+  };
+
+  if (!body.nome) {
+    mostrarToast("Digite o nome do produto", "erro");
+    return;
+  }
+  if (!body.categoria_id) {
+    mostrarToast("Selecione uma categoria", "erro");
+    return;
+  }
+  if (!body.preco || body.preco <= 0) {
+    mostrarToast("Informe um preço válido", "erro");
+    return;
+  }
+
+  const botao = document.getElementById("btnSalvarProduto");
+  botao.disabled = true;
+
+  try {
+    const editando = Boolean(produtoEmEdicaoId);
+    const url = editando
+      ? `${API}/api/cardapio/produtos/${produtoEmEdicaoId}`
+      : `${API}/api/cardapio/produtos`;
+
+    const response = await fetch(url, {
+      method: editando ? "PUT" : "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.message || "Erro ao salvar produto");
+    }
+
+    mostrarToast(
+      editando ? "Produto atualizado!" : "Produto criado!",
+      "sucesso",
+    );
+
+    fecharModalProduto();
+    await carregarProdutos();
+  } catch (error) {
+    console.error(error);
+    mostrarToast(error.message || "Erro ao salvar produto", "erro");
+  } finally {
+    botao.disabled = false;
+  }
+};
+
+function editarProduto(id) {
+  const produto = produtosCache.find((item) => item.id === id);
+  if (!produto) {
+    mostrarToast("Produto não encontrado", "erro");
+    return;
+  }
+
+  produtoEmEdicaoId = id;
+  document.getElementById("modalProdutoTitulo").textContent =
+    "🍟 Editar produto";
+  document.getElementById("produto_nome").value = produto.nome || "";
+  document.getElementById("produto_descricao").value = produto.descricao || "";
+  document.getElementById("produto_preco").value = produto.preco || "";
+  document.getElementById("produto_imagem_url").value =
+    produto.imagem_url || "";
+
+  preencherSelectCategorias(produto.categoria_id || produto.categorias?.id);
+
+  document.getElementById("overlayProduto").classList.add("ativo");
+  document.getElementById("modalProduto").classList.add("ativo");
+}
+
+async function excluirProduto(id) {
+  if (!confirm("Excluir produto?")) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API}/api/cardapio/produtos/${id}`, {
+      method: "DELETE",
+      headers,
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data?.message || "Erro ao excluir produto");
+    }
+
+    mostrarToast("Produto excluído", "sucesso");
+    await carregarProdutos();
+  } catch (error) {
+    console.error(error);
+    mostrarToast(error.message || "Erro ao excluir produto", "erro");
+  }
+}
+
+// ---------- Personalização da loja (logo e banner) ----------
+
+let logoLojaDataUrl = "";
+let bannerLojaDataUrl = "";
+
+function lerImagemComoDataUrl(arquivo) {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader();
+    leitor.onload = () => resolve(leitor.result);
+    leitor.onerror = reject;
+    leitor.readAsDataURL(arquivo);
+  });
+}
+
+document
+  .getElementById("logoLoja")
+  .addEventListener("change", async (evento) => {
+    const arquivo = evento.target.files?.[0];
+    if (!arquivo) return;
+
+    logoLojaDataUrl = await lerImagemComoDataUrl(arquivo);
+
+    const img = document.getElementById("previewLogoImg");
+    img.src = logoLojaDataUrl;
+    img.hidden = false;
+    document.getElementById("previewLogoPlaceholder").hidden = true;
+
+    atualizarPreviewCardapio();
+  });
+
+document
+  .getElementById("bannerLoja")
+  .addEventListener("change", async (evento) => {
+    const arquivo = evento.target.files?.[0];
+    if (!arquivo) return;
+
+    bannerLojaDataUrl = await lerImagemComoDataUrl(arquivo);
+
+    const img = document.getElementById("previewBannerImg");
+    img.src = bannerLojaDataUrl;
+    img.hidden = false;
+    document.getElementById("previewBannerPlaceholder").hidden = true;
+
+    atualizarPreviewCardapio();
+  });
+
+document.getElementById("btnSalvarPersonalizacao").onclick = async () => {
+  const botao = document.getElementById("btnSalvarPersonalizacao");
+  botao.disabled = true;
+  botao.textContent = "Salvando...";
+
+  try {
+    const response = await fetch(`${API}/api/empresa/personalizacao`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        logo_url: logoLojaDataUrl || undefined,
+        banner_url: bannerLojaDataUrl || undefined,
+      }),
+    });
+
+    if (!response.ok) throw new Error("Endpoint indisponível");
+
+    mostrarToast("Personalização salva!", "sucesso");
+  } catch (error) {
+    console.error(error);
+    // A prévia já reflete as imagens escolhidas mesmo sem backend pronto.
+    mostrarToast(
+      "Prévia atualizada. Conecte o endpoint de personalização para salvar de forma permanente.",
+      "erro",
+    );
+  } finally {
+    botao.disabled = false;
+    botao.textContent = "Salvar personalização";
+  }
+};
+
+// ---------- Prévia do cardápio (visão do cliente final) ----------
+
+function atualizarPreviewCardapio() {
+  const container = document.getElementById("previewCardapio");
+  if (!container) return;
+
+  if (categoriasCache.length === 0 && produtosCache.length === 0) {
+    container.innerHTML = `<p class="empty-state">Adicione categorias e produtos para ver a prévia.</p>`;
+    return;
+  }
+
+  const nomeLoja = empresaAtual?.nome_fantasia || "Sua loja";
+
+  const categoriasHtml = categoriasCache
+    .map((cat) => `<span class="preview-categoria-pill">${cat.nome}</span>`)
+    .join("");
+
+  const produtosHtml = produtosCache
+    .map(
+      (produto) => `
+        <div class="preview-produto-item">
+          <img
+            src="${produto.imagem_url || PLACEHOLDER_IMG}"
+            alt="${produto.nome}"
+            onerror="this.src='${PLACEHOLDER_IMG}'"
+          >
+          <div class="preview-produto-info">
+            <h5>${produto.nome}</h5>
+            <p>${produto.descricao || ""}</p>
+            <strong>R$ ${Number(produto.preco || 0).toFixed(2)}</strong>
+          </div>
+        </div>
+      `,
+    )
+    .join("");
+
+  container.innerHTML = `
+    <img class="preview-banner" src="${bannerLojaDataUrl || ""}" alt="Banner da loja" ${bannerLojaDataUrl ? "" : "style='display:flex'"}>
+    <div class="preview-loja-info">
+      <img class="preview-logo" src="${logoLojaDataUrl || PLACEHOLDER_IMG}" alt="Logo">
+      <div>
+        <h4>${nomeLoja}</h4>
+        <span>🟢 Aberto agora</span>
+      </div>
+    </div>
+    <div class="preview-categorias">${categoriasHtml}</div>
+    <div class="preview-produtos">
+      ${produtosHtml || `<p class="empty-state">Nenhum produto cadastrado ainda.</p>`}
+    </div>
+  `;
+}
+
+// =================================
 // CONFIGURAÇÕES
 // =================================
 
@@ -1272,14 +1829,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 (async () => {
   await conectarEmpresa();
+
   await Promise.all([
     carregarEntregas(),
     carregarPedidos(),
     carregarDashboardKpis(),
+    carregarCategorias(),
+    carregarProdutos(),
+    carregarBairros(),
   ]);
-  await iniciarRealtime();
-})();
 
-(async () => {
-  await carregarBairros();
+  await iniciarRealtime();
 })();
