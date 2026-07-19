@@ -219,12 +219,12 @@ exports.register = async (req, res) => {
 // ======================================
 
 exports.login = async (req, res) => {
-  try {
-    const {
-      email,
+  console.log("=== LOGIN INICIADO ===");
 
-      senha,
-    } = req.body;
+  try {
+    const { email, senha } = req.body;
+
+    console.log("EMAIL RECEBIDO:", email);
 
     const { data: usuario, error } = await supabase
       .from("usuarios")
@@ -232,11 +232,14 @@ exports.login = async (req, res) => {
       .eq("email", email)
       .maybeSingle();
 
-    if (error) {
-      console.log("ERRO SUPABASE:", error);
+    console.log("SUPABASE RETORNO:", {
+      usuarioExiste: !!usuario,
+      error,
+    });
 
+    if (error) {
       return res.status(500).json({
-        message: "Erro no banco.",
+        message: error.message,
       });
     }
 
@@ -246,11 +249,11 @@ exports.login = async (req, res) => {
       });
     }
 
-    const senhaValida = await bcrypt.compare(
-      senha,
+    console.log("USUARIO ENCONTRADO:", usuario.id);
 
-      usuario.senha_hash,
-    );
+    const senhaValida = await bcrypt.compare(senha, usuario.senha_hash);
+
+    console.log("SENHA VALIDA:", senhaValida);
 
     if (!senhaValida) {
       return res.status(401).json({
@@ -258,10 +261,11 @@ exports.login = async (req, res) => {
       });
     }
 
+    console.log("JWT SECRET EXISTE:", !!process.env.JWT_SECRET);
+
     const token = jwt.sign(
       {
         id: usuario.id,
-
         tipo: usuario.tipo,
       },
 
@@ -277,19 +281,16 @@ exports.login = async (req, res) => {
 
       usuario: {
         id: usuario.id,
-
         nome: usuario.nome,
-
         email: usuario.email,
-
         tipo: usuario.tipo,
       },
     });
   } catch (error) {
-    console.log(error);
+    console.log("ERRO LOGIN COMPLETO:", error);
 
     return res.status(500).json({
-      message: "Erro interno.",
+      message: error.message,
     });
   }
 };
