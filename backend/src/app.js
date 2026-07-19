@@ -11,7 +11,7 @@ const empresaRoutes = require("./routes/empresaRoutes");
 const entregadorRoutes = require("./routes/entregadorRoutes");
 const entregasRoutes = require("./routes/entregasRoutes");
 const financeiroRoutes = require("./routes/financeiroRoutes");
-const pedidosRoutes = require("./routes/Pedidosroutes");
+const pedidosRoutes = require("./routes/pedidosRoutes");
 
 const app = express();
 
