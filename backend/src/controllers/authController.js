@@ -218,24 +218,21 @@ exports.register = async (req, res) => {
 // LOGIN
 // ======================================
 
+// ======================================
+// LOGIN
+// ======================================
+
 exports.login = async (req, res) => {
   console.log("=== LOGIN INICIADO ===");
 
   try {
     const { email, senha } = req.body;
 
-    console.log("EMAIL RECEBIDO:", email);
-
     const { data: usuario, error } = await supabase
       .from("usuarios")
       .select("*")
       .eq("email", email)
       .maybeSingle();
-
-    console.log("SUPABASE RETORNO:", {
-      usuarioExiste: !!usuario,
-      error,
-    });
 
     if (error) {
       return res.status(500).json({
@@ -249,11 +246,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    console.log("USUARIO ENCONTRADO:", usuario.id);
-
     const senhaValida = await bcrypt.compare(senha, usuario.senha_hash);
-
-    console.log("SENHA VALIDA:", senhaValida);
 
     if (!senhaValida) {
       return res.status(401).json({
@@ -261,16 +254,45 @@ exports.login = async (req, res) => {
       });
     }
 
-    console.log("JWT SECRET EXISTE:", !!process.env.JWT_SECRET);
+    let empresa_id = null;
+    let entregador_id = null;
+
+    // ==========================
+    // EMPRESA
+    // ==========================
+
+    if (usuario.tipo === "empresa") {
+      const { data: empresa } = await supabase
+        .from("empresas")
+        .select("id")
+        .eq("usuario_id", usuario.id)
+        .single();
+
+      empresa_id = empresa?.id || null;
+    }
+
+    // ==========================
+    // ENTREGADOR
+    // ==========================
+
+    if (usuario.tipo === "entregador") {
+      const { data: entregador } = await supabase
+        .from("entregadores")
+        .select("id")
+        .eq("usuario_id", usuario.id)
+        .single();
+
+      entregador_id = entregador?.id || null;
+    }
 
     const token = jwt.sign(
       {
         id: usuario.id,
         tipo: usuario.tipo,
+        empresa_id,
+        entregador_id,
       },
-
       process.env.JWT_SECRET,
-
       {
         expiresIn: "7d",
       },
@@ -284,6 +306,8 @@ exports.login = async (req, res) => {
         nome: usuario.nome,
         email: usuario.email,
         tipo: usuario.tipo,
+        empresa_id,
+        entregador_id,
       },
     });
   } catch (error) {

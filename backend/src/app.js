@@ -13,6 +13,7 @@ const entregasRoutes = require("./routes/entregasRoutes");
 const financeiroRoutes = require("./routes/financeiroRoutes");
 const pedidosRoutes = require("./routes/pedidosRoutes");
 const tabelaPrecosRoutes = require("./routes/tabelaPrecosRoutes");
+const cardapioRoutes = require("./routes/cardapioRoutes");
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use("/api/entregas", entregasRoutes);
 app.use("/api/financeiro", financeiroRoutes);
 app.use("/api/empresa/pedidos", pedidosRoutes);
 app.use("/api/tabela-precos", tabelaPrecosRoutes);
+app.use("/api/cardapio", cardapioRoutes);
 
 // Job de expiração/redistribuição de entregas. Não depende mais de
 // socket nenhum — só lê/grava no banco, e quem escuta (empresa e
