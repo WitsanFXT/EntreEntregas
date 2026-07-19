@@ -100,11 +100,22 @@ exports.criarPedido = async (req, res) => {
       .from("pedidos")
       .insert({
         empresa_id: empresa.id,
-        cliente_nome: cliente_nome.trim(),
-        cliente_telefone: cliente_telefone?.trim() || null,
-        itens: itens.trim(),
-        valor_total: Number(valor_total) || 0,
-        origem: origem || "manual",
+
+        cliente_nome,
+        cliente_telefone,
+
+        itens,
+        valor_total,
+
+        origem,
+
+        endereco,
+        bairro,
+        cidade,
+
+        latitude,
+        longitude,
+
         status: "aguardando",
       })
       .select()

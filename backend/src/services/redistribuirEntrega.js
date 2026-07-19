@@ -32,10 +32,12 @@ async function redistribuirEntrega(entregaId) {
 
     if (!entregadores || entregadores.length === 0) {
       console.log("Nenhum entregador online");
-
       await supabase
         .from("entregas")
-        .update({ entregador_id: null })
+        .update({
+          entregador_id: null,
+          status: "sem_entregador",
+        })
         .eq("id", entregaId);
 
       return null;

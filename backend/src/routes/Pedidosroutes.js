@@ -4,7 +4,7 @@ const router = express.Router();
 
 const auth = require("../middleware/auth");
 const permissao = require("../middleware/permissao");
-const pedidosController = require("../controllers/pedidosController");
+const pedidosController = require("../controllers/PedidosController");
 
 router.post("/", auth, permissao("empresa"), pedidosController.criarPedido);
 

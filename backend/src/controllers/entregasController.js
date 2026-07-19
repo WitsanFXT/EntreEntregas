@@ -143,7 +143,17 @@ exports.listarEntregasEmpresa = async (req, res) => {
 
       .from("entregas")
 
-      .select("*, entregadores(nome)")
+      .select(
+        `
+ *,
+ entregadores(
+    *,
+    usuarios(
+       nome
+    )
+ )
+`,
+      )
 
       .eq("empresa_id", empresa.id)
 

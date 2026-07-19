@@ -8,10 +8,9 @@ const calcularDistancia = require("./distanciaService");
 
 async function distribuirEntrega(entregaId) {
   try {
-    // buscar entrega
+    // BUSCAR ENTREGA
 
     const { data: entrega, error } = await supabase
-
       .from("entregas")
       .select("*")
       .eq("id", entregaId)
@@ -20,36 +19,42 @@ async function distribuirEntrega(entregaId) {
     if (error || !entrega) {
       console.log("Entrega não encontrada");
 
-      return;
+      return null;
     }
 
-    // buscar entregadores online
+    // BUSCAR ENTREGADORES ONLINE
 
-    const { data: entregadores } = await supabase
-
+    const { data: entregadores, error: erroEntregadores } = await supabase
       .from("entregadores")
-
       .select("*")
-
       .eq("online", true);
 
-    if (!entregadores || entregadores.length === 0) {
+    if (erroEntregadores || !entregadores || entregadores.length === 0) {
       console.log("Nenhum entregador online");
 
-      return;
+      await supabase
+        .from("entregas")
+        .update({
+          status: "sem_entregador",
+
+          entregador_id: null,
+        })
+        .eq("id", entregaId);
+
+      return null;
     }
 
-    // calcular distancia
+    // CALCULAR DISTÂNCIA
 
     const candidatos = entregadores.map((entregador) => {
       const distancia = calcularDistancia(
-        entrega.latitude,
+        Number(entrega.latitude),
 
-        entrega.longitude,
+        Number(entrega.longitude),
 
-        entregador.latitude,
+        Number(entregador.latitude),
 
-        entregador.longitude,
+        Number(entregador.longitude),
       );
 
       return {
@@ -59,39 +64,43 @@ async function distribuirEntrega(entregaId) {
       };
     });
 
-    // ordenar pelo mais perto
+    // ORDENAR MAIS PRÓXIMO
 
     candidatos.sort((a, b) => a.distancia - b.distancia);
 
     const entregadorEscolhido = candidatos[0];
 
-    // atualizar entrega
+    console.log(
+      "Escolhido:",
+      entregadorEscolhido.id,
+      "distância:",
+      entregadorEscolhido.distancia,
+    );
 
-    await supabase
+    // SALVAR NA ENTREGA
 
+    const { error: updateError } = await supabase
       .from("entregas")
-
       .update({
         entregador_id: entregadorEscolhido.id,
 
-        atribuido_em: new Date().toISOString(),
+        status: "pendente",
+
+        atribuido_em: new Date(),
       })
+      .eq("id", entregaId);
 
-      .eq(
-        "id",
+    if (updateError) {
+      console.log(updateError);
 
-        entregaId,
-      );
-
-    console.log(
-      "Entrega enviada para:",
-
-      entregadorEscolhido.id,
-    );
+      return null;
+    }
 
     return entregadorEscolhido;
   } catch (error) {
     console.log(error);
+
+    return null;
   }
 }
 

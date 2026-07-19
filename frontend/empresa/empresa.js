@@ -134,6 +134,65 @@ document
 // GEOLOCALIZAÇÃO (reutilizada no form de entrega e no de configurações)
 // =================================
 
+async function buscarEnderecoPedido() {
+  const endereco = document.getElementById("np_endereco").value;
+  const bairro = document.getElementById("np_bairro").value;
+  const cidade = document.getElementById("np_cidade").value;
+
+  const tentativas = [
+    `${endereco}, ${bairro}, ${cidade}, MG, Brasil`,
+    `${endereco}, ${cidade}, MG, Brasil`,
+    `${bairro}, ${cidade}, MG, Brasil`,
+    `${cidade}, MG, Brasil`,
+  ];
+
+  for (const busca of tentativas) {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(busca)}`,
+    );
+
+    const data = await response.json();
+
+    if (data.length) {
+      const local = data[0];
+
+      document.getElementById("np_latitude").value = local.lat;
+      document.getElementById("np_longitude").value = local.lon;
+
+      mostrarToast("Endereço localizado", "sucesso");
+
+      return;
+    }
+  }
+
+  mostrarToast("Endereço não encontrado. Selecione no mapa.", "erro");
+}
+document
+  .getElementById("btnBuscarEndereco")
+  .addEventListener("click", buscarEnderecoPedido);
+
+// Inicializar mapa para seleção de coordenadas
+let map = null;
+
+function inicializarMapa() {
+  const mapContainer = document.getElementById("mapa");
+  if (!mapContainer) return;
+
+  map = L.map("mapa").setView([-16.3518, -46.912], 13); // Unai como padrão
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap contributors",
+    maxZoom: 19,
+  }).addTo(map);
+
+  // Capturar clique no mapa para preenchimento de coordenadas
+  map.on("click", function (e) {
+    document.getElementById("np_latitude").value = e.latlng.lat;
+    document.getElementById("np_longitude").value = e.latlng.lng;
+    mostrarToast("Coordenadas atualizadas no mapa", "sucesso");
+  });
+}
+
 function ligarBotaoLocalizacao(idBotao, idLat, idLon, idStatus) {
   const el = document.getElementById(idBotao);
   if (!el) return;
@@ -240,7 +299,8 @@ document.getElementById("btnCriarEntrega").onclick = async () => {
 function criarCardEntrega(entrega) {
   const item = document.createElement("div");
   item.className = "entrega-card";
-  if (entrega.status === "sem_entregador") item.classList.add("sem-entregador");
+  if (["sem_entregador", "sem_entregadores"].includes(entrega.status))
+    item.classList.add("sem-entregador");
 
   const header = document.createElement("div");
   header.className = "entrega-header";
@@ -277,6 +337,17 @@ function criarCardEntrega(entrega) {
     footer.appendChild(btn);
     item.appendChild(footer);
   }
+  if (entrega.entregadores) {
+    const entregador = document.createElement("p");
+
+    entregador.className = "entrega-info";
+
+    entregador.textContent = `🛵 ${
+      entrega.entregadores.usuarios?.nome || "Entregador"
+    }`;
+
+    item.appendChild(entregador);
+  }
 
   return item;
 }
@@ -298,8 +369,10 @@ function atualizarAlertBanner() {
 
 function renderizarEntregasAoVivo() {
   const container = document.getElementById("entregasAoVivo");
-  const emRota = [...entregasCache.values()].filter(
-    (e) => e.status === "aceita" || e.status === "retirada",
+  const emRota = [...entregasCache.values()].filter((e) =>
+    ["pendente", "aceita", "retirada", "em_rota", "a_caminho"].includes(
+      e.status,
+    ),
   );
 
   container.innerHTML = "";
@@ -313,7 +386,8 @@ function renderizarEntregasAoVivo() {
     card.className = "entrega-live-card";
 
     const codigo = `#${(entrega.id || "").slice(0, 6).toUpperCase()}`;
-    const nomeEntregador = entrega.entregadores?.nome || "Entregador a caminho";
+    const nomeEntregador =
+      entrega.entregadores?.usuarios?.nome || "Entregador a caminho";
 
     card.innerHTML = `
       <div class="entrega-live-topo">
@@ -339,26 +413,46 @@ async function carregarEntregas() {
 
   try {
     const response = await fetch(`${API}/api/entregas/empresa`, { headers });
+
     const entregas = await response.json();
 
+    console.log("ENTREGAS RECEBIDAS:", entregas);
+
     div.innerHTML = "";
+
     entregasCache.clear();
 
-    if (!Array.isArray(entregas) || !entregas.length) {
-      div.innerHTML = `<p class="empty-state">Nenhuma entrega criada.</p>`;
-    } else {
-      entregas.forEach((entrega) => {
-        entregasCache.set(entrega.id ?? entrega._id, entrega);
-        div.appendChild(criarCardEntrega(entrega));
-      });
+    if (!Array.isArray(entregas) || entregas.length === 0) {
+      div.innerHTML = `
+        <p class="empty-state">
+          Nenhuma entrega encontrada.
+        </p>
+      `;
+
+      renderizarEntregasAoVivo();
+
+      return;
     }
 
+    entregas.forEach((entrega) => {
+      entregasCache.set(entrega.id, entrega);
+
+      div.appendChild(criarCardEntrega(entrega));
+    });
+
     atualizarAlertBanner();
+
     renderizarEntregasAoVivo();
+
     atualizarMetricEmEntrega();
   } catch (error) {
     console.error(error);
-    div.innerHTML = `<p class="empty-state">Não foi possível carregar as entregas.</p>`;
+
+    div.innerHTML = `
+      <p class="empty-state">
+        Não foi possível carregar entregas.
+      </p>
+    `;
   }
 }
 
@@ -870,12 +964,9 @@ async function iniciarRealtime() {
           filter: `empresa_id=eq.${empresaAtual.id}`,
         },
         (payload) => {
-          const entrega = payload.new;
+          console.log("REALTIME:", payload);
+
           carregarEntregas();
-          carregarDashboardKpis();
-          if (entrega && entrega.status === "sem_entregador") {
-            abrirModalSemEntregador(entrega);
-          }
         },
       )
       .subscribe((status) => {
@@ -907,6 +998,10 @@ document.getElementById("btnLogout").addEventListener("click", () => {
 // =================================
 // INICIALIZAÇÃO
 // =================================
+
+document.addEventListener("DOMContentLoaded", () => {
+  inicializarMapa();
+});
 
 (async () => {
   await conectarEmpresa();

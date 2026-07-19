@@ -81,17 +81,19 @@ function pararAlertaEntrega() {
 const painel = document.getElementById("painelOperacional");
 const alca = document.getElementById("alcaPainelOperacional");
 
-alca.addEventListener("click", () => {
-  painel.classList.toggle("recolhido");
+if (alca) {
+  alca.addEventListener("click", () => {
+    painel.classList.toggle("recolhido");
 
-  if (estadoPainel === "medio") {
-    painel.dataset.estado = "aberto";
-    estadoPainel = "aberto";
-  } else {
-    painel.dataset.estado = "medio";
-    estadoPainel = "medio";
-  }
-});
+    if (estadoPainel === "medio") {
+      painel.dataset.estado = "aberto";
+      estadoPainel = "aberto";
+    } else {
+      painel.dataset.estado = "medio";
+      estadoPainel = "medio";
+    }
+  });
+}
 // =========================================================
 // TOASTS — feedback não bloqueante
 // =========================================================
@@ -429,13 +431,17 @@ function atualizarStatus(online) {
   botao.classList.toggle("offline", !onlineAtual);
 }
 
-document.getElementById("toggleDetalhesStatus").onclick = () => {
-  const card = document.getElementById("cardStatusOnline");
-  const aberto = card.classList.toggle("aberto");
-  document
-    .getElementById("toggleDetalhesStatus")
-    .setAttribute("aria-expanded", aberto);
-};
+const toggleDetalhes = document.getElementById("toggleDetalhesStatus");
+
+if (toggleDetalhes) {
+  toggleDetalhes.onclick = () => {
+    const card = document.getElementById("cardStatusOnline");
+
+    const aberto = card.classList.toggle("aberto");
+
+    toggleDetalhes.setAttribute("aria-expanded", aberto);
+  };
+}
 
 document.getElementById("btnToggleOnline").onclick = async () => {
   const irParaOnline = !onlineAtual;
