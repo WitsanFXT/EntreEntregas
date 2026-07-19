@@ -226,15 +226,19 @@ exports.login = async (req, res) => {
       senha,
     } = req.body;
 
-    const { data: usuario } = await supabase
-
+    const { data: usuario, error } = await supabase
       .from("usuarios")
-
       .select("*")
-
       .eq("email", email)
-
       .maybeSingle();
+
+    if (error) {
+      console.log("ERRO SUPABASE:", error);
+
+      return res.status(500).json({
+        message: "Erro no banco.",
+      });
+    }
 
     if (!usuario) {
       return res.status(401).json({
