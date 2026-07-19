@@ -1,269 +1,661 @@
-/* =========================================================
-   PAINEL EMPRESA — CSS
-   Mesmo tema do painel do entregador (dark + verde), adaptado
-   pra um layout de admin: sidebar (desktop) / menu inferior (mobile)
-   ========================================================= */
-
 :root {
-  --cor-primaria: #22c55e;
-  --cor-primaria-escura: #16a34a;
-  --cor-primaria-clara: rgba(34, 197, 94, 0.16);
-  --cor-perigo: #ef4444;
-  --cor-perigo-escura: #dc2626;
-  --cor-perigo-clara: rgba(239, 68, 68, 0.16);
-  --cor-alerta: #f59e0b;
-  --cor-alerta-escura: #d97706;
-  --cor-alerta-clara: rgba(245, 158, 11, 0.16);
-  --cor-info: #3b82f6;
-  --cor-info-clara: rgba(59, 130, 246, 0.16);
-  --cor-fundo: #0f1115;
-  --cor-card: #1a1d24;
-  --cor-card-alt: #22262f;
-  --cor-texto: #f1f5f9;
-  --cor-texto-suave: #94a3b8;
-  --cor-borda: #2c313c;
-  --sombra: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
-  --sombra-forte: 0 8px 28px rgba(0, 0, 0, 0.55);
-  --raio: 14px;
-  --altura-menu: 64px;
-  --largura-sidebar: 240px;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --brand-primary: #ff6b00;
+  --brand-primary-hover: #e05e00;
 
-  --z-menu: 250;
-  --z-toast: 300;
-  --z-overlay-modal: 9998;
-  --z-modal: 9999;
+  --sidebar-bg: #121214;
+  --sidebar-text: #8d8d99;
+  --sidebar-active: #ffffff;
+
+  --main-bg: #f4f5f7;
+
+  --card-bg: #ffffff;
+
+  --text-dark: #1c1c1e;
+  --text-muted: #7c7c8a;
+
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #0066ff;
+
+  --border: #ececec;
+
+  --shadow-card: 0px 4px 12px rgba(0, 0, 0, 0.03);
+
+  --shadow-modal: 0px 16px 32px rgba(0, 0, 0, 0.15);
+
+  --radius: 12px;
+
+  --sidebar-width: 260px;
 }
 
 * {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
 html,
 body {
-  margin: 0;
+  width: 100%;
   min-height: 100%;
 }
 
 body {
-  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: var(--cor-fundo);
-  color: var(--cor-texto);
-  -webkit-font-smoothing: antialiased;
-  min-height: 100dvh;
-  padding-bottom: calc(var(--altura-menu) + var(--safe-bottom) + 16px);
+  font-family: "Inter", sans-serif;
+  background: var(--main-bg);
+  color: var(--text-dark);
 }
 
-button {
-  font-family: inherit;
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
 }
 
-input,
-textarea,
-select {
-  font-family: inherit;
+.sidebar {
+  background: var(--sidebar-bg);
+  color: white;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 24px;
+
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* =========================================================
-   TOPO — identidade da empresa
-   ========================================================= */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 
-.topo-empresa {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: rgba(26, 29, 36, 0.92);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--cor-borda);
-  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.avatar-loja {
+  width: 52px;
+  height: 52px;
+
+  border-radius: 50%;
+
+  background: var(--brand-primary);
+
+  color: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.sidebar-header h3 {
+  font-size: 1rem;
+  color: white;
+}
+
+.sidebar-header p {
+  color: #8d8d99;
+  font-size: 0.85rem;
+}
+
+.status-loja {
+  background: rgba(16, 185, 129, 0.1);
+
+  color: var(--success);
+
+  border: 1px solid rgba(16, 185, 129, 0.3);
+
+  padding: 10px 14px;
+
+  border-radius: 10px;
+
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  margin-bottom: 30px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu-item {
+  height: 48px;
+
+  border: none;
+
+  background: transparent;
+
+  color: var(--sidebar-text);
+
+  text-align: left;
+
+  border-radius: 10px;
+
+  padding: 0 16px;
+
+  cursor: pointer;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+
+  transition: 0.25s;
 }
 
-.topo-empresa-identidade h1 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
+.menu-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
 }
 
-.topo-empresa-identidade p {
-  margin: 3px 0 0;
-  font-size: 0.72rem;
+.menu-item.ativo {
+  background: var(--brand-primary);
+
+  color: white;
+
   font-weight: 600;
-  color: var(--cor-texto-suave);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
 }
 
-.topo-empresa-identidade p::before {
-  content: "";
-  width: 7px;
-  height: 7px;
+.menu-badge {
+  min-width: 24px;
+  height: 24px;
+
+  border-radius: 999px;
+
+  background: white;
+
+  color: var(--brand-primary);
+
+  font-size: 0.75rem;
+  font-weight: 700;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding-top: 20px;
+
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.avatar-user {
+  width: 44px;
+  height: 44px;
+
   border-radius: 50%;
-  background: var(--cor-primaria);
-  flex-shrink: 0;
-}
 
-.badge-alerta-topo {
-  display: none;
+  background: #2a2a2e;
+
+  display: flex;
   align-items: center;
-  gap: 6px;
-  background: var(--cor-alerta-clara);
-  color: var(--cor-alerta);
-  border: 1px solid var(--cor-alerta);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 0.74rem;
+  justify-content: center;
+
+  color: white;
   font-weight: 700;
-  cursor: pointer;
-  animation: pulsoBadge 1.8s ease-in-out infinite;
 }
 
-.badge-alerta-topo.mostrar {
-  display: inline-flex;
+.main-content {
+  padding: 30px;
 }
 
-@keyframes pulsoBadge {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.35);
-  }
-  50% {
-    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
-  }
-}
-
-/* =========================================================
-   LAYOUT — sidebar (desktop) + conteúdo
-   ========================================================= */
-
-.app-shell {
+.topbar {
   display: flex;
-  min-height: 100dvh;
-}
-
-.conteudo-principal {
-  flex: 1;
-  min-width: 0;
-  max-width: 640px;
-  margin: 0 auto;
-  width: 100%;
-  padding: 18px 16px 24px;
-}
-
-/* =========================================================
-   NAVEGAÇÃO — menu inferior (mobile) / sidebar (desktop)
-   ========================================================= */
-
-.menu-inferior {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: var(--altura-menu);
-  background: var(--cor-card);
-  border-top: 1px solid var(--cor-borda);
-  padding-bottom: var(--safe-bottom);
-  display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
-  z-index: var(--z-menu);
-  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.25);
+
+  margin-bottom: 24px;
 }
 
-.menu-inferior button {
-  position: relative;
-  background: none;
-  border: none;
+.breadcrumb {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+}
+
+.topbar h1 {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.topbar p {
+  color: var(--text-muted);
+}
+
+.topbar-actions {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
-  font-size: 1.2rem;
-  color: var(--cor-texto-suave);
-  cursor: pointer;
-  flex: 1;
-  padding: 6px 0;
+  gap: 12px;
 }
 
-.menu-inferior button span {
-  font-size: 0.68rem;
+.pending-pill {
+  background: #fff1e6;
+
+  color: var(--brand-primary);
+
+  padding: 10px 16px;
+
+  border-radius: 999px;
+
   font-weight: 600;
 }
 
-.menu-inferior button.ativo {
-  color: var(--cor-primaria);
+.notification-btn {
+  width: 48px;
+  height: 48px;
+
+  border: none;
+
+  border-radius: 12px;
+
+  background: white;
+
+  box-shadow: var(--shadow-card);
+
+  position: relative;
+
+  cursor: pointer;
 }
 
-.menu-inferior button .contador {
+.notification-btn span {
   position: absolute;
-  top: -2px;
-  right: 22%;
-  background: var(--cor-alerta);
-  color: #0f1115;
-  font-size: 0.62rem;
-  font-weight: 800;
+
+  top: -5px;
+  right: -5px;
+
+  width: 22px;
+  height: 22px;
+
+  border-radius: 50%;
+
+  background: #ef4444;
+
+  color: white;
+
+  font-size: 0.7rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-novo-pedido {
+  height: 48px;
+
+  border: none;
+
+  padding: 0 22px;
+
+  border-radius: 12px;
+
+  background: var(--brand-primary);
+
+  color: white;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.25s;
+}
+
+.btn-novo-pedido:hover {
+  background: var(--brand-primary-hover);
+}
+
+.alert-banner {
+  background: #fff1e6;
+
+  color: var(--brand-primary);
+
+  border-left: 4px solid var(--brand-primary);
+
+  padding: 16px;
+
+  border-radius: 12px;
+
+  margin-bottom: 24px;
+}
+
+.metric-grid {
+  display: grid;
+
+  grid-template-columns: repeat(4, 1fr);
+
+  gap: 20px;
+
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  background: white;
+
+  border-radius: 16px;
+
+  padding: 24px;
+
+  box-shadow: var(--shadow-card);
+}
+
+.metric-card span {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.metric-card h2 {
+  margin-top: 10px;
+
+  font-size: 2rem;
+}
+
+.metric-card small {
+  display: block;
+  margin-top: 10px;
+}
+
+.positive {
+  color: var(--success);
+}
+
+.negative {
+  color: var(--danger);
+}
+
+.dashboard-grid {
+  display: grid;
+
+  grid-template-columns: 2fr 1fr;
+
+  gap: 20px;
+
+  margin-bottom: 24px;
+}
+
+.card-large {
+  background: white;
+
+  border-radius: 16px;
+
+  padding: 24px;
+
+  box-shadow: var(--shadow-card);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 20px;
+}
+
+.pedido-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 14px 0;
+
+  border-bottom: 1px solid #eee;
+}
+
+.status-preparo {
+  background: #fff1e6;
+
+  color: #ff6b00;
+
+  padding: 6px 12px;
+
   border-radius: 999px;
-  padding: 1px 5px;
+
+  font-size: 0.8rem;
+}
+
+.status-rota {
+  background: #ebe3ff;
+
+  color: #6366f1;
+
+  padding: 6px 12px;
+
+  border-radius: 999px;
+
+  font-size: 0.8rem;
+}
+
+.channel-item {
+  margin-top: 18px;
+}
+
+.channel-info {
+  display: flex;
+  justify-content: space-between;
+
+  margin-bottom: 8px;
+}
+
+.progress {
+  height: 12px;
+
+  background: #ececec;
+
+  border-radius: 999px;
+
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+}
+
+.ifood {
+  background: #ea1d2c;
+}
+
+.manual {
+  background: #5b5c62;
+}
+
+.site {
+  background: #0066ff;
+}
+
+@media (max-width: 1100px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================
+   MOBILE NAVBAR
+========================================== */
+
+.mobile-nav {
   display: none;
 }
 
-.menu-inferior button .contador.mostrar {
-  display: inline-block;
+@media (max-width: 900px) {
+  body {
+    padding-bottom: 85px;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    height: 70px;
+
+    background: #121214;
+
+    border-top: 1px solid #232326;
+
+    z-index: 9999;
+
+    justify-content: space-around;
+    align-items: center;
+
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .mobile-nav button {
+    background: none;
+    border: none;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 4px;
+
+    color: #8d8d99;
+
+    flex: 1;
+
+    height: 100%;
+
+    cursor: pointer;
+
+    transition: 0.25s;
+  }
+
+  .mobile-nav button .icon {
+    font-size: 20px;
+  }
+
+  .mobile-nav button .label {
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .mobile-nav button.ativo {
+    color: #ff6b00;
+  }
+
+  .mobile-nav button.ativo .icon {
+    transform: translateY(-2px);
+  }
+
+  .mobile-nav button::before {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+
+    width: 40px;
+    height: 3px;
+
+    background: transparent;
+
+    border-radius: 999px;
+
+    transition: 0.25s;
+  }
+
+  .mobile-nav button.ativo::before {
+    background: #ff6b00;
+  }
 }
 
-/* =========================================================
-   TELAS — Entregas / Dashboard
-   ========================================================= */
+/* =========================================================================
+   EXTENSÕES — form, modal, toast, badges, páginas Pedidos/Entregas/Config
+   (mantém as variáveis e o visual definidos acima)
+   ========================================================================= */
+
+/* ---------- Telas (Dashboard / Pedidos / Entregas / Configurações) ---------- */
 
 .tela-app {
   display: none;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .tela-app.ativa {
   display: flex;
 }
 
-/* =========================================================
-   CARD BASE
-   ========================================================= */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.page-header h2 {
+  font-size: 1.4rem;
+}
+
+/* ---------- Cards genéricos (formulários e seções) ---------- */
 
 .card {
-  background: var(--cor-card);
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio);
-  box-shadow: var(--sombra);
-  padding: 18px;
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: var(--shadow-card);
 }
 
 .card h2,
 .card h3 {
-  margin: 0 0 16px;
-  font-size: 1.02rem;
-  font-weight: 700;
-  color: var(--cor-texto);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.card h4 {
-  margin: 0 0 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--cor-texto-suave);
+  margin-bottom: 16px;
 }
 
 .field-label {
   display: block;
-  font-size: 0.74rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: var(--cor-texto-suave);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
   margin: 0 0 6px 2px;
@@ -272,23 +664,23 @@ select {
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 14px;
 }
 
-/* =========================================================
-   INPUTS
-   ========================================================= */
+/* ---------- Inputs ---------- */
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   padding: 12px 14px;
   margin-bottom: 14px;
-  border: 1.5px solid var(--cor-borda);
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   font-size: 0.92rem;
-  color: var(--cor-texto);
-  background-color: var(--cor-card-alt);
+  font-family: inherit;
+  color: var(--text-dark);
+  background-color: #fafafa;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
@@ -296,25 +688,27 @@ textarea {
 
 input::placeholder,
 textarea::placeholder {
-  color: #626b7c;
+  color: #b3b3ba;
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   outline: none;
-  border-color: var(--cor-primaria);
-  box-shadow: 0 0 0 4px var(--cor-primaria-clara);
+  border-color: var(--brand-primary);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.12);
 }
 
 textarea {
-  min-height: 90px;
+  min-height: 80px;
   resize: vertical;
   line-height: 1.5;
 }
 
 .gps-box {
-  background: var(--cor-card-alt);
-  border: 1px solid var(--cor-borda);
+  background: #fafafa;
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px;
   margin: 4px 0 18px;
@@ -322,15 +716,13 @@ textarea {
 
 .gps-coords-ok {
   font-size: 0.78rem;
-  color: var(--cor-primaria);
+  color: var(--success);
   font-weight: 600;
   margin: -6px 0 12px 2px;
   min-height: 1em;
 }
 
-/* =========================================================
-   BOTÕES
-   ========================================================= */
+/* ---------- Botões de ação ---------- */
 
 button.acao {
   width: 100%;
@@ -358,38 +750,34 @@ button.acao:disabled {
 }
 
 .btn-primary {
-  background: linear-gradient(
-    135deg,
-    var(--cor-primaria),
-    var(--cor-primaria-escura)
-  );
-  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.28);
+  background: var(--brand-primary);
+  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.28);
 }
 
 .btn-primary:hover {
-  filter: brightness(1.06);
+  background: var(--brand-primary-hover);
 }
 
 .btn-secondary {
-  background: var(--cor-card-alt);
-  color: var(--cor-texto);
-  border: 1.5px solid var(--cor-borda);
+  background: #fff;
+  color: var(--text-dark);
+  border: 1.5px solid var(--border);
   box-shadow: none;
 }
 
 .btn-secondary:hover {
-  border-color: var(--cor-texto-suave);
+  border-color: #c7c7cf;
 }
 
 .btn-danger {
-  background: var(--cor-card-alt);
-  color: var(--cor-perigo);
-  border: 1.5px solid var(--cor-perigo);
+  background: #fff;
+  color: var(--danger);
+  border: 1.5px solid #fecaca;
   box-shadow: none;
 }
 
 .btn-danger:hover {
-  background: rgba(239, 68, 68, 0.12);
+  background: #fef2f2;
 }
 
 .btn-solucionar {
@@ -397,82 +785,332 @@ button.acao:disabled {
   padding: 8px 14px;
   font-size: 0.8rem;
   border-radius: 999px;
-  background: linear-gradient(
-    135deg,
-    var(--cor-alerta),
-    var(--cor-alerta-escura)
-  );
-  box-shadow: 0 3px 8px rgba(217, 119, 6, 0.3);
+  background: var(--warning);
+  box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3);
 }
 
-/* =========================================================
-   ABAS INTERNAS (Relatório / Configurações)
-   ========================================================= */
+/* ---------- Status badges (pedidos + entregas) ---------- */
 
-.tabs-internas {
-  display: flex;
-  gap: 8px;
-}
-
-.tab-interna {
-  flex: 1;
-  border: none;
-  border-radius: 12px;
-  padding: 10px 8px;
-  background: var(--cor-card-alt);
-  color: var(--cor-texto-suave);
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
   font-weight: 700;
-  font-size: 0.8rem;
-  cursor: pointer;
+  white-space: nowrap;
 }
 
-.tab-interna.ativa {
-  background: var(--cor-primaria);
-  color: #04150a;
+.status-aguardando {
+  background: #fef3c7;
+  color: #92400e;
+}
+.status-confirmado,
+.status-pendente {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+.status-em_preparo {
+  background: #fff1e6;
+  color: var(--brand-primary);
+}
+.status-saiu_para_entrega,
+.status-aceita,
+.status-aceito,
+.status-retirada,
+.status-em_rota,
+.status-a_caminho {
+  background: #ebe3ff;
+  color: #6366f1;
+}
+.status-entregue,
+.status-finalizada,
+.status-concluida,
+.status-concluido {
+  background: #d1fae5;
+  color: #047857;
+}
+.status-cancelado,
+.status-cancelada {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+.status-sem_entregador {
+  background: #fee2e2;
+  color: #b91c1c;
+  animation: pulsoBadge 1.8s ease-in-out infinite;
 }
 
-.painel-interno {
-  display: none;
-  flex-direction: column;
-  gap: 16px;
+@keyframes pulsoBadge {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(239, 68, 68, 0);
+  }
 }
 
-.painel-interno.ativa {
-  display: flex;
+.origem-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
 }
 
-/* =========================================================
-   LISTA DE ENTREGAS
-   ========================================================= */
-
-#listaEntregas {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.origem-ifood {
+  background: #fde2e2;
+  color: #ea1d2c;
 }
+.origem-manual {
+  background: #ececec;
+  color: #5b5c62;
+}
+.origem-site {
+  background: #dbeafe;
+  color: #0066ff;
+}
+
+/* ---------- Listas (pedidos / entregas) ---------- */
 
 .empty-state {
   text-align: center;
-  color: var(--cor-texto-suave);
+  color: var(--text-muted);
   font-size: 0.88rem;
   padding: 28px 0;
   margin: 0;
 }
 
+.pedido-row,
+.entrega-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.pedido-row:last-child,
+.entrega-row:last-child {
+  border-bottom: none;
+}
+
+.pedido-row .cliente-info strong,
+.entrega-row .cliente-info strong {
+  display: block;
+  color: var(--text-dark);
+}
+
+.pedido-row .cliente-info p,
+.entrega-row .cliente-info p {
+  margin-top: 2px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.pedido-row .valor-total {
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.pedido-actions,
+.entrega-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-mini {
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text-dark);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-mini:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+
+@media (max-width: 700px) {
+  .pedido-row,
+  .entrega-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+/* ---------- Overlay + Modal ---------- */
+
+.overlay-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 15, 20, 0.5);
+  z-index: 9998;
+}
+
+.overlay-modal.ativo {
+  display: block;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 9999;
+}
+
+.modal.ativo {
+  display: flex;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 20px;
+  padding: 26px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-modal);
+  animation: entrarModal 0.2s ease-out;
+}
+
+@keyframes entrarModal {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-content h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.modal-content p {
+  margin: 0 0 18px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+/* ---------- Toasts ---------- */
+
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  left: 12px;
+  right: 12px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+
+@media (min-width: 900px) {
+  .toast-container {
+    left: auto;
+    right: 24px;
+    align-items: flex-end;
+  }
+}
+
+.toast {
+  background: #1c1c1e;
+  color: #fff;
+  padding: 11px 18px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-modal);
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  max-width: 90vw;
+  text-align: center;
+}
+
+.toast.mostrar {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.sucesso {
+  box-shadow:
+    0 0 0 1.5px var(--success),
+    var(--shadow-modal);
+}
+.toast.erro {
+  box-shadow:
+    0 0 0 1.5px var(--danger),
+    var(--shadow-modal);
+}
+
+/* ---------- Sidebar: página "em breve" ---------- */
+
+.menu-item.em-breve {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.menu-item.em-breve:hover {
+  background: transparent;
+  color: var(--sidebar-text);
+}
+
+/* ---------- Botão "Novo Pedido" habilitado nos dois lugares ---------- */
+
+.btn-novo-pedido:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---------- Cards de entrega (lista da página Entregas) ---------- */
+
 .entrega-card {
-  background: var(--cor-card-alt);
-  border: 1px solid var(--cor-borda);
-  border-left: 4px solid var(--cor-primaria);
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--brand-primary);
   border-radius: 12px;
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 12px;
   animation: entrarCard 0.2s ease-out;
 }
 
 .entrega-card.sem-entregador {
-  border-left-color: var(--cor-alerta);
+  border-left-color: var(--danger);
+  background: #fef2f2;
 }
 
 @keyframes entrarCard {
@@ -495,13 +1133,13 @@ button.acao:disabled {
 
 .entrega-cliente {
   font-weight: 700;
-  color: var(--cor-texto);
+  color: var(--text-dark);
   font-size: 0.95rem;
 }
 
 .entrega-info {
   margin: 0;
-  color: var(--cor-texto-suave);
+  color: var(--text-muted);
   font-size: 0.84rem;
   line-height: 1.5;
 }
@@ -509,8 +1147,8 @@ button.acao:disabled {
 .entrega-coords {
   display: flex;
   gap: 16px;
-  font-size: 0.74rem;
-  color: #626b7c;
+  font-size: 0.72rem;
+  color: #9d9da5;
 }
 
 .entrega-footer {
@@ -518,595 +1156,82 @@ button.acao:disabled {
   justify-content: flex-end;
 }
 
-.status-badge {
+/* ---------- Banner de alerta dinâmico (sem entregador) ---------- */
+
+.alert-banner.oculto {
+  display: none;
+}
+
+.alert-banner.clicavel {
+  cursor: pointer;
+}
+
+/* ---------- Indicador de conexão realtime no topbar ---------- */
+
+.status-realtime {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.68rem;
+}
+
+.status-realtime::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d1d5db;
+}
+
+.status-realtime.conectado::before {
+  background: var(--success);
+}
+
+/* ---------- Código curto do pedido (#A1B2C3) ---------- */
+
+.pedido-codigo {
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+/* ---------- Card de entrega ao vivo (widget do Dashboard) ---------- */
+
+#entregasAoVivo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.entrega-live-card {
+  background: #fff8f0;
+  border: 1px solid #ffd9b3;
+  border-left: 4px solid var(--brand-primary);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.entrega-live-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.entrega-live-codigo {
+  font-size: 0.78rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
+  color: var(--brand-primary);
 }
 
-.status-pendente {
-  background: var(--cor-info-clara);
-  color: var(--cor-info);
-}
-.status-aceita,
-.status-aceito,
-.status-em_rota,
-.status-a_caminho {
-  background: var(--cor-info-clara);
-  color: var(--cor-info);
-}
-.status-entregue,
-.status-finalizada,
-.status-concluida,
-.status-concluido {
-  background: var(--cor-primaria-clara);
-  color: var(--cor-primaria);
-}
-.status-cancelada,
-.status-cancelado {
-  background: var(--cor-card);
-  color: var(--cor-texto-suave);
-}
-.status-sem_entregador {
-  background: var(--cor-alerta-clara);
-  color: var(--cor-alerta);
-  animation: pulsoBadge 1.8s ease-in-out infinite;
-}
-
-/* =========================================================
-   RELATÓRIO — grid de indicadores
-   ========================================================= */
-
-.grid-relatorio {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.stat-card {
-  background: var(--cor-card-alt);
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio);
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.stat-card-destaque {
-  grid-column: 1 / -1;
-  background: linear-gradient(135deg, var(--cor-primaria-clara), transparent);
-  border-color: var(--cor-primaria);
-}
-
-.stat-label {
-  font-size: 0.72rem;
-  color: var(--cor-texto-suave);
-  font-weight: 600;
-}
-
-.stat-card strong {
-  font-size: 1.2rem;
-  color: var(--cor-texto);
-}
-
-.stat-card-destaque strong {
-  color: var(--cor-primaria);
-  font-size: 1.7rem;
-}
-
-.stat-card.alerta strong {
-  color: var(--cor-alerta);
-}
-
-.stat-card.perigo strong {
-  color: var(--cor-perigo);
-}
-
-/* =========================================================
-   OVERLAY + MODAL — sem entregador
-   ========================================================= */
-
-.overlay-modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.72);
-  z-index: var(--z-overlay-modal);
-}
-
-.overlay-modal.ativo {
-  display: block;
-}
-
-.modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  z-index: var(--z-modal);
-}
-
-.modal.ativo {
-  display: flex;
-}
-
-.modal-content {
-  background: var(--cor-card);
-  border: 1px solid var(--cor-borda);
-  border-radius: 20px;
-  padding: 24px;
-  width: 100%;
-  max-width: 380px;
-  box-shadow: var(--sombra-forte);
-  animation: entrarModal 0.2s ease-out;
-}
-
-@keyframes entrarModal {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.modal-content h2 {
-  margin: 0 0 8px;
-  font-size: 1.05rem;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.modal-content p {
-  margin: 0 0 20px;
+.entrega-live-entregador {
   font-size: 0.86rem;
-  color: var(--cor-texto-suave);
-  line-height: 1.5;
+  margin-bottom: 4px;
 }
 
-.modal-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* =========================================================
-   TOASTS
-   ========================================================= */
-
-.toast-container {
-  position: fixed;
-  bottom: calc(var(--altura-menu) + 16px);
-  left: 12px;
-  right: 12px;
-  z-index: var(--z-toast);
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 8px;
-  align-items: center;
-  pointer-events: none;
-}
-
-.toast {
-  background: var(--cor-card-alt);
-  border: 1px solid var(--cor-borda);
-  color: var(--cor-texto);
-  padding: 10px 16px;
-  border-radius: 999px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  box-shadow: var(--sombra-forte);
-  opacity: 0;
-  transform: translateY(10px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-  max-width: 100%;
-  text-align: center;
-}
-
-.toast.mostrar {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.toast.sucesso {
-  border-color: var(--cor-primaria);
-}
-.toast.erro {
-  border-color: var(--cor-perigo);
-}
-
-/* =========================================================
-   RESPONSIVO — DESKTOP (sidebar em vez de menu inferior)
-   ========================================================= */
-
-@media (min-width: 900px) {
-  body {
-    padding-bottom: 0;
-  }
-
-  .menu-inferior {
-    position: sticky;
-    top: 0;
-    left: auto;
-    right: auto;
-    height: 100dvh;
-    width: var(--largura-sidebar);
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: stretch;
-    gap: 4px;
-    padding: 20px 12px;
-    border-top: none;
-    border-right: 1px solid var(--cor-borda);
-  }
-
-  .menu-inferior button {
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 10px;
-    padding: 11px 12px;
-    border-radius: 10px;
-    font-size: 0.9rem;
-  }
-
-  .menu-inferior button span {
-    font-size: 0.85rem;
-  }
-
-  .menu-inferior button.ativo {
-    background: var(--cor-primaria-clara);
-  }
-
-  .menu-inferior button .contador {
-    top: 6px;
-    right: 10px;
-  }
-
-  .app-shell {
-    flex-direction: row;
-  }
-
-  .conteudo-principal {
-    max-width: 720px;
-    padding: 24px 32px 32px;
-  }
-
-  .grid-relatorio {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .toast-container {
-    bottom: 20px;
-  }
-}
-
-/* =========================================================
-   TELAS PEQUENAS
-   ========================================================= */
-
-@media (max-width: 600px) {
-  .field-row {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-
-  input,
-  textarea,
-  button.acao {
-    font-size: 16px; /* evita zoom automático no iOS */
-  }
-
-  .entrega-header {
-    flex-direction: column;
-  }
-}
-
-/* ==================================================
-   MELHORIAS VISUAIS
-================================================== */
-
-.conteudo-principal {
-  max-width: 1100px;
-}
-
-.card {
-  transition: 0.25s;
-}
-
-.card:hover {
-  border-color: #3a404d;
-}
-
-.stat-card {
-  min-height: 110px;
-  justify-content: center;
-}
-
-.stat-card strong {
-  font-size: 1.8rem;
-  margin-top: 4px;
-}
-
-.entrega-card {
-  transition: 0.25s;
-}
-
-.entrega-card:hover {
-  transform: translateY(-2px);
-  border-color: #3a404d;
-}
-
-.gps-box {
-  background: #20252f;
-}
-
-.tab-interna {
-  transition: 0.2s;
-}
-
-.tab-interna:hover {
-  background: #2b303b;
-  color: white;
-}
-
-.tab-interna.ativa {
-  background: linear-gradient(135deg, #22c55e, #16a34a);
-  color: white;
-}
-
-@media (min-width: 900px) {
-  .conteudo-principal {
-    padding: 32px;
-    max-width: none;
-  }
-
-  .tela-app {
-    max-width: 1100px;
-    margin: auto;
-  }
-
-  .grid-relatorio {
-    grid-template-columns: repeat(3, minmax(220px, 1fr));
-  }
-
-  .card {
-    padding: 24px;
-  }
-}
-
-/* ==========================================
-   CORREÇÕES GERAIS
-========================================== */
-
-html,
-body {
-  width: 100%;
-  overflow-x: hidden;
-}
-
-body {
-  margin: 0;
-}
-
-/* ==========================================
-   CONTEÚDO
-========================================== */
-
-.conteudo-principal {
-  flex: 1;
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-/* ==========================================
-   INPUTS
-========================================== */
-
-.field-row input,
-.field-row textarea,
-.field-row select {
-  margin-bottom: 12px; /* espaçamento entre inputs dentro de .field-row */
-}
-
-.field-row {
-  margin-bottom: 14px;
-}
-
-/* ==========================================
-   CARDS
-========================================== */
-
-.card {
-  overflow: hidden;
-}
-
-.card + .card {
-  margin-top: 16px;
-}
-
-/* ==========================================
-   ENTREGAS
-========================================== */
-
-#listaEntregas {
-  max-height: 700px;
-  overflow-y: auto;
-  padding-right: 4px;
-}
-
-#listaEntregas::-webkit-scrollbar {
-  width: 6px;
-}
-
-#listaEntregas::-webkit-scrollbar-thumb {
-  background: #394150;
-  border-radius: 999px;
-}
-
-.entrega-card {
-  width: 100%;
-}
-
-.entrega-header {
-  width: 100%;
-}
-
-.entrega-footer {
-  margin-top: 10px;
-}
-
-/* ==========================================
-   DASHBOARD
-========================================== */
-
-.grid-relatorio {
-  align-items: stretch;
-}
-
-.stat-card {
-  min-height: 130px;
-}
-
-.stat-card strong {
-  font-size: 2rem;
-}
-
-/* ==========================================
-   BOTÕES
-========================================== */
-
-button.acao {
-  min-height: 48px;
-}
-
-.btn-primary,
-.btn-secondary,
-.btn-danger {
-  transition:
-    transform 0.15s,
-    filter 0.15s,
-    box-shadow 0.15s;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-}
-
-/* ==========================================
-   MODAL
-========================================== */
-
-.overlay-modal {
-  backdrop-filter: blur(4px);
-}
-
-.modal {
-  z-index: 99999;
-}
-
-.modal-content {
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-/* ==========================================
-   TOAST
-========================================== */
-
-.toast-container {
-  pointer-events: none;
-}
-
-.toast {
-  pointer-events: auto;
-}
-
-/* ==========================================
-   DESKTOP
-========================================== */
-
-@media (min-width: 900px) {
-  .app-shell {
-    display: flex;
-    align-items: flex-start;
-  }
-
-  .menu-inferior {
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    flex-shrink: 0;
-  }
-
-  .conteudo-principal {
-    padding: 32px;
-  }
-
-  .tela-app {
-    width: 100%;
-    max-width: 1300px;
-  }
-
-  .grid-relatorio {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* ==========================================
-   MOBILE
-========================================== */
-
-@media (max-width: 600px) {
-  .card {
-    padding: 16px;
-  }
-
-  .field-row {
-    grid-template-columns: 1fr;
-  }
-
-  .grid-relatorio {
-    grid-template-columns: 1fr;
-  }
-
-  .modal-content {
-    max-width: 100%;
-    border-radius: 18px;
-  }
-
-  .badge-alerta-topo {
-    font-size: 0.68rem;
-    padding: 5px 10px;
-  }
-
-  .topo-empresa-identidade h1 {
-    font-size: 0.95rem;
-  }
-}
-
-@media (min-width: 900px) {
-  #btnLogout {
-    margin-top: auto;
-    color: #ef4444;
-  }
-
-  #btnLogout:hover {
-    background: rgba(239, 68, 68, 0.12);
-  }
+.entrega-live-endereco {
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }

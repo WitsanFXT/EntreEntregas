@@ -11,6 +11,7 @@ const empresaRoutes = require("./routes/empresaRoutes");
 const entregadorRoutes = require("./routes/entregadorRoutes");
 const entregasRoutes = require("./routes/entregasRoutes");
 const financeiroRoutes = require("./routes/financeiroRoutes");
+const pedidosRoutes = require("./routes/pedidosRoutes");
 
 const app = express();
 
@@ -28,14 +29,12 @@ app.use("/api/empresa", empresaRoutes);
 app.use("/api/entregador", entregadorRoutes);
 app.use("/api/entregas", entregasRoutes);
 app.use("/api/financeiro", financeiroRoutes);
+app.use("/api/empresa/pedidos", pedidosRoutes);
 
 // Job de expiração/redistribuição de entregas. Não depende mais de
 // socket nenhum — só lê/grava no banco, e quem escuta (empresa e
 // entregador) recebe as mudanças via Supabase Realtime.
 iniciarVerificacaoTimeouts();
-
-console.log("SUPABASE KEY PREFIX:");
-console.log(process.env.SUPABASE_KEY?.substring(0, 20));
 
 app.listen(process.env.PORT || 5500, () => {
   console.log(`Servidor rodando na porta ${process.env.PORT || 5500}`);

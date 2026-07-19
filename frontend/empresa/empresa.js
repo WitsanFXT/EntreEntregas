@@ -2,12 +2,11 @@
 // CONFIG / AUTENTICAÇÃO
 // =================================
 
-// Detecta automaticamente onde o site está rodando
 const API =
   window.location.hostname === "localhost" ||
   window.location.hostname === "127.0.0.1"
-    ? "http://localhost:5500" // Se for no seu PC, aponta para a porta do backend
-    : ""; // Se for na Vercel, usa rota relativa (o vercel.json resolve)
+    ? "http://localhost:5500"
+    : "";
 
 const token = localStorage.getItem("token");
 
@@ -25,7 +24,6 @@ const headers = {
 // =================================
 
 const SUPABASE_URL = "https://gnrhxvbyxnixnrppwnul.supabase.co";
-
 const SUPABASE_PUBLISHABLE_KEY =
   "sb_publishable_FzazGW0YE3mAcFO6NlUk6g_e5_pq_Nw";
 
@@ -34,16 +32,16 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_PUBLISHABLE_KEY,
 );
 
-// Guarda a última lista de entregas em cache (usada pelo relatório e
-// pra reabrir o modal "sem entregador" a partir da lista).
+let empresaAtual = null;
 const entregasCache = new Map();
+let pedidosCache = [];
 let entregaProblema = null;
 
-// Rótulos amigáveis para cada status vindo da API
 const STATUS_LABELS = {
   pendente: "Pendente",
   aceita: "Aceita",
   aceito: "Aceita",
+  retirada: "Retirada",
   em_rota: "Em rota",
   a_caminho: "A caminho",
   entregue: "Entregue",
@@ -51,25 +49,32 @@ const STATUS_LABELS = {
   concluida: "Entregue",
   concluido: "Entregue",
   cancelada: "Cancelada",
-  cancelado: "Cancelada",
+  cancelado: "Cancelado",
   sem_entregador: "Sem entregador",
+  aguardando: "Aguardando",
+  confirmado: "Confirmado",
+  em_preparo: "Em preparo",
+  saiu_para_entrega: "Saiu p/ entrega",
+};
+
+const ORIGEM_LABELS = {
+  ifood: "iFood",
+  manual: "Manual",
+  site: "Site próprio",
 };
 
 // =================================
-// TOAST DE FEEDBACK
+// TOAST
 // =================================
 
 function mostrarToast(mensagem, tipo = "") {
   const container = document.getElementById("toastContainer");
-
   const toast = document.createElement("div");
   toast.className = `toast ${tipo}`.trim();
   toast.textContent = mensagem;
-
   container.appendChild(toast);
 
   requestAnimationFrame(() => toast.classList.add("mostrar"));
-
   setTimeout(() => {
     toast.classList.remove("mostrar");
     setTimeout(() => toast.remove(), 250);
@@ -77,59 +82,63 @@ function mostrarToast(mensagem, tipo = "") {
 }
 
 // =================================
-// NAVEGAÇÃO ENTRE TELAS (Entregas / Dashboard)
+// NAVEGAÇÃO ENTRE TELAS
 // =================================
 
-const navEntregas = document.getElementById("navEntregas");
-// HTML uses id="navEmpresa" for the dashboard/company button
-const navDashboard = document.getElementById("navEmpresa");
-const telaEntregas = document.getElementById("telaEntregas");
-const telaDashboard = document.getElementById("telaDashboard");
+const TITULOS_TELA = {
+  dashboard: { titulo: "Painel Geral", crumb: "Dashboard" },
+  pedidos: { titulo: "Pedidos", crumb: "Pedidos" },
+  entregas: { titulo: "Entregas", crumb: "Entregas" },
+  configuracoes: { titulo: "Configurações", crumb: "Configurações" },
+};
 
 function irParaTela(tela) {
-  const ehEntregas = tela === "entregas";
+  document
+    .querySelectorAll(".tela-app")
+    .forEach((el) => el.classList.remove("ativa"));
+  document
+    .getElementById(`tela${tela.charAt(0).toUpperCase()}${tela.slice(1)}`)
+    ?.classList.add("ativa");
 
-  telaEntregas.classList.toggle("ativa", ehEntregas);
-  telaDashboard.classList.toggle("ativa", !ehEntregas);
-  navEntregas.classList.toggle("ativo", ehEntregas);
-  navDashboard.classList.toggle("ativo", !ehEntregas);
+  document.querySelectorAll("[data-tela]").forEach((btn) => {
+    btn.classList.toggle("ativo", btn.dataset.tela === tela);
+  });
 
-  if (!ehEntregas) {
-    atualizarRelatorio();
+  const info = TITULOS_TELA[tela];
+  if (info) {
+    document.getElementById("tituloTela").textContent = info.titulo;
+    document.getElementById("breadcrumbTela").textContent = info.crumb;
   }
+
+  if (tela === "pedidos") carregarPedidos();
+  if (tela === "configuracoes") carregarConfiguracoes();
 }
 
-navEntregas.onclick = () => irParaTela("entregas");
-navDashboard.onclick = () => irParaTela("dashboard");
+document.querySelectorAll("[data-tela]").forEach((btn) => {
+  btn.addEventListener("click", () => irParaTela(btn.dataset.tela));
+});
 
-// Abas internas do Dashboard: Relatório / Configurações
-const tabRelatorio = document.getElementById("tabRelatorio");
-const tabConfiguracoes = document.getElementById("tabConfiguracoes");
-const painelRelatorio = document.getElementById("painelRelatorio");
-const painelConfiguracoes = document.getElementById("painelConfiguracoes");
+document
+  .querySelectorAll(".menu-item.em-breve, .mobile-nav .em-breve")
+  .forEach((btn) => {
+    btn.addEventListener("click", () =>
+      mostrarToast("Essa área ainda está em construção 🚧"),
+    );
+  });
 
-function irParaPainelDashboard(painel) {
-  const ehRelatorio = painel === "relatorio";
-
-  painelRelatorio.classList.toggle("ativa", ehRelatorio);
-  painelConfiguracoes.classList.toggle("ativa", !ehRelatorio);
-  tabRelatorio.classList.toggle("ativa", ehRelatorio);
-  tabConfiguracoes.classList.toggle("ativa", !ehRelatorio);
-
-  if (!ehRelatorio) {
-    carregarConfiguracoes();
-  }
-}
-
-tabRelatorio.onclick = () => irParaPainelDashboard("relatorio");
-tabConfiguracoes.onclick = () => irParaPainelDashboard("configuracoes");
+document
+  .getElementById("alertBanner")
+  .addEventListener("click", () => irParaTela("entregas"));
 
 // =================================
-// PEGAR LOCALIZAÇÃO (reutilizado no form de entrega e no de configurações)
+// GEOLOCALIZAÇÃO (reutilizada no form de entrega e no de configurações)
 // =================================
 
 function ligarBotaoLocalizacao(idBotao, idLat, idLon, idStatus) {
-  document.getElementById(idBotao).onclick = () => {
+  const el = document.getElementById(idBotao);
+  if (!el) return;
+
+  el.onclick = () => {
     const botao = document.getElementById(idBotao);
     const status = document.getElementById(idStatus);
 
@@ -140,12 +149,10 @@ function ligarBotaoLocalizacao(idBotao, idLat, idLon, idStatus) {
       (pos) => {
         document.getElementById(idLat).value = pos.coords.latitude;
         document.getElementById(idLon).value = pos.coords.longitude;
-
         status.textContent = "✓ Localização capturada";
         botao.disabled = false;
         botao.textContent = "Usar minha localização";
       },
-
       () => {
         mostrarToast("Erro ao pegar localização", "erro");
         botao.disabled = false;
@@ -169,7 +176,7 @@ ligarBotaoLocalizacao(
 );
 
 // =================================
-// CRIAR ENTREGA
+// ENTREGAS — criar
 // =================================
 
 document.getElementById("btnCriarEntrega").onclick = async () => {
@@ -197,7 +204,6 @@ document.getElementById("btnCriarEntrega").onclick = async () => {
     });
 
     const data = await response.json();
-
     mostrarToast(
       data.message || "Entrega criada",
       response.ok ? "sucesso" : "erro",
@@ -228,15 +234,13 @@ document.getElementById("btnCriarEntrega").onclick = async () => {
 };
 
 // =================================
-// LISTAR ENTREGAS
+// ENTREGAS — listar
 // =================================
 
 function criarCardEntrega(entrega) {
   const item = document.createElement("div");
   item.className = "entrega-card";
-  if (entrega.status === "sem_entregador") {
-    item.classList.add("sem-entregador");
-  }
+  if (entrega.status === "sem_entregador") item.classList.add("sem-entregador");
 
   const header = document.createElement("div");
   header.className = "entrega-header";
@@ -249,8 +253,7 @@ function criarCardEntrega(entrega) {
   badge.className = `status-badge status-${entrega.status}`;
   badge.textContent = STATUS_LABELS[entrega.status] || entrega.status || "—";
 
-  header.appendChild(cliente);
-  header.appendChild(badge);
+  header.append(cliente, badge);
   item.appendChild(header);
 
   const endereco = document.createElement("p");
@@ -263,205 +266,472 @@ function criarCardEntrega(entrega) {
   bairro.textContent = `🏙️ ${entrega.bairro || "-"}${entrega.cidade ? " · " + entrega.cidade : ""}`;
   item.appendChild(bairro);
 
-  if (entrega.latitude != null && entrega.longitude != null) {
-    const coords = document.createElement("div");
-    coords.className = "entrega-coords";
-
-    const lat = document.createElement("span");
-    lat.textContent = `Lat: ${entrega.latitude}`;
-    const lon = document.createElement("span");
-    lon.textContent = `Lon: ${entrega.longitude}`;
-
-    coords.appendChild(lat);
-    coords.appendChild(lon);
-    item.appendChild(coords);
-  }
-
-  // Quando a entrega está sem entregador, mostra o botão pra reabrir
-  // o modal de decisão (tentar novamente / externo / cancelar).
   if (entrega.status === "sem_entregador") {
     const footer = document.createElement("div");
     footer.className = "entrega-footer";
-
-    const btnSolucionar = document.createElement("button");
-    btnSolucionar.type = "button";
-    btnSolucionar.className = "acao btn-solucionar";
-    btnSolucionar.textContent = "⚠️ Solucionar";
-    btnSolucionar.onclick = () => abrirModalSemEntregador(entrega);
-
-    footer.appendChild(btnSolucionar);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "acao btn-solucionar";
+    btn.textContent = "⚠️ Solucionar";
+    btn.onclick = () => abrirModalSemEntregador(entrega);
+    footer.appendChild(btn);
     item.appendChild(footer);
   }
 
   return item;
 }
 
-function atualizarBadgesSemEntregador() {
+function atualizarAlertBanner() {
   const semEntregador = [...entregasCache.values()].filter(
     (e) => e.status === "sem_entregador",
   ).length;
 
-  const badgeTopo = document.getElementById("badgeAlertaTopo");
-  const qtdTopo = document.getElementById("qtdSemEntregador");
-  // contadorDashboard may not exist in this template; only update if present
-  const contadorNav = document.getElementById("contadorDashboard");
+  document.getElementById("qtdSemEntregador").textContent = semEntregador;
+  document
+    .getElementById("alertBanner")
+    .classList.toggle("oculto", semEntregador === 0);
 
-  qtdTopo.textContent = semEntregador;
-  if (contadorNav) contadorNav.textContent = semEntregador;
-
-  badgeTopo.classList.toggle("mostrar", semEntregador > 0);
-  if (contadorNav) contadorNav.classList.toggle("mostrar", semEntregador > 0);
+  const badgeEntregas = document.getElementById("badgeEntregasSidebar");
+  badgeEntregas.textContent = semEntregador;
+  badgeEntregas.style.display = semEntregador > 0 ? "flex" : "none";
 }
 
-document.getElementById("badgeAlertaTopo").onclick = () =>
-  irParaTela("entregas");
+function renderizarEntregasAoVivo() {
+  const container = document.getElementById("entregasAoVivo");
+  const emRota = [...entregasCache.values()].filter(
+    (e) => e.status === "aceita" || e.status === "retirada",
+  );
+
+  container.innerHTML = "";
+  if (!emRota.length) {
+    container.innerHTML = `<p class="empty-state">Nenhuma entrega em rota.</p>`;
+    return;
+  }
+
+  emRota.forEach((entrega) => {
+    const card = document.createElement("div");
+    card.className = "entrega-live-card";
+
+    const codigo = `#${(entrega.id || "").slice(0, 6).toUpperCase()}`;
+    const nomeEntregador = entrega.entregadores?.nome || "Entregador a caminho";
+
+    card.innerHTML = `
+      <div class="entrega-live-topo">
+        <span class="entrega-live-codigo">${codigo}</span>
+        <span class="status-badge status-${entrega.status}">${STATUS_LABELS[entrega.status] || entrega.status}</span>
+      </div>
+      <div class="entrega-live-entregador">🛵 <strong>${nomeEntregador}</strong></div>
+      <div class="entrega-live-endereco">📍 ${entrega.endereco || ""}${entrega.bairro ? " — " + entrega.bairro : ""}</div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function atualizarPendingPill(qtd) {
+  const pill = document.getElementById("pendingPill");
+  document.getElementById("pendingPillTexto").textContent =
+    `${qtd} pedido${qtd === 1 ? "" : "s"} pendente${qtd === 1 ? "" : "s"}`;
+  pill.style.display = qtd > 0 ? "flex" : "none";
+}
 
 async function carregarEntregas() {
   const div = document.getElementById("listaEntregas");
 
   try {
-    const response = await fetch(`${API}/api/entregas/empresa`, {
-      headers,
-    });
-
+    const response = await fetch(`${API}/api/entregas/empresa`, { headers });
     const entregas = await response.json();
 
     div.innerHTML = "";
     entregasCache.clear();
 
     if (!Array.isArray(entregas) || !entregas.length) {
-      const vazio = document.createElement("p");
-      vazio.className = "empty-state";
-      vazio.textContent = "Nenhuma entrega criada.";
-      div.appendChild(vazio);
-      atualizarBadgesSemEntregador();
-      return;
+      div.innerHTML = `<p class="empty-state">Nenhuma entrega criada.</p>`;
+    } else {
+      entregas.forEach((entrega) => {
+        entregasCache.set(entrega.id ?? entrega._id, entrega);
+        div.appendChild(criarCardEntrega(entrega));
+      });
     }
 
-    entregas.forEach((entrega) => {
-      entregasCache.set(entrega.id ?? entrega._id, entrega);
-      div.appendChild(criarCardEntrega(entrega));
-    });
-
-    atualizarBadgesSemEntregador();
+    atualizarAlertBanner();
+    renderizarEntregasAoVivo();
+    atualizarMetricEmEntrega();
   } catch (error) {
     console.error(error);
-    div.innerHTML = "";
-    const erro = document.createElement("p");
-    erro.className = "empty-state";
-    erro.textContent = "Não foi possível carregar as entregas.";
-    div.appendChild(erro);
+    div.innerHTML = `<p class="empty-state">Não foi possível carregar as entregas.</p>`;
   }
 }
 
+function atualizarMetricEmEntrega() {
+  const emEntrega = [...entregasCache.values()].filter(
+    (e) => e.status === "aceita" || e.status === "retirada",
+  ).length;
+  const el = document.getElementById("metricEntrega");
+  if (el) el.textContent = emEntrega;
+}
+
 // =================================
-// realtime supabase
+// MODAL: SEM ENTREGADOR
 // =================================
-async function iniciarRealtime() {
+
+function abrirModalSemEntregador(entrega) {
+  entregaProblema = entrega;
+  document.getElementById("overlayModal").classList.add("ativo");
+  document.getElementById("modalSemEntregador").classList.add("ativo");
+}
+
+function fecharModalSemEntregador() {
+  entregaProblema = null;
+  document.getElementById("overlayModal").classList.remove("ativo");
+  document.getElementById("modalSemEntregador").classList.remove("ativo");
+}
+
+async function acaoModal(
+  botao,
+  url,
+  mensagemSucesso,
+  { fechar = true, atualizarLista = true } = {},
+) {
+  if (!entregaProblema) return;
+  const entregaId = entregaProblema.id ?? entregaProblema._id;
+
+  if (!entregaId) {
+    mostrarToast("Entrega sem ID válido — veja o console", "erro");
+    return;
+  }
+
+  botao.disabled = true;
+
   try {
-    const response = await fetch(`${API}/api/empresa/token-realtime`, {
-      headers,
-    });
+    const response = await fetch(
+      `${API}/api/empresa/entrega/${entregaId}/${url}`,
+      {
+        method: "POST",
+        headers,
+      },
+    );
 
-    const { token: tokenRealtime } = await response.json();
+    let data = null;
+    try {
+      data = await response.json();
+    } catch (_) {}
 
-    if (!tokenRealtime) {
-      console.log("Token realtime não recebido");
+    if (!response.ok) {
+      const detalhe = data?.message || data?.error || response.statusText;
+      mostrarToast(`Erro ${response.status}: ${detalhe}`, "erro");
       return;
     }
 
-    supabaseClient.realtime.setAuth(tokenRealtime);
-
-    supabaseClient
-      .channel(`empresa-${Date.now()}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "entregas",
-          filter: `empresa_id=eq.${empresaAtual.id}`,
-        },
-        (payload) => {
-          const entrega = payload.new;
-
-          console.log("Atualização realtime:", entrega);
-
-          carregarEntregas();
-
-          if (entrega && entrega.status === "sem_entregador") {
-            abrirModalSemEntregador(entrega);
-          }
-        },
-      )
-      .subscribe((status) => {
-        console.log("Realtime empresa:", status);
-
-        document.getElementById("statusConexao").textContent =
-          status === "SUBSCRIBED" ? "Conectado" : "Reconectando...";
-      });
+    mostrarToast(data?.message || mensagemSucesso, "sucesso");
+    if (fechar) fecharModalSemEntregador();
+    if (atualizarLista) carregarEntregas();
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    mostrarToast("Não foi possível conectar ao servidor", "erro");
+  } finally {
+    botao.disabled = false;
+  }
+}
+
+document.getElementById("btnTentarNovamente").onclick = function () {
+  acaoModal(this, "tentar-novamente", "Buscando novo entregador...");
+};
+document.getElementById("btnCancelar").onclick = function () {
+  acaoModal(this, "cancelar", "Pedido cancelado");
+};
+document.getElementById("btnExterno").onclick = function () {
+  acaoModal(this, "externo", "Entrega marcada como externa");
+};
+
+// =================================
+// PEDIDOS
+// =================================
+
+const STATUS_SEQUENCIA = [
+  "aguardando",
+  "confirmado",
+  "em_preparo",
+  "saiu_para_entrega",
+  "entregue",
+];
+const STATUS_PROXIMA_ACAO = {
+  aguardando: "Confirmar",
+  confirmado: "Em preparo",
+  em_preparo: "Saiu p/ entrega",
+  saiu_para_entrega: "Marcar entregue",
+};
+
+function criarLinhaPedido(pedido, comAcoes = true) {
+  const row = document.createElement("div");
+  row.className = "pedido-row";
+
+  const info = document.createElement("div");
+  info.className = "cliente-info";
+  const codigo = `#${(pedido.id || "").slice(0, 6).toUpperCase()}`;
+  info.innerHTML = `
+    <strong><span class="pedido-codigo">${codigo}</span> ${pedido.cliente_nome}</strong>
+    <p>${pedido.itens}</p>
+  `;
+
+  const origem = document.createElement("span");
+  origem.className = `origem-badge origem-${pedido.origem}`;
+  origem.textContent = ORIGEM_LABELS[pedido.origem] || pedido.origem;
+
+  const valor = document.createElement("span");
+  valor.className = "valor-total";
+  valor.textContent = Number(pedido.valor_total || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+
+  const statusBadge = document.createElement("span");
+  statusBadge.className = `status-badge status-${pedido.status}`;
+  statusBadge.textContent = STATUS_LABELS[pedido.status] || pedido.status;
+
+  row.append(info, origem, statusBadge, valor);
+
+  if (comAcoes) {
+    const acoes = document.createElement("div");
+    acoes.className = "pedido-actions";
+
+    const proximaAcao = STATUS_PROXIMA_ACAO[pedido.status];
+    if (proximaAcao) {
+      const btnAvancar = document.createElement("button");
+      btnAvancar.className = "btn-mini";
+      btnAvancar.textContent = proximaAcao;
+      btnAvancar.onclick = () => avancarStatusPedido(pedido);
+      acoes.appendChild(btnAvancar);
+    }
+
+    if (pedido.status !== "entregue" && pedido.status !== "cancelado") {
+      const btnCancelar = document.createElement("button");
+      btnCancelar.className = "btn-mini";
+      btnCancelar.textContent = "Cancelar";
+      btnCancelar.onclick = () => atualizarStatusPedido(pedido, "cancelado");
+      acoes.appendChild(btnCancelar);
+    }
+
+    row.appendChild(acoes);
+  }
+
+  return row;
+}
+
+async function atualizarStatusPedido(pedido, novoStatus) {
+  try {
+    const response = await fetch(
+      `${API}/api/empresa/pedidos/${pedido.id}/status`,
+      {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ status: novoStatus }),
+      },
+    );
+
+    const data = await response.json();
+    mostrarToast(
+      data.message || "Status atualizado",
+      response.ok ? "sucesso" : "erro",
+    );
+
+    if (response.ok) {
+      carregarPedidos();
+    }
+  } catch (error) {
+    console.error(error);
+    mostrarToast("Não foi possível atualizar o status", "erro");
+  }
+}
+
+function avancarStatusPedido(pedido) {
+  const indiceAtual = STATUS_SEQUENCIA.indexOf(pedido.status);
+  const proximo = STATUS_SEQUENCIA[indiceAtual + 1];
+  if (proximo) atualizarStatusPedido(pedido, proximo);
+}
+
+async function carregarPedidos() {
+  const div = document.getElementById("listaPedidos");
+
+  try {
+    const response = await fetch(`${API}/api/empresa/pedidos`, { headers });
+    const pedidos = await response.json();
+
+    pedidosCache = Array.isArray(pedidos) ? pedidos : [];
+
+    div.innerHTML = "";
+    if (!pedidosCache.length) {
+      div.innerHTML = `<p class="empty-state">Nenhum pedido ainda.</p>`;
+    } else {
+      pedidosCache.forEach((p) => div.appendChild(criarLinhaPedido(p)));
+    }
+
+    renderizarPedidosRecentes();
+    atualizarBadgePedidos();
+  } catch (error) {
+    console.error(error);
+    div.innerHTML = `<p class="empty-state">Não foi possível carregar os pedidos.</p>`;
+  }
+}
+
+function renderizarPedidosRecentes() {
+  const container = document.getElementById("listaPedidosRecentes");
+  const recentes = pedidosCache.slice(0, 5);
+
+  container.innerHTML = "";
+  if (!recentes.length) {
+    container.innerHTML = `<p class="empty-state">Nenhum pedido ainda.</p>`;
+    return;
+  }
+
+  recentes.forEach((p) => container.appendChild(criarLinhaPedido(p, false)));
+}
+
+function atualizarBadgePedidos() {
+  const pendentes = pedidosCache.filter(
+    (p) => p.status === "aguardando" || p.status === "confirmado",
+  ).length;
+  const badge = document.getElementById("badgePedidosSidebar");
+  badge.textContent = pendentes;
+  badge.style.display = pendentes > 0 ? "flex" : "none";
+}
+
+// ---------- Modal Novo Pedido ----------
+
+function abrirModalNovoPedido() {
+  document.getElementById("overlayNovoPedido").classList.add("ativo");
+  document.getElementById("modalNovoPedido").classList.add("ativo");
+}
+
+function fecharModalNovoPedido() {
+  document.getElementById("overlayNovoPedido").classList.remove("ativo");
+  document.getElementById("modalNovoPedido").classList.remove("ativo");
+  [
+    "np_cliente_nome",
+    "np_cliente_telefone",
+    "np_itens",
+    "np_valor_total",
+    "np_endereco",
+    "np_bairro",
+    "np_cidade",
+  ].forEach((id) => (document.getElementById(id).value = ""));
+  document.getElementById("np_origem").value = "manual";
+}
+
+document.getElementById("btnNovoPedido").onclick = abrirModalNovoPedido;
+document.getElementById("btnCancelarNovoPedido").onclick =
+  fecharModalNovoPedido;
+
+document.getElementById("btnConfirmarNovoPedido").onclick = async function () {
+  const botao = this;
+
+  const body = {
+    cliente_nome: document.getElementById("np_cliente_nome").value,
+    cliente_telefone: document.getElementById("np_cliente_telefone").value,
+    itens: document.getElementById("np_itens").value,
+    valor_total: Number(document.getElementById("np_valor_total").value) || 0,
+    origem: document.getElementById("np_origem").value,
+    endereco: document.getElementById("np_endereco").value,
+    bairro: document.getElementById("np_bairro").value,
+    cidade: document.getElementById("np_cidade").value,
+  };
+
+  botao.disabled = true;
+  botao.textContent = "Criando...";
+
+  try {
+    const response = await fetch(`${API}/api/empresa/pedidos`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+    mostrarToast(
+      data.message || "Pedido criado",
+      response.ok ? "sucesso" : "erro",
+    );
+
+    if (response.ok) {
+      fecharModalNovoPedido();
+      carregarPedidos();
+      carregarEntregas();
+      carregarDashboardKpis();
+    }
+  } catch (error) {
+    console.error(error);
+    mostrarToast("Não foi possível criar o pedido", "erro");
+  } finally {
+    botao.disabled = false;
+    botao.textContent = "Criar pedido";
+  }
+};
+
+// =================================
+// DASHBOARD — KPIs
+// =================================
+
+async function carregarDashboardKpis() {
+  try {
+    const response = await fetch(`${API}/api/empresa/pedidos/dashboard-kpis`, {
+      headers,
+    });
+    const kpis = await response.json();
+
+    console.log("KPIs recebidos:", response.status, kpis);
+
+    if (!response.ok) {
+      mostrarToast(
+        `Erro ${response.status} ao carregar KPIs: ${kpis?.message || "veja o console"}`,
+        "erro",
+      );
+      return;
+    }
+
+    document.getElementById("metricFaturamento").textContent = Number(
+      kpis.faturamentoHoje || 0,
+    ).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    document.getElementById("metricPedidos").textContent =
+      kpis.pedidosHoje || 0;
+    document.getElementById("metricTicket").textContent = Number(
+      kpis.ticketMedio || 0,
+    ).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+    document.getElementById("metricEntrega").textContent = kpis.emEntrega || 0;
+
+    const canais = kpis.canais || { ifood: 0, manual: 0, site: 0 };
+    const total =
+      (canais.ifood || 0) + (canais.manual || 0) + (canais.site || 0) || 1;
+
+    document.getElementById("canalIfoodQtd").textContent =
+      `${canais.ifood || 0} pedidos`;
+    document.getElementById("canalManualQtd").textContent =
+      `${canais.manual || 0} pedidos`;
+    document.getElementById("canalSiteQtd").textContent =
+      `${canais.site || 0} pedidos`;
+
+    document.getElementById("canalIfood").style.width =
+      `${((canais.ifood || 0) / total) * 100}%`;
+    document.getElementById("canalManual").style.width =
+      `${((canais.manual || 0) / total) * 100}%`;
+    document.getElementById("canalSite").style.width =
+      `${((canais.site || 0) / total) * 100}%`;
+
+    atualizarPendingPill(kpis.pedidosPendentes || 0);
+  } catch (error) {
+    console.error("Erro ao carregar KPIs:", error);
+    mostrarToast(
+      "Não foi possível carregar os indicadores do dashboard",
+      "erro",
+    );
   }
 }
 
 // =================================
-// RELATÓRIO (calculado a partir das entregas já carregadas)
+// CONFIGURAÇÕES
 // =================================
 
-function atualizarRelatorio() {
-  const entregas = [...entregasCache.values()];
-
-  const contagem = {
-    total: entregas.length,
-    pendentes: 0,
-    emRota: 0,
-    entregues: 0,
-    semEntregador: 0,
-    canceladas: 0,
-  };
-
-  entregas.forEach((e) => {
-    switch (e.status) {
-      case "pendente":
-        contagem.pendentes++;
-        break;
-      case "aceita":
-      case "aceito":
-      case "em_rota":
-      case "a_caminho":
-        contagem.emRota++;
-        break;
-      case "entregue":
-      case "finalizada":
-      case "concluida":
-      case "concluido":
-        contagem.entregues++;
-        break;
-      case "sem_entregador":
-        contagem.semEntregador++;
-        break;
-      case "cancelada":
-      case "cancelado":
-        contagem.canceladas++;
-        break;
-    }
-  });
-
-  document.getElementById("statTotal").textContent = contagem.total;
-  document.getElementById("statPendentes").textContent = contagem.pendentes;
-  document.getElementById("statEmRota").textContent = contagem.emRota;
-  document.getElementById("statEntregues").textContent = contagem.entregues;
-  document.getElementById("statSemEntregador").textContent =
-    contagem.semEntregador;
-  document.getElementById("statCanceladas").textContent = contagem.canceladas;
-}
-
-// =================================
-// CONFIGURAÇÕES DA EMPRESA (GET/PUT /api/empresa/me)
-// =================================
-
-let empresaAtual = null;
 let configuracoesCarregadas = false;
 
 async function carregarConfiguracoes() {
@@ -523,7 +793,6 @@ document.getElementById("btnSalvarConfiguracoes").onclick = async () => {
     });
 
     const data = await response.json();
-
     mostrarToast(
       data.message || "Configurações salvas",
       response.ok ? "sucesso" : "erro",
@@ -533,6 +802,11 @@ document.getElementById("btnSalvarConfiguracoes").onclick = async () => {
       empresaAtual = data.empresa;
       document.getElementById("nomeEmpresaTopo").textContent =
         data.empresa.nome_fantasia || "Painel da empresa";
+      document.getElementById("avatarLoja").textContent = (
+        data.empresa.nome_fantasia || "E"
+      )
+        .charAt(0)
+        .toUpperCase();
     }
   } catch (error) {
     console.error(error);
@@ -544,147 +818,102 @@ document.getElementById("btnSalvarConfiguracoes").onclick = async () => {
 };
 
 // =================================
-// CONECTAR EMPRESA AO REALTIME SUPABASE (GET /api/empresa/me)
+// CONECTAR EMPRESA
 // =================================
 
 async function conectarEmpresa() {
   try {
-    const response = await fetch(`${API}/api/empresa/me`, {
-      headers,
-    });
-
+    const response = await fetch(`${API}/api/empresa/me`, { headers });
     const empresa = await response.json();
 
-    if (!empresa?.id) {
-      console.log("Empresa não encontrada");
-      return;
-    }
+    if (!empresa?.id) return;
 
     empresaAtual = empresa;
-
     document.getElementById("nomeEmpresaTopo").textContent =
       empresa.nome_fantasia || "Painel da empresa";
-
-    console.log("Empresa conectada:", empresa.id);
+    document.getElementById("avatarLoja").textContent = (
+      empresa.nome_fantasia || "E"
+    )
+      .charAt(0)
+      .toUpperCase();
   } catch (error) {
     console.log(error);
-
-    document.getElementById("statusConexao").textContent = "Erro ao conectar";
   }
 }
 
 // =================================
-// MODAL: SEM ENTREGADOR
+// SUPABASE REALTIME
 // =================================
 
-function abrirModalSemEntregador(entrega) {
-  entregaProblema = entrega;
-  document.getElementById("overlayModal").classList.add("ativo");
-  document.getElementById("modalSemEntregador").classList.add("ativo");
-}
-
-function fecharModalSemEntregador() {
-  entregaProblema = null;
-  document.getElementById("overlayModal").classList.remove("ativo");
-  document.getElementById("modalSemEntregador").classList.remove("ativo");
-}
-
-async function acaoModal(
-  botao,
-  url,
-  mensagemSucesso,
-  { fechar = true, atualizarLista = true } = {},
-) {
-  if (!entregaProblema) return;
-
-  const entregaId = entregaProblema.id ?? entregaProblema._id;
-
-  if (!entregaId) {
-    console.error("entregaProblema sem id:", entregaProblema);
-    mostrarToast("Entrega sem ID válido — veja o console", "erro");
-    return;
-  }
-
-  botao.disabled = true;
-
+async function iniciarRealtime() {
   try {
-    const response = await fetch(
-      `${API}/api/empresa/entrega/${entregaId}/${url}`,
-      {
-        method: "POST",
-        headers,
-      },
-    );
+    const response = await fetch(`${API}/api/empresa/token-realtime`, {
+      headers,
+    });
+    const { token: tokenRealtime } = await response.json();
 
-    let data = null;
-    try {
-      data = await response.json();
-    } catch (_) {
-      // resposta sem corpo JSON
-    }
-
-    if (!response.ok) {
-      const detalhe = data?.message || data?.error || response.statusText;
-      console.error(
-        `Falha em POST /api/empresa/entrega/${entregaId}/${url} → ${response.status} ${detalhe}`,
-      );
-      mostrarToast(`Erro ${response.status}: ${detalhe}`, "erro");
+    if (!tokenRealtime) {
+      console.log("Token realtime não recebido");
       return;
     }
 
-    mostrarToast(data?.message || mensagemSucesso, "sucesso");
+    supabaseClient.realtime.setAuth(tokenRealtime);
 
-    if (fechar) {
-      fecharModalSemEntregador();
-    }
-
-    if (atualizarLista) {
-      carregarEntregas();
-    }
+    supabaseClient
+      .channel(`empresa-${empresaAtual.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "entregas",
+          filter: `empresa_id=eq.${empresaAtual.id}`,
+        },
+        (payload) => {
+          const entrega = payload.new;
+          carregarEntregas();
+          carregarDashboardKpis();
+          if (entrega && entrega.status === "sem_entregador") {
+            abrirModalSemEntregador(entrega);
+          }
+        },
+      )
+      .subscribe((status) => {
+        const el = document.getElementById("statusRealtime");
+        if (status === "SUBSCRIBED") {
+          el.textContent = "Conectado em tempo real";
+          el.classList.add("conectado");
+        } else {
+          el.textContent = "Reconectando...";
+          el.classList.remove("conectado");
+        }
+      });
   } catch (error) {
-    console.error(error);
-    mostrarToast("Não foi possível conectar ao servidor", "erro");
-  } finally {
-    botao.disabled = false;
+    console.log(error);
   }
 }
 
-document.getElementById("btnTentarNovamente").onclick = function () {
-  acaoModal(this, "tentar-novamente", "Buscando novo entregador...");
-};
-
-document.getElementById("btnCancelar").onclick = function () {
-  acaoModal(this, "cancelar", "Pedido cancelado");
-};
-
-document.getElementById("btnExterno").onclick = function () {
-  acaoModal(this, "externo", "Entrega marcada como externa");
-};
-
-// ================================
+// =================================
 // LOGOUT
-// ================================
+// =================================
 
-const btnLogout = document.getElementById("btnLogout");
-
-if (btnLogout) {
-  btnLogout.addEventListener("click", () => {
-    const confirmar = confirm("Deseja realmente sair da conta?");
-
-    if (!confirmar) return;
-
-    localStorage.removeItem("token");
-    localStorage.removeItem("usuario");
-
-    window.location.href = "../login/login.html";
-  });
-}
+document.getElementById("btnLogout").addEventListener("click", () => {
+  if (!confirm("Deseja realmente sair da conta?")) return;
+  localStorage.removeItem("token");
+  localStorage.removeItem("usuario");
+  window.location.href = "../login/login.html";
+});
 
 // =================================
 // INICIALIZAÇÃO
 // =================================
+
 (async () => {
   await conectarEmpresa();
-  await carregarEntregas();
+  await Promise.all([
+    carregarEntregas(),
+    carregarPedidos(),
+    carregarDashboardKpis(),
+  ]);
   await iniciarRealtime();
 })();

@@ -8,70 +8,297 @@
     <link rel="stylesheet" href="empresa.css" />
   </head>
   <body>
-    <!-- ================= TOPO ================= -->
-    <header class="topo-empresa">
-      <div class="topo-empresa-identidade">
-        <h1 id="nomeEmpresaTopo">Painel da Empresa</h1>
-        <p id="statusConexao">Conectado</p>
-      </div>
+    <div class="dashboard-layout">
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="avatar-loja" id="avatarLoja">E</div>
 
-      <button id="badgeAlertaTopo" class="badge-alerta-topo" type="button">
-        ⚠️ <span id="qtdSemEntregador">0</span> sem entregador
-      </button>
-    </header>
+          <div>
+            <h3 id="nomeEmpresaTopo">Painel da Empresa</h3>
+            <p>Painel Parceiro</p>
+          </div>
+        </div>
 
-    <div class="app-shell">
-      <!-- ================= MENU ================= -->
-      <nav class="menu-inferior">
-        <button id="navEntregas" class="ativo" type="button">
-          🚚
-          <span>Entregas</span>
+        <div class="status-loja">🟢 Loja Aberta</div>
+
+        <nav class="sidebar-nav">
+          <button
+            id="navDashboard"
+            class="menu-item ativo"
+            data-tela="dashboard"
+          >
+            📊 Dashboard
+          </button>
+
+          <button id="navPedidos" class="menu-item" data-tela="pedidos">
+            📦 Pedidos
+            <span
+              id="badgePedidosSidebar"
+              class="menu-badge"
+              style="display: none"
+              >0</span
+            >
+          </button>
+
+          <button id="navEntregas" class="menu-item" data-tela="entregas">
+            🚚 Entregas
+            <span
+              id="badgeEntregasSidebar"
+              class="menu-badge"
+              style="display: none"
+              >0</span
+            >
+          </button>
+
+          <button class="menu-item em-breve" type="button" title="Em breve">
+            🍔 Cardápio
+          </button>
+
+          <button class="menu-item em-breve" type="button" title="Em breve">
+            💰 Financeiro
+          </button>
+
+          <button class="menu-item em-breve" type="button" title="Em breve">
+            💳 Pagamentos
+          </button>
+
+          <button
+            id="navConfiguracoes"
+            class="menu-item"
+            data-tela="configuracoes"
+          >
+            ⚙️ Configurações
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="avatar-user">EU</div>
+
+          <div>
+            <strong>Sua conta</strong>
+            <small>Proprietário</small>
+          </div>
+
+          <button id="btnLogout" class="logout-btn" title="Sair">🚪</button>
+        </div>
+      </aside>
+
+      <!-- NAV MOBILE -->
+      <nav class="mobile-nav">
+        <button id="navDashboardMobile" class="ativo" data-tela="dashboard">
+          <span class="icon">🏠</span>
+          <span class="label">Início</span>
         </button>
 
-        <button id="navEmpresa" type="button">
-          🏠
-          <span>Empresa</span>
+        <button id="navPedidosMobile" data-tela="pedidos">
+          <span class="icon">📦</span>
+          <span class="label">Pedidos</span>
         </button>
 
-        <button id="btnLogout">
-          🚪
-          <span>Sair</span>
+        <button id="navEntregasMobile" data-tela="entregas">
+          <span class="icon">🛵</span>
+          <span class="label">Entregas</span>
+        </button>
+
+        <button class="em-breve" type="button" title="Em breve">
+          <span class="icon">💰</span>
+          <span class="label">Financeiro</span>
+        </button>
+
+        <button id="navConfigMobile" data-tela="configuracoes">
+          <span class="icon">⚙️</span>
+          <span class="label">Config</span>
         </button>
       </nav>
 
-      <!-- ================= CONTEÚDO ================= -->
-      <main class="conteudo-principal">
-        <!-- ==========================================
-                 TELA ENTREGAS
-            =========================================== -->
-        <section id="telaEntregas" class="tela-app ativa">
+      <!-- MAIN -->
+      <main class="main-content">
+        <!-- TOPBAR (fixo, muda só o texto conforme a tela) -->
+        <header class="topbar">
+          <div>
+            <div class="breadcrumb">
+              Parceiro DeliveryOS / <span id="breadcrumbTela">Dashboard</span>
+            </div>
+
+            <h1 id="tituloTela">Painel Geral</h1>
+
+            <p>
+              <span id="statusRealtime" class="status-realtime"
+                >Conectando...</span
+              >
+            </p>
+          </div>
+
+          <div class="topbar-actions">
+            <div id="pendingPill" class="pending-pill" style="display: none">
+              <span id="pendingPillTexto">0 pedidos pendentes</span>
+            </div>
+
+            <button id="btnNovoPedido" class="btn-novo-pedido" type="button">
+              + Novo Pedido
+            </button>
+          </div>
+        </header>
+
+        <!-- ALERTA — entregas sem entregador -->
+        <section id="alertBanner" class="alert-banner oculto clicavel">
+          ⚠️ <span id="qtdSemEntregador">0</span> entrega(s) sem entregador —
+          clique pra resolver
+        </section>
+
+        <!-- ===================================================
+             TELA DASHBOARD
+        ==================================================== -->
+        <section id="telaDashboard" class="tela-app ativa">
+          <section class="metric-grid">
+            <div class="metric-card">
+              <span>FATURAMENTO HOJE</span>
+              <h2 id="metricFaturamento">R$ 0,00</h2>
+            </div>
+
+            <div class="metric-card">
+              <span>PEDIDOS HOJE</span>
+              <h2 id="metricPedidos">0</h2>
+            </div>
+
+            <div class="metric-card">
+              <span>TICKET MÉDIO</span>
+              <h2 id="metricTicket">R$ 0,00</h2>
+            </div>
+
+            <div class="metric-card">
+              <span>EM ENTREGA</span>
+              <h2 id="metricEntrega">0</h2>
+            </div>
+          </section>
+
+          <section class="dashboard-grid">
+            <div class="card-large">
+              <div class="card-header">
+                <h3>Pedidos Recentes</h3>
+              </div>
+
+              <div id="listaPedidosRecentes">
+                <p class="empty-state">Nenhum pedido ainda.</p>
+              </div>
+            </div>
+
+            <div class="card-large">
+              <div class="card-header">
+                <h3>Entregas ao Vivo</h3>
+              </div>
+
+              <div id="entregasAoVivo">
+                <p class="empty-state">Nenhuma entrega em rota.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="card-large">
+            <div class="card-header">
+              <h3>Canais de Venda</h3>
+            </div>
+
+            <div class="channel-item">
+              <div class="channel-info">
+                <span>iFood</span>
+                <strong id="canalIfoodQtd">0 pedidos</strong>
+              </div>
+              <div class="progress">
+                <div
+                  id="canalIfood"
+                  class="progress-fill ifood"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+
+            <div class="channel-item">
+              <div class="channel-info">
+                <span>Manual</span>
+                <strong id="canalManualQtd">0 pedidos</strong>
+              </div>
+              <div class="progress">
+                <div
+                  id="canalManual"
+                  class="progress-fill manual"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+
+            <div class="channel-item">
+              <div class="channel-info">
+                <span>Site Próprio</span>
+                <strong id="canalSiteQtd">0 pedidos</strong>
+              </div>
+              <div class="progress">
+                <div
+                  id="canalSite"
+                  class="progress-fill site"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <!-- ===================================================
+             TELA PEDIDOS
+        ==================================================== -->
+        <section id="telaPedidos" class="tela-app">
+          <div class="page-header">
+            <h2>📦 Pedidos</h2>
+          </div>
+
+          <section class="card-large">
+            <div id="listaPedidos">
+              <p class="empty-state">Carregando pedidos...</p>
+            </div>
+          </section>
+        </section>
+
+        <!-- ===================================================
+             TELA ENTREGAS
+        ==================================================== -->
+        <section id="telaEntregas" class="tela-app">
+          <div class="page-header">
+            <h2>🚚 Entregas</h2>
+          </div>
+
           <section class="card">
-            <h2>📦 Criar nova entrega</h2>
+            <h3>Criar entrega avulsa</h3>
+            <p
+              style="
+                margin: -8px 0 16px;
+                color: var(--text-muted);
+                font-size: 0.85rem;
+              "
+            >
+              Use isso pra entregas que não vieram de um pedido no cardápio (ex:
+              encomenda por telefone).
+            </p>
 
-            <label class="field-label" for="cliente_nome"> Cliente </label>
-
+            <label class="field-label" for="cliente_nome">Cliente</label>
             <div class="field-row">
               <input
                 id="cliente_nome"
                 type="text"
                 placeholder="Nome do cliente"
               />
-
               <input id="cliente_telefone" type="text" placeholder="Telefone" />
             </div>
 
-            <label class="field-label" for="endereco"> Endereço </label>
-
+            <label class="field-label" for="endereco">Endereço</label>
             <input id="endereco" type="text" placeholder="Endereço" />
 
             <div class="field-row">
               <input id="bairro" type="text" placeholder="Bairro" />
-
               <input id="cidade" type="text" placeholder="Cidade" />
             </div>
 
-            <label class="field-label" for="descricao"> Descrição </label>
-
+            <label class="field-label" for="descricao">Descrição</label>
             <textarea
               id="descricao"
               placeholder="Descrição da entrega"
@@ -79,15 +306,11 @@
 
             <div class="gps-box">
               <h4>📍 Localização da entrega</h4>
-
               <div class="field-row">
                 <input id="latitude" type="text" placeholder="Latitude" />
-
                 <input id="longitude" type="text" placeholder="Longitude" />
               </div>
-
               <p id="gpsStatus" class="gps-coords-ok"></p>
-
               <button
                 id="buscarLocalizacao"
                 type="button"
@@ -102,8 +325,10 @@
             </button>
           </section>
 
-          <section class="card">
-            <h3>🚚 Minhas entregas</h3>
+          <section class="card-large">
+            <div class="card-header">
+              <h3>Minhas entregas</h3>
+            </div>
 
             <div id="listaEntregas">
               <p class="empty-state">Carregando entregas...</p>
@@ -111,152 +336,162 @@
           </section>
         </section>
 
-        <!-- ==========================================
-                 TELA EMPRESA
-            =========================================== -->
-        <section id="telaDashboard" class="tela-app">
-          <section class="card">
-            <div class="tabs-internas">
-              <button id="tabRelatorio" class="tab-interna ativa" type="button">
-                📊 Relatório
-              </button>
+        <!-- ===================================================
+             TELA CONFIGURAÇÕES
+        ==================================================== -->
+        <section id="telaConfiguracoes" class="tela-app">
+          <div class="page-header">
+            <h2>⚙️ Configurações</h2>
+          </div>
 
-              <button id="tabConfiguracoes" class="tab-interna" type="button">
-                ⚙️ Configurações
+          <section class="card">
+            <h3>Dados da empresa</h3>
+
+            <label class="field-label" for="cfg_nome_fantasia"
+              >Nome fantasia</label
+            >
+            <input
+              id="cfg_nome_fantasia"
+              type="text"
+              placeholder="Nome da empresa"
+            />
+
+            <div class="field-row">
+              <div>
+                <label class="field-label" for="cfg_telefone">Telefone</label>
+                <input id="cfg_telefone" type="text" placeholder="Telefone" />
+              </div>
+              <div>
+                <label class="field-label" for="cfg_categoria">Categoria</label>
+                <input
+                  id="cfg_categoria"
+                  type="text"
+                  placeholder="Ex: Restaurante"
+                />
+              </div>
+            </div>
+
+            <label class="field-label" for="cfg_endereco">Endereço</label>
+            <input id="cfg_endereco" type="text" placeholder="Endereço" />
+
+            <div class="field-row">
+              <input id="cfg_bairro" type="text" placeholder="Bairro" />
+              <input id="cfg_cidade" type="text" placeholder="Cidade" />
+            </div>
+
+            <div class="gps-box">
+              <h4>📍 Localização da empresa</h4>
+              <div class="field-row">
+                <input id="cfg_latitude" type="text" placeholder="Latitude" />
+                <input id="cfg_longitude" type="text" placeholder="Longitude" />
+              </div>
+              <p id="cfgGpsStatus" class="gps-coords-ok"></p>
+              <button
+                id="cfgBuscarLocalizacao"
+                type="button"
+                class="acao btn-secondary"
+              >
+                Usar minha localização
               </button>
             </div>
+
+            <button
+              id="btnSalvarConfiguracoes"
+              type="button"
+              class="acao btn-primary"
+            >
+              Salvar alterações
+            </button>
           </section>
-
-          <!-- RELATÓRIO -->
-          <div id="painelRelatorio" class="painel-interno ativa">
-            <section class="card">
-              <h3>📊 Visão geral das entregas</h3>
-
-              <div class="grid-relatorio">
-                <div class="stat-card stat-card-destaque">
-                  <span class="stat-label"> Total de entregas </span>
-                  <strong id="statTotal">0</strong>
-                </div>
-
-                <div class="stat-card">
-                  <span class="stat-label">Pendentes</span>
-                  <strong id="statPendentes">0</strong>
-                </div>
-
-                <div class="stat-card">
-                  <span class="stat-label">Em rota</span>
-                  <strong id="statEmRota">0</strong>
-                </div>
-
-                <div class="stat-card">
-                  <span class="stat-label">Entregues</span>
-                  <strong id="statEntregues">0</strong>
-                </div>
-
-                <div class="stat-card alerta">
-                  <span class="stat-label"> Sem entregador </span>
-                  <strong id="statSemEntregador">0</strong>
-                </div>
-
-                <div class="stat-card perigo">
-                  <span class="stat-label"> Canceladas </span>
-                  <strong id="statCanceladas">0</strong>
-                </div>
-              </div>
-            </section>
-          </div>
-
-          <!-- CONFIGURAÇÕES -->
-          <div id="painelConfiguracoes" class="painel-interno">
-            <section class="card">
-              <h3>⚙️ Dados da empresa</h3>
-
-              <label class="field-label" for="cfg_nome_fantasia">
-                Nome fantasia
-              </label>
-
-              <input
-                id="cfg_nome_fantasia"
-                type="text"
-                placeholder="Nome da empresa"
-              />
-
-              <div class="field-row">
-                <div>
-                  <label class="field-label" for="cfg_telefone">
-                    Telefone
-                  </label>
-
-                  <input id="cfg_telefone" type="text" placeholder="Telefone" />
-                </div>
-
-                <div>
-                  <label class="field-label" for="cfg_categoria">
-                    Categoria
-                  </label>
-
-                  <input
-                    id="cfg_categoria"
-                    type="text"
-                    placeholder="Ex: Restaurante"
-                  />
-                </div>
-              </div>
-
-              <label class="field-label" for="cfg_endereco"> Endereço </label>
-
-              <input id="cfg_endereco" type="text" placeholder="Endereço" />
-
-              <div class="field-row">
-                <input id="cfg_bairro" type="text" placeholder="Bairro" />
-
-                <input id="cfg_cidade" type="text" placeholder="Cidade" />
-              </div>
-
-              <div class="gps-box">
-                <h4>📍 Localização da empresa</h4>
-
-                <div class="field-row">
-                  <input id="cfg_latitude" type="text" placeholder="Latitude" />
-
-                  <input
-                    id="cfg_longitude"
-                    type="text"
-                    placeholder="Longitude"
-                  />
-                </div>
-
-                <p id="cfgGpsStatus" class="gps-coords-ok"></p>
-
-                <button
-                  id="cfgBuscarLocalizacao"
-                  type="button"
-                  class="acao btn-secondary"
-                >
-                  Usar minha localização
-                </button>
-              </div>
-
-              <button
-                id="btnSalvarConfiguracoes"
-                type="button"
-                class="acao btn-primary"
-              >
-                Salvar alterações
-              </button>
-            </section>
-          </div>
         </section>
       </main>
     </div>
 
-    <!-- ================= MODAL ================= -->
+    <!-- ================= MODAL: NOVO PEDIDO ================= -->
+    <div id="overlayNovoPedido" class="overlay-modal"></div>
+
+    <div id="modalNovoPedido" class="modal">
+      <div class="modal-content">
+        <h2>📦 Novo pedido</h2>
+        <p>
+          Preenche os dados do pedido. Se tiver endereço, a entrega já sai pro
+          motoboy sozinha.
+        </p>
+
+        <label class="field-label" for="np_cliente_nome">Cliente</label>
+        <div class="field-row">
+          <input
+            id="np_cliente_nome"
+            type="text"
+            placeholder="Nome do cliente"
+          />
+          <input id="np_cliente_telefone" type="text" placeholder="Telefone" />
+        </div>
+
+        <label class="field-label" for="np_itens">Itens do pedido</label>
+        <textarea
+          id="np_itens"
+          placeholder="Ex: X-Burgão + Batata G + Suco"
+        ></textarea>
+
+        <div class="field-row">
+          <div>
+            <label class="field-label" for="np_valor_total"
+              >Valor total (R$)</label
+            >
+            <input
+              id="np_valor_total"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0,00"
+            />
+          </div>
+          <div>
+            <label class="field-label" for="np_origem">Origem</label>
+            <select id="np_origem">
+              <option value="manual" selected>Manual</option>
+              <option value="site">Site próprio</option>
+              <option value="ifood">iFood</option>
+            </select>
+          </div>
+        </div>
+
+        <label class="field-label" for="np_endereco"
+          >Endereço (opcional — gera entrega)</label
+        >
+        <input id="np_endereco" type="text" placeholder="Endereço" />
+
+        <div class="field-row">
+          <input id="np_bairro" type="text" placeholder="Bairro" />
+          <input id="np_cidade" type="text" placeholder="Cidade" />
+        </div>
+
+        <div class="modal-actions">
+          <button
+            id="btnConfirmarNovoPedido"
+            type="button"
+            class="acao btn-primary"
+          >
+            Criar pedido
+          </button>
+          <button
+            id="btnCancelarNovoPedido"
+            type="button"
+            class="acao btn-secondary"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= MODAL: SEM ENTREGADOR ================= -->
     <div id="overlayModal" class="overlay-modal"></div>
 
     <div id="modalSemEntregador" class="modal">
       <div class="modal-content" role="dialog" aria-labelledby="modalTitulo">
         <h2 id="modalTitulo">⚠️ Nenhum entregador aceitou</h2>
-
         <p>Escolha o que fazer com esta entrega antes de continuar.</p>
 
         <div class="modal-actions">
@@ -267,11 +502,9 @@
           >
             🔄 Tentar novamente
           </button>
-
           <button id="btnExterno" type="button" class="acao btn-secondary">
             🛵 Entregador externo
           </button>
-
           <button id="btnCancelar" type="button" class="acao btn-danger">
             ✖ Cancelar pedido
           </button>
