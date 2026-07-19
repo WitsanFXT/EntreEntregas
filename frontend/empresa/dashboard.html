@@ -81,7 +81,7 @@
             <small>Proprietário</small>
           </div>
 
-          <button id="btnLogout" class="logout-btn" title="Sair">🚪</button>
+          <button id="btnLogout" class="logout-btn" title="Sair">‹</button>
         </div>
       </aside>
 
@@ -268,7 +268,7 @@
             <h2>🚚 Entregas</h2>
           </div>
 
-          <section class="card">
+          <section class="card entrega-avulsa-oculta">
             <h3>Criar entrega avulsa</h3>
             <p
               style="
@@ -441,22 +441,20 @@
               placeholder="0,00"
             />
           </div>
-          <div class="gps-box">
-            <h4>📍 Localização do cliente</h4>
+          <div class="field-row">
+            <div>
+              <label>Valor produtos</label>
+              <input id="np_valor_produtos" type="number" placeholder="0,00" />
+            </div>
 
-            <button
-              id="btnBuscarEndereco"
-              class="acao btn-secondary"
-              type="button"
-            >
-              Buscar endereço
-            </button>
-
-            <div id="mapaPedido"></div>
-
-            <div class="field-row">
-              <input id="np_latitude" readonly />
-              <input id="np_longitude" readonly />
+            <div>
+              <label>Taxa entrega</label>
+              <input
+                id="np_taxa_entrega"
+                type="number"
+                readonly
+                placeholder="0,00"
+              />
             </div>
           </div>
           <div>
@@ -469,14 +467,43 @@
           </div>
         </div>
 
-        <label class="field-label" for="np_endereco"
-          >Endereço (opcional — gera entrega)</label
-        >
-        <input id="np_endereco" type="text" placeholder="Endereço" />
+        <!-- GPS FORA DO FIELD-ROW -->
+        <div class="gps-box">
+          <label class="field-label" for="np_endereco"
+            >Endereço (opcional — gera entrega)</label
+          >
+          <input id="np_endereco" type="text" placeholder="Endereço" />
 
-        <div class="field-row">
-          <input id="np_bairro" type="text" placeholder="Bairro" />
-          <input id="np_cidade" type="text" placeholder="Cidade" />
+          <div class="field-row">
+            <div class="autocomplete-box">
+              <input
+                id="np_bairro"
+                type="text"
+                placeholder="Digite o bairro"
+                autocomplete="off"
+              />
+
+              <div id="listaBairros" class="lista-autocomplete"></div>
+            </div>
+            <input id="np_cidade" type="text" placeholder="Cidade" />
+          </div>
+          <h4>📍 Localização do cliente</h4>
+
+          <button
+            id="btnBuscarEndereco"
+            class="acao btn-secondary"
+            type="button"
+          >
+            Buscar endereço
+          </button>
+
+          <div id="mapaPedido"></div>
+
+          <div class="field-row">
+            <input id="np_latitude" readonly placeholder="Latitude" />
+
+            <input id="np_longitude" readonly placeholder="Longitude" />
+          </div>
         </div>
 
         <div class="modal-actions">

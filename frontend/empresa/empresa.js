@@ -37,6 +37,12 @@ const entregasCache = new Map();
 let pedidosCache = [];
 let entregaProblema = null;
 
+let bairrosTabela = [];
+let valorEntregaAtual = 0;
+
+let mapaPedido = null;
+let marcadorPedido = null;
+
 const STATUS_LABELS = {
   pendente: "Pendente",
   aceita: "Aceita",
@@ -134,6 +140,122 @@ document
 // GEOLOCALIZAÇÃO (reutilizada no form de entrega e no de configurações)
 // =================================
 
+async function carregarBairros() {
+  try {
+    const resposta = await fetch(`${API}/api/tabela-precos`, {
+      headers,
+    });
+
+    const dados = await resposta.json();
+
+    bairrosTabela = dados;
+
+    console.log("BAIRROS CARREGADOS:", bairrosTabela);
+  } catch (error) {
+    console.error("Erro bairros", error);
+  }
+}
+
+const inputBairro = document.getElementById("np_bairro");
+
+const listaBairros = document.getElementById("listaBairros");
+
+inputBairro.addEventListener("input", () => {
+  const texto = inputBairro.value.toLowerCase().trim();
+
+  listaBairros.innerHTML = "";
+
+  if (!texto) {
+    listaBairros.classList.remove("ativo");
+    return;
+  }
+
+  const encontrados = bairrosTabela.filter((b) => {
+    return b.bairro
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .includes(texto.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+  });
+
+  encontrados.forEach((bairro) => {
+    const item = document.createElement("div");
+
+    item.className = "item-bairro";
+
+    item.innerHTML = `
+
+        <span>
+          ${bairro.bairro}
+        </span>
+
+        <strong>
+          R$ ${Number(bairro.valor).toFixed(2)}
+        </strong>
+
+    `;
+
+    item.onclick = () => {
+      inputBairro.value = bairro.bairro;
+
+      valorEntregaAtual = Number(bairro.valor);
+
+      document.getElementById("np_taxa_entrega").value =
+        valorEntregaAtual.toFixed(2);
+
+      calcularTotalPedido();
+
+      listaBairros.classList.remove("ativo");
+    };
+
+    listaBairros.appendChild(item);
+  });
+
+  if (encontrados.length) {
+    listaBairros.classList.add("ativo");
+  } else {
+    listaBairros.classList.remove("ativo");
+  }
+});
+
+document.getElementById("np_bairro").addEventListener("change", () => {
+  const bairro = document.getElementById("np_bairro").value;
+
+  const encontrado = bairrosTabela.find(
+    (b) => b.bairro.toLowerCase() === bairro.toLowerCase(),
+  );
+
+  if (encontrado) {
+    valorEntregaAtual = Number(encontrado.valor);
+
+    document.getElementById("np_taxa_entrega").value =
+      valorEntregaAtual.toFixed(2);
+
+    calcularTotalPedido();
+  }
+});
+
+function calcularTotalPedido() {
+  const produtos =
+    Number(document.getElementById("np_valor_produtos").value) || 0;
+
+  const entrega = Number(valorEntregaAtual) || 0;
+
+  const total = produtos + entrega;
+
+  document.getElementById("np_valor_total").value = total.toFixed(2);
+
+  console.log("TOTAL PEDIDO:", {
+    produtos,
+    entrega,
+    total,
+  });
+}
+
+document
+  .getElementById("np_valor_produtos")
+  .addEventListener("input", calcularTotalPedido);
+
 async function buscarEnderecoPedido() {
   const endereco = document.getElementById("np_endereco").value;
   const bairro = document.getElementById("np_bairro").value;
@@ -169,7 +291,84 @@ async function buscarEnderecoPedido() {
 }
 document
   .getElementById("btnBuscarEndereco")
-  .addEventListener("click", buscarEnderecoPedido);
+  .addEventListener("click", async () => {
+    console.log("BOTÃO BUSCAR CLICADO");
+
+    const endereco = document.getElementById("np_endereco").value.trim();
+
+    const bairro = document.getElementById("np_bairro").value.trim();
+
+    const cidade = document.getElementById("np_cidade").value.trim();
+
+    if (!endereco) {
+      mostrarToast("Digite o endereço primeiro", "erro");
+      return;
+    }
+
+    if (!mapaPedido) {
+      iniciarMapaPedido();
+    }
+
+    const tentativas = [
+      `${endereco}, ${bairro}, ${cidade}, Minas Gerais, Brasil`,
+
+      `${endereco}, ${cidade}, Minas Gerais, Brasil`,
+
+      `${endereco}, Unaí, MG, Brasil`,
+
+      `${bairro}, ${cidade}, Minas Gerais, Brasil`,
+    ];
+
+    console.log("TENTATIVAS:", tentativas);
+
+    try {
+      let encontrado = null;
+
+      for (const busca of tentativas) {
+        console.log("CONSULTANDO:", busca);
+
+        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(busca)}`;
+
+        const resposta = await fetch(url, {
+          headers: {
+            "Accept-Language": "pt-BR",
+          },
+        });
+
+        const dados = await resposta.json();
+
+        console.log("RESULTADO:", dados);
+
+        if (dados.length) {
+          encontrado = dados[0];
+          break;
+        }
+      }
+
+      if (!encontrado) {
+        mostrarToast("Não encontrei. Clique no mapa para marcar.", "erro");
+
+        return;
+      }
+
+      const lat = Number(encontrado.lat);
+      const lng = Number(encontrado.lon);
+
+      console.log("COORDENADAS PESQUISA:", lat, lng);
+
+      adicionarMarcador(lat, lng);
+
+      document.getElementById("np_latitude").value = lat.toFixed(8);
+
+      document.getElementById("np_longitude").value = lng.toFixed(8);
+
+      mostrarToast("Endereço localizado", "sucesso");
+    } catch (error) {
+      console.error(error);
+
+      mostrarToast("Erro ao buscar endereço", "erro");
+    }
+  });
 
 // Inicializar mapa para seleção de coordenadas
 let map = null;
@@ -691,9 +890,64 @@ function atualizarBadgePedidos() {
 
 // ---------- Modal Novo Pedido ----------
 
+function iniciarMapaPedido() {
+  if (mapaPedido) return;
+
+  mapaPedido = L.map("mapaPedido").setView([-16.3605, -46.8845], 13);
+
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap",
+  }).addTo(mapaPedido);
+
+  mapaPedido.on("click", function (e) {
+    adicionarMarcador(e.latlng.lat, e.latlng.lng);
+  });
+
+  setTimeout(() => {
+    mapaPedido.invalidateSize();
+  }, 500);
+}
+
+function adicionarMarcador(lat, lng) {
+  console.log("ADICIONANDO MARCADOR:", lat, lng);
+
+  const posicao = [Number(lat), Number(lng)];
+
+  if (marcadorPedido) {
+    marcadorPedido.setLatLng(posicao);
+  } else {
+    marcadorPedido = L.marker(posicao, {
+      draggable: true,
+    })
+      .addTo(mapaPedido)
+      .bindPopup(
+        `
+    <strong>📍 Cliente</strong><br>
+    Local da entrega
+`,
+      )
+      .openPopup();
+  }
+
+  mapaPedido.setView(posicao, 18, {
+    animate: true,
+  });
+
+  document.getElementById("np_latitude").value = Number(lat).toFixed(8);
+
+  document.getElementById("np_longitude").value = Number(lng).toFixed(8);
+}
+
 function abrirModalNovoPedido() {
   document.getElementById("overlayNovoPedido").classList.add("ativo");
+
   document.getElementById("modalNovoPedido").classList.add("ativo");
+
+  setTimeout(() => {
+    iniciarMapaPedido();
+
+    mapaPedido.invalidateSize(true);
+  }, 800);
 }
 
 function fecharModalNovoPedido() {
@@ -720,13 +974,26 @@ document.getElementById("btnConfirmarNovoPedido").onclick = async function () {
 
   const body = {
     cliente_nome: document.getElementById("np_cliente_nome").value,
+
     cliente_telefone: document.getElementById("np_cliente_telefone").value,
+
     itens: document.getElementById("np_itens").value,
+
     valor_total: Number(document.getElementById("np_valor_total").value) || 0,
+
+    valor_entrega: valorEntregaAtual,
+
     origem: document.getElementById("np_origem").value,
+
     endereco: document.getElementById("np_endereco").value,
+
     bairro: document.getElementById("np_bairro").value,
+
     cidade: document.getElementById("np_cidade").value,
+
+    latitude: Number(document.getElementById("np_latitude").value) || null,
+
+    longitude: Number(document.getElementById("np_longitude").value) || null,
   };
 
   botao.disabled = true;
@@ -1011,4 +1278,8 @@ document.addEventListener("DOMContentLoaded", () => {
     carregarDashboardKpis(),
   ]);
   await iniciarRealtime();
+})();
+
+(async () => {
+  await carregarBairros();
 })();
