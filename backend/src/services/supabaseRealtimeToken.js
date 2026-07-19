@@ -12,12 +12,12 @@ function gerarTokenRealtime(claims) {
       role: "authenticated",
       ...claims,
     },
+
     SUPABASE_JWT_SECRET,
+
     {
       expiresIn: "12h",
     },
-
-    console.log("SUPABASE JWT:", process.env.SUPABASE_JWT_SECRET),
   );
 }
 
