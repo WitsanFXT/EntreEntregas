@@ -27,16 +27,18 @@
     },
 
     {
-      "src": "/loja/(.*)",
-      "dest": "/frontend/public/loja/index.html"
+      "src": "/loja/script.js",
+      "dest": "/frontend/public/loja/script.js"
     },
 
     {
-      "src": "/cliente",
-      "status": 302,
-      "headers": {
-        "Location": "/frontend/public/index.html"
-      }
+      "src": "/loja/style.css",
+      "dest": "/frontend/public/loja/style.css"
+    },
+
+    {
+      "src": "/loja/(.*)",
+      "dest": "/frontend/public/loja/index.html"
     },
 
     {
