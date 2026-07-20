@@ -6,15 +6,23 @@ const empresaId =
   new URLSearchParams(window.location.search).get("empresa") ||
   window.location.pathname.split("/").filter(Boolean).pop();
 
-const API_URL =
-  window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1"
-    ? "http://localhost:5500"
-    : "";
+// 🔥 CONFIGURAÇÃO CORRETA PARA PRODUÇÃO E DESENVOLVIMENTO
+const API_URL = (() => {
+  // Se estiver em produção (Vercel), usa a URL da API
+  if (
+    window.location.hostname !== "localhost" &&
+    window.location.hostname !== "127.0.0.1"
+  ) {
+    // 🔥 MUDE PARA A URL DO SEU BACKEND NA PRODUÇÃO
+    // Exemplo: https://seu-backend.vercel.app
+    return "https://entre-entregas.vercel.app/"; // <-- AJUSTE ESTA URL
+  }
+  // Desenvolvimento local
+  return "http://localhost:5500";
+})();
 
-// ⚠️ PLACEHOLDER — taxa de serviço da plataforma. Ajuste pro valor real
-// (ou traga isso do backend, se cada loja puder ter uma taxa diferente).
-const TAXA_SERVICO = 0;
+console.log("📡 API_URL:", API_URL);
+console.log("🏪 Empresa ID:", empresaId);
 
 // ======================================
 // ESTADO
@@ -102,35 +110,33 @@ function renderizarLoja(empresa) {
     ? `📍 ${partesEndereco.join(" — ")}`
     : "";
 
-  // Logo
+  // 🔥 LOGO - sem placeholder
   const logo = document.getElementById("logoLoja");
-  const logoPlaceholder = document.getElementById("logoPlaceholder");
   if (empresa.logo_url) {
     logo.src = empresa.logo_url;
     logo.hidden = false;
-    logoPlaceholder.hidden = true;
   } else {
     logo.hidden = true;
-    logoPlaceholder.hidden = false;
   }
 
+  // Banner
   aplicarBannerLoja(empresa.banner_url);
 
-  // Avaliação — só mostra se o backend já devolver isso um dia
+  // Avaliação
   if (empresa.avaliacao) {
     const el = document.getElementById("avaliacaoLoja");
     el.textContent = `⭐ ${Number(empresa.avaliacao).toFixed(1)}${empresa.total_avaliacoes ? ` (${empresa.total_avaliacoes})` : ""}`;
     el.hidden = false;
   }
 
-  // Pedido mínimo — idem
+  // Pedido mínimo
   if (empresa.pedido_minimo) {
     const el = document.getElementById("pedidoMinimoLoja");
     el.textContent = `Pedido mínimo ${formatarPreco(empresa.pedido_minimo)}`;
     el.hidden = false;
   }
 
-  // Cupons — placeholder até existir endpoint de cupons da loja
+  // Cupons
   if (Array.isArray(empresa.cupons) && empresa.cupons.length > 0) {
     document.getElementById("qtdCupons").textContent = empresa.cupons.length;
     document.getElementById("lojaCupons").hidden = false;
@@ -597,54 +603,48 @@ function fecharModalEntrega() {
 // ⚠️ Geolocalização + geocodificação reversa via Nominatim (OpenStreetMap),
 // que é gratuito mas tem limite de uso — pra produção/alto volume vale
 // trocar por um provedor pago (Google Geocoding, Mapbox etc.).
-function localizarClienteAutomaticamente() {
-  const textoEndereco = document.getElementById("textoEndereco");
+// ======================================
+// GEOLOCALIZAÇÃO - com fallback para erro CORS
+// ======================================
 
-  if (!navigator.geolocation) {
-    textoEndereco.textContent =
-      "Não conseguimos localizar você. Informe o endereço manualmente.";
-    mostrarFormEnderecoManual();
-    return Promise.resolve();
-  }
+// ======================================
+// ETAPA 2: ENTREGA - VERSÃO SIMPLIFICADA
+// ======================================
 
-  textoEndereco.textContent = "Localizando seu endereço...";
+async function abrirModalEntrega() {
+  document.getElementById("modalEntrega").classList.add("ativo");
+  document.body.classList.add("sem-scroll");
 
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      async (posicao) => {
-        const { latitude, longitude } = posicao.coords;
-
-        try {
-          const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
-          );
-          const dados = await response.json();
-
-          enderecoTexto =
-            dados?.display_name ||
-            `Lat ${latitude.toFixed(5)}, Long ${longitude.toFixed(5)}`;
-
-          window.ultimaLocalizacaoCliente = { latitude, longitude };
-
-          textoEndereco.textContent = enderecoTexto;
-        } catch (error) {
-          console.error("Erro na geocodificação reversa:", error);
-          textoEndereco.textContent =
-            "Não conseguimos identificar seu endereço. Informe manualmente.";
-          mostrarFormEnderecoManual();
-        }
-
-        resolve();
-      },
-      () => {
-        textoEndereco.textContent =
-          "Não conseguimos acessar sua localização. Informe o endereço manualmente.";
-        mostrarFormEnderecoManual();
-        resolve();
-      },
-    );
-  });
+  // 🔥 Mostra o formulário manual diretamente
+  mostrarFormEnderecoManual();
+  atualizarResumoEntrega();
 }
+
+function fecharModalEntrega() {
+  document.getElementById("modalEntrega").classList.remove("ativo");
+  document.body.classList.remove("sem-scroll");
+}
+
+function mostrarFormEnderecoManual() {
+  document.getElementById("enderecoConfirmado").hidden = true;
+  document.getElementById("formEnderecoManual").hidden = false;
+}
+
+function mostrarEnderecoConfirmado() {
+  // 🔥 Agora mostra o endereço digitado
+  const endereco = document.getElementById("enderecoClienteInput").value.trim();
+  const bairro = document.getElementById("bairroClienteSelect").value;
+
+  if (endereco && bairro) {
+    document.getElementById("textoEndereco").textContent =
+      `${endereco}, ${bairro}`;
+    document.getElementById("enderecoConfirmado").hidden = false;
+    document.getElementById("formEnderecoManual").hidden = true;
+  }
+}
+
+// 🔥 Remove a função localizarClienteAutomaticamente e btnUsarLocalizacao
+// Remova também os event listeners relacionados
 
 function mostrarFormEnderecoManual() {
   document.getElementById("enderecoConfirmado").hidden = true;
@@ -659,10 +659,10 @@ function mostrarEnderecoConfirmado() {
 document.getElementById("btnTrocarEndereco").onclick =
   mostrarFormEnderecoManual;
 
-document.getElementById("btnUsarLocalizacao").onclick = async () => {
+/*document.getElementById("btnUsarLocalizacao").onclick = async () => {
   mostrarEnderecoConfirmado();
   await localizarClienteAutomaticamente();
-};
+};*/
 
 function selecionarTipoEntrega(tipo) {
   tipoEntrega = tipo;
@@ -687,43 +687,103 @@ document.getElementById("btnEntregaStep").onclick = () =>
 document.getElementById("btnRetiradaStep").onclick = () =>
   selecionarTipoEntrega("Retirada");
 
+// ======================================
+// BAIRROS - Buscar da tabela_precos
+// ======================================
+
+// ======================================
+// BAIRROS - Buscar da tabela_precos (CORRIGIDO)
+// ======================================
+
 async function carregarBairros() {
   const select = document.getElementById("bairroClienteSelect");
 
   try {
-    const response = await fetch(
-      `${API_URL}/api/publico/empresas/${empresaId}/tabela-precos`,
+    // 🔥 BUSCA DA TABELA_PRECOS
+    const response = await fetch(`${API_URL}/api/publico/tabela-precos`);
+
+    console.log(
+      "📡 Buscando bairros em:",
+      `${API_URL}/api/publico/tabela-precos`,
     );
+
+    if (!response.ok) {
+      throw new Error(`Erro ${response.status} ao carregar bairros`);
+    }
+
     const dados = await response.json();
-    bairrosDisponiveis = response.ok && Array.isArray(dados) ? dados : [];
+
+    // Ordena por bairro
+    bairrosDisponiveis = Array.isArray(dados)
+      ? dados.sort((a, b) => a.bairro.localeCompare(b.bairro))
+      : [];
+
+    console.log("📋 Bairros carregados:", bairrosDisponiveis.length);
   } catch (error) {
-    console.error("Erro ao carregar bairros:", error);
-    bairrosDisponiveis = [];
+    console.error("❌ Erro ao carregar bairros:", error);
+    // Fallback: bairros padrão
+    bairrosDisponiveis = [
+      { bairro: "Centro", valor: 5.0 },
+      { bairro: "Bairro A", valor: 8.0 },
+      { bairro: "Bairro B", valor: 10.0 },
+    ];
   }
 
+  // Popula o select
   select.innerHTML = '<option value="">Selecione o bairro</option>';
   bairrosDisponiveis.forEach((b) => {
-    select.innerHTML += `<option value="${b.bairro}">${b.bairro} - ${formatarPreco(b.valor)}</option>`;
+    const option = document.createElement("option");
+    option.value = b.bairro;
+    option.textContent = `${b.bairro} - ${formatarPreco(b.valor)}`;
+    if (b.bairro === bairroSelecionado) {
+      option.selected = true;
+    }
+    select.appendChild(option);
   });
 
+  // Evento de mudança - atualiza a taxa de entrega
   select.onchange = () => {
     const bairro = bairrosDisponiveis.find((b) => b.bairro === select.value);
     if (bairro) {
       taxaEntrega = Number(bairro.valor);
       bairroSelecionado = bairro.bairro;
-      enderecoTexto = document
-        .getElementById("enderecoClienteInput")
-        .value.trim();
+    } else {
+      taxaEntrega = 0;
+      bairroSelecionado = "";
     }
     atualizarResumoEntrega();
   };
 }
+// ======================================
+// GERENCIAR ENDEREÇO
+// ======================================
 
+// Quando o usuário digitar o endereço
 document
   .getElementById("enderecoClienteInput")
   .addEventListener("input", (e) => {
     enderecoTexto = e.target.value.trim();
+    // Se tiver endereço e bairro, mostra confirmado
+    const bairro = document.getElementById("bairroClienteSelect").value;
+    if (enderecoTexto && bairro) {
+      mostrarEnderecoConfirmado();
+    }
   });
+
+// Quando o usuário selecionar o bairro
+document
+  .getElementById("bairroClienteSelect")
+  .addEventListener("change", () => {
+    const bairro = document.getElementById("bairroClienteSelect").value;
+    if (enderecoTexto && bairro) {
+      mostrarEnderecoConfirmado();
+    }
+  });
+
+// Botão "Trocar endereço"
+document.getElementById("btnTrocarEndereco").onclick = () => {
+  mostrarFormEnderecoManual();
+};
 
 function atualizarResumoEntrega() {
   const subtotal = subtotalCarrinho();
@@ -739,9 +799,12 @@ function atualizarResumoEntrega() {
   document.getElementById("totalComEntrega").textContent =
     formatarPreco(totalComEntrega);
 
-  const podeContinuar =
-    tipoEntrega === "Retirada" ||
-    (enderecoTexto && (bairroSelecionado || window.ultimaLocalizacaoCliente));
+  // 🔥 Verifica se tem endereço e bairro para liberar o botão
+  const endereco = document.getElementById("enderecoClienteInput").value.trim();
+  const bairro = document.getElementById("bairroClienteSelect").value;
+
+  const podeContinuar = tipoEntrega === "Retirada" || (endereco && bairro);
+
   document.getElementById("btnContinuarPagamento").disabled = !podeContinuar;
 }
 
@@ -781,7 +844,10 @@ function atualizarResumoPagamento() {
   const desconto = descontoCupom(subtotal);
   const totalSemEntrega = Math.max(0, subtotal - desconto);
   const entrega = tipoEntrega === "Entrega" ? taxaEntrega : 0;
-  const total = totalSemEntrega + entrega + TAXA_SERVICO;
+  const total =
+    totalSemEntrega +
+    entrega +
+    (typeof TAXA_SERVICO !== "undefined" ? TAXA_SERVICO : 0);
 
   const avisoCupom = document.getElementById("cupomAplicadoResumo");
   if (cupomAplicado) {
@@ -795,8 +861,9 @@ function atualizarResumoPagamento() {
     formatarPreco(totalSemEntrega);
   document.getElementById("taxaEntregaPagamento").textContent =
     entrega > 0 ? formatarPreco(entrega) : "Grátis";
-  document.getElementById("taxaServicoPagamento").textContent =
-    formatarPreco(TAXA_SERVICO);
+  document.getElementById("taxaServicoPagamento").textContent = formatarPreco(
+    typeof TAXA_SERVICO !== "undefined" ? TAXA_SERVICO : 0,
+  );
   document.getElementById("totalPagamento").textContent = formatarPreco(total);
 }
 
@@ -836,20 +903,33 @@ const METODOS_PAGAMENTO_LABEL = {
   debito: "Cartão de débito",
 };
 
+// ======================================
+// ETAPA 4: REVISAR PEDIDO - COMPLETO
+// ======================================
+
 function abrirModalRevisar() {
   const subtotal = subtotalCarrinho();
   const desconto = descontoCupom(subtotal);
   const totalSemEntrega = Math.max(0, subtotal - desconto);
   const entrega = tipoEntrega === "Entrega" ? taxaEntrega : 0;
-  const total = totalSemEntrega + entrega + TAXA_SERVICO;
+  const total =
+    totalSemEntrega +
+    entrega +
+    (typeof TAXA_SERVICO !== "undefined" ? TAXA_SERVICO : 0);
+
+  // Busca os dados do endereço
+  const endereco = document.getElementById("enderecoClienteInput").value.trim();
+  const bairro = document.getElementById("bairroClienteSelect").value;
+  const enderecoCompleto =
+    endereco && bairro ? `${endereco}, ${bairro}` : "Endereço não informado";
 
   document.getElementById("revisaoTipoEntrega").textContent =
-    tipoEntrega === "Entrega" ? "Entrega" : "Retirada na loja";
+    tipoEntrega === "Entrega" ? "🏠 Entrega" : "🛍️ Retirada na loja";
   document.getElementById("revisaoPrevisao").textContent =
     tipoEntrega === "Entrega" ? "30–50 min" : "15–25 min";
   document.getElementById("revisaoEndereco").textContent =
     tipoEntrega === "Entrega"
-      ? enderecoTexto || "Endereço não informado"
+      ? enderecoCompleto
       : dadosCardapio?.empresa?.bairro
         ? `Retirar em: ${dadosCardapio.empresa.bairro}`
         : "Retirar na loja";
@@ -864,12 +944,27 @@ function abrirModalRevisar() {
   }
 
   document.getElementById("revisaoPagamento").textContent =
-    METODOS_PAGAMENTO_LABEL[metodoPagamentoSelecionado];
+    METODOS_PAGAMENTO_LABEL[metodoPagamentoSelecionado] || "Pagamento pelo app";
   document.getElementById("revisaoTotal").textContent = formatarPreco(total);
 
   document.getElementById("modalRevisar").classList.add("ativo");
   document.body.classList.add("sem-scroll");
 }
+
+function fecharModalRevisar() {
+  document.getElementById("modalRevisar").classList.remove("ativo");
+  document.body.classList.remove("sem-scroll");
+}
+
+document.getElementById("fecharRevisar").onclick = fecharModalRevisar;
+document.getElementById("modalRevisar").addEventListener("click", (e) => {
+  if (e.target.id === "modalRevisar") fecharModalRevisar();
+});
+
+document.getElementById("btnAlterarPedido").onclick = () => {
+  fecharModalRevisar();
+  abrirModalPagamento();
+};
 
 function fecharModalRevisar() {
   document.getElementById("modalRevisar").classList.remove("ativo");

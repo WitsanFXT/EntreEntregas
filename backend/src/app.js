@@ -97,6 +97,7 @@ app.use("/api/empresa/pedidos", pedidosRoutes);
 app.use("/api/tabela-precos", tabelaPrecosRoutes);
 app.use("/api/cardapio", cardapioRoutes);
 app.use("/api/publico", publicRoutes);
+app.use("/api/publico", require("./routes/Publicoroutes"));
 
 // ======================================
 // ROTA DE FALLBACK

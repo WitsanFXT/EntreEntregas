@@ -117,37 +117,44 @@ const removeBannerBtn = document.getElementById("removeBannerBtn");
 const previewLoading = document.getElementById("previewLoading");
 
 // =================================
-// FUNÇÕES DE PREVIEW DE IMAGEM
+// FUNÇÕES DE PREVIEW DE IMAGEM - CORRIGIDA
 // =================================
 
-// Atualiza uma caixa de preview (logo, banner ou imagem de produto) a
-// partir do valor de um input de URL.
 function atualizarPreviewImagem(inputEl, imgEl, placeholderEl, removeBtnEl) {
   if (!inputEl || !imgEl || !placeholderEl) return;
 
   const url = (inputEl.value || "").trim();
   const box = imgEl.closest(".upload-preview");
 
+  // Remove classe de erro
   box?.classList.remove("upload-preview--erro");
 
-  imgEl.onload = () => box?.classList.remove("upload-preview--erro");
-  imgEl.onerror = () => {
-    imgEl.hidden = true;
-    placeholderEl.hidden = false;
-    box?.classList.add("upload-preview--erro");
-    if (removeBtnEl) removeBtnEl.hidden = false;
-  };
-
+  // Se tiver URL, mostra a imagem e ESCONDE o placeholder
   if (url) {
+    // Configura a imagem
+    imgEl.onload = () => {
+      imgEl.hidden = false; // Mostra a imagem
+      placeholderEl.hidden = true; // ESCONDE o placeholder
+      if (removeBtnEl) removeBtnEl.hidden = false;
+      box?.classList.remove("upload-preview--erro");
+    };
+
+    imgEl.onerror = () => {
+      imgEl.hidden = true;
+      placeholderEl.hidden = false; // Mostra o placeholder se erro
+      box?.classList.add("upload-preview--erro");
+      if (removeBtnEl) removeBtnEl.hidden = true;
+    };
+
+    // Carrega a imagem
     imgEl.src = url;
-    imgEl.hidden = false;
-    placeholderEl.hidden = true;
-    if (removeBtnEl) removeBtnEl.hidden = false;
   } else {
+    // Sem URL: esconde imagem, mostra placeholder
     imgEl.hidden = true;
     imgEl.removeAttribute("src");
-    placeholderEl.hidden = false;
+    placeholderEl.hidden = false; // Mostra o placeholder
     if (removeBtnEl) removeBtnEl.hidden = true;
+    box?.classList.remove("upload-preview--erro");
   }
 }
 
@@ -189,6 +196,40 @@ function atualizarPreview() {
     if (loading) loading.classList.remove("mostrar");
   }, 5000);
 }
+
+// Forçar atualização do preview de imagens
+function forcarAtualizarPreviewImagens() {
+  const logoUrl = document.getElementById("logoLojaUrl")?.value || "";
+  const bannerUrl = document.getElementById("bannerLojaUrl")?.value || "";
+
+  if (logoUrl) {
+    const img = document.getElementById("previewLogoImg");
+    const placeholder = document.getElementById("previewLogoPlaceholder");
+    const removeBtn = document.getElementById("removeLogoBtn");
+    if (img) {
+      img.src = logoUrl;
+      img.hidden = false;
+      if (placeholder) placeholder.hidden = true;
+      if (removeBtn) removeBtn.hidden = false;
+    }
+  }
+
+  if (bannerUrl) {
+    const img = document.getElementById("previewBannerImg");
+    const placeholder = document.getElementById("previewBannerPlaceholder");
+    const removeBtn = document.getElementById("removeBannerBtn");
+    if (img) {
+      img.src = bannerUrl;
+      img.hidden = false;
+      if (placeholder) placeholder.hidden = true;
+      if (removeBtn) removeBtn.hidden = false;
+    }
+  }
+}
+
+// Chamar após carregar a empresa
+// Adicionar no final da função conectarEmpresa:
+// forcarAtualizarPreviewImagens();
 
 logoLojaUrl.addEventListener("input", () => {
   atualizarPreviewImagem(
