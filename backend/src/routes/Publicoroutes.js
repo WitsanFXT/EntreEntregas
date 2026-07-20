@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const publicRoutes = require("./routes/Publicoroutes"); // 🔥 NOME CORRETO (com p minúsculo)
+
+const publicoController = require("../controllers/publicoController");
 const supabase = require("../config/supabase");
 
 // Rota do cardápio

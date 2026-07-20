@@ -1,4 +1,5 @@
 const supabase = require("../config/supabase");
+const Publicoroute = require("../routes/Publicoroutes");
 
 // ======================================
 // CARDÁPIO PÚBLICO (sem login)
