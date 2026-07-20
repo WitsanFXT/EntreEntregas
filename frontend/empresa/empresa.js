@@ -1488,6 +1488,15 @@ function fecharModalCategoria() {
 }
 
 document.getElementById("btnNovaCategoria").onclick = abrirModalCategoria;
+
+document.getElementById("btnVisitarLoja").onclick = () => {
+  if (!empresaAtual?.id) {
+    mostrarToast("Aguarde os dados da empresa carregarem", "erro");
+    return;
+  }
+  const url = `${window.location.origin}/loja/${empresaAtual.id}`;
+  window.open(url, "_blank");
+};
 document.getElementById("btnCancelarCategoria").onclick = fecharModalCategoria;
 document.getElementById("overlayCategoria").onclick = fecharModalCategoria;
 
