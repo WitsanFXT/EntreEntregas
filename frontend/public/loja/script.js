@@ -2,9 +2,11 @@
 // CONFIG
 // ======================================
 
-const empresaId =
-  new URLSearchParams(window.location.search).get("empresa") ||
-  window.location.pathname.split("/").filter(Boolean).pop();
+const params = new URLSearchParams(window.location.search);
+
+const empresaId = params.get("id");
+
+console.log("🏪 Empresa ID:", empresaId);
 
 // 🔥 CONFIGURAÇÃO PARA PRODUÇÃO E DESENVOLVIMENTO
 const API_URL = (() => {
@@ -18,8 +20,6 @@ const API_URL = (() => {
 })();
 
 const TAXA_SERVICO = 0;
-
-const params = new URLSearchParams(window.location.search);
 
 const lojaId = params.get("id");
 
