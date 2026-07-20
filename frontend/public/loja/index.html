@@ -7,27 +7,35 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <!-- ================= HEADER ================= -->
-    <header class="hero" id="heroLoja">
-      <div class="overlay">
-        <img src="" alt="Logo" class="logo" id="logoLoja" />
-        <h1 id="nomeLoja">Carregando...</h1>
-        <p id="descricaoLoja">Os melhores produtos da região.</p>
-        <div id="statusLoja" class="status-loja aberto">🟢 Aberto agora</div>
+    <!-- ================= CARD DA LOJA (estilo iFood) ================= -->
+    <header class="loja-card" id="lojaCard">
+      <div class="loja-banner" id="lojaBanner">
+        <img id="bannerLojaImg" alt="Banner da loja" hidden />
       </div>
+
+      <div class="loja-info">
+        <img src="" alt="Logo" class="loja-logo" id="logoLoja" hidden />
+        <div class="loja-logo-placeholder" id="logoPlaceholder">🏬</div>
+
+        <div class="loja-info-texto">
+          <h1 id="nomeLoja">Carregando...</h1>
+          <p class="loja-endereco" id="enderecoLoja">📍 —</p>
+
+          <div class="loja-meta">
+            <span class="loja-status aberto" id="statusLoja"
+              >🟢 Aberto agora</span
+            >
+            <span class="loja-avaliacao" id="avaliacaoLoja" hidden>⭐ —</span>
+          </div>
+
+          <p class="loja-pedido-minimo" id="pedidoMinimoLoja" hidden></p>
+        </div>
+      </div>
+
+      <button type="button" class="loja-cupons" id="lojaCupons" hidden>
+        🎟️ <span id="qtdCupons">0</span> cupons disponíveis nesta loja
+      </button>
     </header>
-
-    <!-- ================= INTRO ================= -->
-    <section class="intro">
-      <h2>🔥 Conheça nosso cardápio</h2>
-      <p>Escolha seus produtos favoritos e faça seu pedido.</p>
-    </section>
-
-    <!-- ================= MAIS PEDIDOS ================= -->
-    <section class="categoria">
-      <h2>⭐ Mais Pedidos</h2>
-      <div id="listaMaisPedidos" class="mais-pedidos-carousel"></div>
-    </section>
 
     <!-- ================= CATEGORIAS (NAV) ================= -->
     <nav class="categorias" id="navCategorias"></nav>
@@ -35,79 +43,19 @@
     <!-- ================= PRODUTOS ================= -->
     <main id="produtosMain"></main>
 
-    <!-- ================= BOTÃO CARRINHO ================= -->
-    <button id="btnCarrinho" type="button" aria-label="Abrir Carrinho">
-      🛒
-      <span id="badgeCarrinho">0</span>
+    <!-- ================= BARRA "VER SACOLA" ================= -->
+    <button id="barraSacola" class="barra-sacola" type="button" hidden>
+      <span class="barra-sacola-qtd" id="qtdSacola">0 itens</span>
+      <span class="barra-sacola-label">Ver sacola</span>
+      <span class="barra-sacola-total" id="totalSacolaBarra">R$ 0,00</span>
     </button>
 
-    <!-- ================= CARRINHO (LATERAL) ================= -->
-    <aside id="carrinho" class="carrinho">
-      <div class="carrinho-topo">
-        <h2>🛒 Seu Pedido</h2>
-        <button id="fecharCarrinho" type="button">×</button>
-      </div>
-
-      <div id="itensCarrinho"></div>
-
-      <div class="carrinho-rodape">
-        <h3 id="totalCarrinho">Total: R$ 0,00</h3>
-
-        <div class="form-pedido">
-          <input id="nomeCliente" type="text" placeholder="Seu nome" />
-          <input
-            id="celularCliente"
-            type="tel"
-            placeholder="Celular / WhatsApp"
-          />
-
-          <div class="tipo-entrega-container">
-            <button
-              id="btnEntrega"
-              class="btn-tipo-entrega ativo"
-              type="button"
-            >
-              🏠 Entrega
-            </button>
-            <button id="btnRetirada" class="btn-tipo-entrega" type="button">
-              🛍️ Retirada
-            </button>
-          </div>
-
-          <div id="camposEntrega">
-            <input id="enderecoCliente" type="text" placeholder="Rua, número" />
-            <select id="bairroCliente">
-              <option value="">Selecione o bairro</option>
-            </select>
-          </div>
-
-          <div
-            id="avisoRetirada"
-            style="
-              display: none;
-              background: #2c2c2c;
-              padding: 12px;
-              border-radius: 8px;
-              text-align: center;
-              color: #fff;
-            "
-          >
-            ✅ Retirada na loja
-          </div>
-
-          <p class="aviso-pagamento-plataforma">
-            💳 O pagamento é feito na próxima etapa, direto pela plataforma.
-          </p>
-        </div>
-
-        <button id="finalizarPedido" type="button">Finalizar Pedido</button>
-      </div>
-    </aside>
-
-    <!-- ================= MODAL PRODUTO ================= -->
+    <!-- ================= MODAL PRODUTO (customização) ================= -->
     <div id="modalProduto" class="modal">
       <div class="modal-content">
-        <button id="fecharModal" type="button">×</button>
+        <button id="fecharModal" class="btn-fechar-modal" type="button">
+          ×
+        </button>
         <h2 id="produtoNome"></h2>
         <p id="produtoPreco"></p>
 
@@ -130,32 +78,241 @@
       </div>
     </div>
 
-    <!-- ================= MODAL UPSELL ================= -->
-    <div id="modalUpsell" class="modal-upsell">
-      <div class="upsell-box">
-        <h3>🔥 Combina com seu pedido</h3>
-        <p>Clientes também costumam pedir:</p>
-        <div id="listaUpsell"></div>
-        <button id="fecharUpsell">Finalizar Escolhas →</button>
+    <!-- ================= ETAPA 1: SACOLA ================= -->
+    <div id="modalSacola" class="modal">
+      <div class="modal-content modal-checkout">
+        <button id="fecharSacola" class="btn-fechar-modal" type="button">
+          ×
+        </button>
+
+        <div class="checkout-header-loja">
+          <img id="sacolaLogoLoja" class="checkout-logo" alt="Logo" />
+          <h2 id="sacolaNomeLoja">Loja</h2>
+        </div>
+
+        <h3 class="checkout-titulo">🛍️ Sua sacola</h3>
+        <div id="itensSacola" class="itens-sacola"></div>
+
+        <div class="cupom-box">
+          <input id="cupomInput" type="text" placeholder="Cupom de desconto" />
+          <button id="btnAplicarCupom" type="button">Aplicar</button>
+        </div>
+        <p id="cupomStatus" class="cupom-status"></p>
+
+        <div class="upsell-inline" id="upsellSacola"></div>
+
+        <div class="resumo-valores">
+          <div class="linha-resumo">
+            <span>Subtotal</span>
+            <span id="subtotalSacola">R$ 0,00</span>
+          </div>
+          <div class="linha-resumo total">
+            <span>Total sem entrega</span>
+            <span id="totalSemEntregaSacola">R$ 0,00</span>
+          </div>
+        </div>
+
+        <button id="btnContinuarEntrega" type="button" class="btn-continuar">
+          Continuar
+        </button>
       </div>
     </div>
 
-    <!-- ================= MODAL CONFIRMAÇÃO DE PEDIDO ================= -->
+    <!-- ================= ETAPA 2: ENTREGA ================= -->
+    <div id="modalEntrega" class="modal">
+      <div class="modal-content modal-checkout">
+        <button id="fecharEntrega" class="btn-fechar-modal" type="button">
+          ×
+        </button>
+
+        <h3 class="checkout-titulo">📍 Entrega</h3>
+
+        <div class="tipo-entrega-container">
+          <button
+            id="btnEntregaStep"
+            class="btn-tipo-entrega ativo"
+            type="button"
+          >
+            🏠 Entrega
+          </button>
+          <button id="btnRetiradaStep" class="btn-tipo-entrega" type="button">
+            🛍️ Retirada
+          </button>
+        </div>
+
+        <div id="enderecoConfirmado" class="endereco-confirmado">
+          <p id="textoEndereco">Localizando seu endereço...</p>
+          <button id="btnTrocarEndereco" type="button" class="link-acao">
+            Trocar endereço
+          </button>
+        </div>
+
+        <div id="formEnderecoManual" class="form-endereco-manual" hidden>
+          <input
+            id="enderecoClienteInput"
+            type="text"
+            placeholder="Rua, número"
+          />
+          <select id="bairroClienteSelect">
+            <option value="">Selecione o bairro</option>
+          </select>
+          <button id="btnUsarLocalizacao" type="button" class="link-acao">
+            📍 Usar minha localização
+          </button>
+        </div>
+
+        <div id="avisoRetiradaStep" class="aviso-retirada" hidden>
+          ✅ Retirada na loja
+        </div>
+
+        <div class="resumo-valores">
+          <div class="linha-resumo">
+            <span>Subtotal</span>
+            <span id="subtotalEntrega">R$ 0,00</span>
+          </div>
+          <div class="linha-resumo">
+            <span>Taxa de entrega</span>
+            <span id="taxaEntregaValor">R$ 0,00</span>
+          </div>
+          <div class="linha-resumo total">
+            <span>Total com entrega</span>
+            <span id="totalComEntrega">R$ 0,00</span>
+          </div>
+        </div>
+
+        <button id="btnContinuarPagamento" type="button" class="btn-continuar">
+          Continuar
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= ETAPA 3: PAGAMENTO ================= -->
+    <div id="modalPagamento" class="modal">
+      <div class="modal-content modal-checkout">
+        <button id="fecharPagamento" class="btn-fechar-modal" type="button">
+          ×
+        </button>
+
+        <div class="checkout-header-loja">
+          <img id="pagamentoLogoLoja" class="checkout-logo" alt="Logo" />
+          <h2 id="pagamentoNomeLoja">Loja</h2>
+        </div>
+
+        <p id="cupomAplicadoResumo" class="cupom-aplicado-resumo" hidden></p>
+
+        <div class="resumo-valores">
+          <div class="linha-resumo">
+            <span>Subtotal</span>
+            <span id="subtotalPagamento">R$ 0,00</span>
+          </div>
+          <div class="linha-resumo">
+            <span>Taxa de entrega</span>
+            <span id="taxaEntregaPagamento">R$ 0,00</span>
+          </div>
+          <div class="linha-resumo">
+            <span>Taxa de serviço</span>
+            <span id="taxaServicoPagamento">R$ 0,00</span>
+          </div>
+          <div class="linha-resumo total">
+            <span>Total</span>
+            <span id="totalPagamento">R$ 0,00</span>
+          </div>
+        </div>
+
+        <h3 class="checkout-titulo">Forma de pagamento</h3>
+        <div class="opcoes-pagamento" id="opcoesPagamento">
+          <button type="button" class="opcao-pagamento ativo" data-metodo="app">
+            💳 Pagamento pelo app
+          </button>
+          <button type="button" class="opcao-pagamento" data-metodo="pix">
+            🔑 Pix
+          </button>
+          <button
+            type="button"
+            class="opcao-pagamento"
+            data-metodo="credito"
+            disabled
+          >
+            💳 Cartão de crédito <small>em breve</small>
+          </button>
+          <button
+            type="button"
+            class="opcao-pagamento"
+            data-metodo="debito"
+            disabled
+          >
+            💳 Cartão de débito <small>em breve</small>
+          </button>
+        </div>
+
+        <label class="cpf-toggle">
+          <input type="checkbox" id="cpfNotaCheckbox" />
+          Quero colocar CPF na nota
+        </label>
+        <input id="cpfNotaInput" type="text" placeholder="CPF" hidden />
+
+        <button id="btnRevisarPedido" type="button" class="btn-continuar">
+          Revisar pedido
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= ETAPA 4: REVISAR PEDIDO ================= -->
+    <div id="modalRevisar" class="modal">
+      <div class="modal-content modal-checkout">
+        <button id="fecharRevisar" class="btn-fechar-modal" type="button">
+          ×
+        </button>
+
+        <h3 class="checkout-titulo">📝 Revise seu pedido</h3>
+
+        <div class="revisao-bloco">
+          <strong>Entrega</strong>
+          <p id="revisaoTipoEntrega"></p>
+        </div>
+        <div class="revisao-bloco">
+          <strong>Previsão</strong>
+          <p id="revisaoPrevisao"></p>
+        </div>
+        <div class="revisao-bloco">
+          <strong>Endereço</strong>
+          <p id="revisaoEndereco"></p>
+        </div>
+        <div class="revisao-bloco" id="revisaoCupomBloco" hidden>
+          <strong>Cupom aplicado</strong>
+          <p id="revisaoCupom"></p>
+        </div>
+        <div class="revisao-bloco">
+          <strong>Forma de pagamento</strong>
+          <p id="revisaoPagamento"></p>
+        </div>
+        <div class="revisao-bloco revisao-total">
+          <strong>Total</strong>
+          <p id="revisaoTotal"></p>
+        </div>
+
+        <button id="btnPagarPedido" type="button" class="btn-continuar">
+          Pagar
+        </button>
+        <button id="btnAlterarPedido" type="button" class="btn-secundario">
+          Alterar pedido
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= CONFIRMAÇÃO FINAL ================= -->
     <div id="modalConfirmacao" class="modal">
       <div class="modal-content">
         <button id="fecharConfirmacao" class="btn-fechar-pix" type="button">
           ×
         </button>
-        <h2 id="tituloConfirmacao">✅ Pedido criado!</h2>
+        <h2 id="tituloConfirmacao">✅ Pedido enviado!</h2>
         <p class="aviso-confirmacao" id="avisoConfirmacao">
-          Agora é só finalizar o pagamento pela plataforma pra confirmar o
-          pedido.
+          Assim que o pagamento for confirmado, a loja recebe seu pedido
+          automaticamente.
         </p>
         <div id="resumoConfirmacao" class="resumo-confirmacao"></div>
-        <button id="btnPagarConfirmacao" type="button">
-          Ir para o pagamento
-        </button>
-        <button id="btnNovoPedido" type="button" class="btn-secundario">
+        <button id="btnNovoPedido" type="button" class="btn-continuar">
           Fazer novo pedido
         </button>
       </div>

@@ -1,19 +1,20 @@
 // ======================================
-// ENTREENTREGAS - LOJA PÚBLICA
-// ======================================
-
-// ======================================
-// CONFIGURAÇÃO
+// CONFIG
 // ======================================
 
 const empresaId =
   new URLSearchParams(window.location.search).get("empresa") ||
   window.location.pathname.split("/").filter(Boolean).pop();
+
 const API_URL =
   window.location.hostname === "localhost" ||
   window.location.hostname === "127.0.0.1"
     ? "http://localhost:5500"
     : "";
+
+// ⚠️ PLACEHOLDER — taxa de serviço da plataforma. Ajuste pro valor real
+// (ou traga isso do backend, se cada loja puder ter uma taxa diferente).
+const TAXA_SERVICO = 0;
 
 // ======================================
 // ESTADO
@@ -21,325 +22,37 @@ const API_URL =
 
 let dadosCardapio = null;
 let carrinho = [];
-let categoriaAtiva = null;
-let produtoSelecionado = null;
 let tipoEntrega = "Entrega";
 let taxaEntrega = 0;
 let bairroSelecionado = "";
+let enderecoTexto = "";
+let bairrosDisponiveis = [];
+let cupomAplicado = null; // { codigo, desconto }
+let produtoAtual = null;
+let ultimoPedidoEnviado = null;
+let metodoPagamentoSelecionado = "app";
 
 // ======================================
-// DOM REFERÊNCIAS
+// UTILS
 // ======================================
 
-const app = document.getElementById("heroLoja");
-const logoLoja = document.getElementById("logoLoja");
-const nomeLoja = document.getElementById("nomeLoja");
-const descricaoLoja = document.getElementById("descricaoLoja");
-const statusLoja = document.getElementById("statusLoja");
-const navCategorias = document.getElementById("navCategorias");
-const produtosMain = document.getElementById("produtosMain");
-const listaMaisPedidos = document.getElementById("listaMaisPedidos");
-
-// ======================================
-// FUNÇÃO PRINCIPAL - CARREGAR CARDÁPIO
-// ======================================
-
-async function carregarCardapio() {
-  try {
-    const response = await fetch(
-      `${API_URL}/api/publico/empresas/${empresaId}/cardapio`,
-    );
-    const dados = await response.json();
-
-    if (!response.ok) {
-      mostrarErro(
-        "Loja não encontrada",
-        "Verifique o link ou tente novamente.",
-      );
-      return;
-    }
-
-    dadosCardapio = dados;
-    renderizarLoja();
-  } catch (error) {
-    console.error("Erro:", error);
-    mostrarErro("Erro ao carregar", "Não foi possível carregar o cardápio.");
-  }
+function formatarPreco(valor) {
+  return `R$ ${Number(valor || 0).toFixed(2)}`;
 }
 
-// ======================================
-// BANNER DA LOJA
-// ======================================
-// A .hero já tem uma imagem padrão no CSS (fallback). Aqui a gente só
-// sobrescreve com o banner real da loja quando ele existe e carrega
-// direito — senão, mantém o padrão em vez de mostrar um banner quebrado.
-
-function aplicarBannerLoja(bannerUrl) {
-  if (!bannerUrl) {
-    app.style.backgroundImage = "";
-    return;
-  }
-
-  const testeImagem = new Image();
-  testeImagem.onload = () => {
-    app.style.backgroundImage = `linear-gradient(180deg, rgba(27, 21, 18, 0.35), rgba(27, 21, 18, 0.85)), url("${bannerUrl}")`;
-  };
-  testeImagem.onerror = () => {
-    app.style.backgroundImage = "";
-  };
-  testeImagem.src = bannerUrl;
-}
-
-// ======================================
-// RENDERIZAR LOJA
-// ======================================
-
-function renderizarLoja() {
-  if (!dadosCardapio) return;
-
-  const { empresa, categorias, produtos } = dadosCardapio;
-
-  // HEADER
-  if (empresa.logo_url) {
-    logoLoja.src = empresa.logo_url;
-    logoLoja.alt = `Logo ${empresa.nome_fantasia}`;
-  } else {
-    logoLoja.style.display = "none";
-  }
-
-  aplicarBannerLoja(empresa.banner_url);
-
-  nomeLoja.textContent = empresa.nome_fantasia || "Loja";
-  descricaoLoja.textContent = `📍 ${empresa.bairro || ""} - ${empresa.cidade || ""}`;
-  statusLoja.className = "status-loja aberto";
-  statusLoja.textContent = "🟢 Aberto agora";
-
-  // CATEGORIAS (NAV)
-  navCategorias.innerHTML = `
-        <button class="categoria-link ${!categoriaAtiva ? "ativo" : ""}" onclick="filtrarCategoria(null)">
-            Todos
-        </button>
-        ${categorias
-          .map(
-            (cat) => `
-            <button class="categoria-link ${categoriaAtiva === cat.id ? "ativo" : ""}" onclick="filtrarCategoria('${cat.id}')">
-                ${cat.nome}
-            </button>
-        `,
-          )
-          .join("")}
-    `;
-
-  // PRODUTOS
-  const produtosFiltrados = categoriaAtiva
-    ? produtos.filter((p) => p.categoria_id === categoriaAtiva)
-    : produtos;
-
-  const produtosAtivos = produtosFiltrados.filter((p) => p.ativo !== false);
-
-  // Agrupa por categoria para exibir
-  const categoriasComProdutos = categorias.filter((cat) =>
-    produtosAtivos.some((p) => p.categoria_id === cat.id),
+function subtotalCarrinho() {
+  return carrinho.reduce(
+    (soma, item) => soma + item.preco * item.quantidade,
+    0,
   );
+}
 
-  if (categoriasComProdutos.length === 0) {
-    produtosMain.innerHTML = `
-            <div class="vazio" style="text-align:center;padding:40px;color:#999;">
-                <p>Nenhum produto disponível no momento.</p>
-            </div>
-        `;
-    return;
+function descontoCupom(subtotal) {
+  if (!cupomAplicado) return 0;
+  if (cupomAplicado.tipo === "percentual") {
+    return subtotal * (cupomAplicado.valor / 100);
   }
-
-  let html = "";
-  categoriasComProdutos.forEach((cat) => {
-    const produtosCat = produtosAtivos.filter((p) => p.categoria_id === cat.id);
-    html += `
-            <h2 class="titulo-categoria">${cat.nome}</h2>
-            <div class="produtos-grid">
-                ${produtosCat
-                  .map(
-                    (p) => `
-                    <div class="produto-card" data-id="${p.id}">
-                        <img src="${p.imagem_url || ""}" alt="${p.nome}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Crect fill=%22%23eee%22 width=%22300%22 height=%22300%22/%3E%3Ctext x=%22150%22 y=%22150%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E🍔%3C/text%3E%3C/svg%3E'">
-                        <h3>${p.nome}</h3>
-                        <p>${p.descricao || ""}</p>
-                        <span class="preco">R$ ${Number(p.preco).toFixed(2)}</span>
-                        <button class="btn-adicionar" onclick="abrirModal('${p.id}')">Adicionar</button>
-                    </div>
-                `,
-                  )
-                  .join("")}
-            </div>
-        `;
-  });
-
-  produtosMain.innerHTML = html;
-
-  // MAIS PEDIDOS (top 4)
-  const maisPedidos = produtosAtivos.slice(0, 4);
-  listaMaisPedidos.innerHTML = maisPedidos
-    .map(
-      (p) => `
-        <div class="produto-card">
-            <img src="${p.imagem_url || ""}" alt="${p.nome}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22300%22%3E%3Crect fill=%22%23eee%22 width=%22300%22 height=%22300%22/%3E%3Ctext x=%22150%22 y=%22150%22 text-anchor=%22middle%22 font-size=%2240%22 fill=%22%23999%22%3E🔥%3C/text%3E%3C/svg%3E'">
-            <h3>${p.nome}</h3>
-            <span class="preco">R$ ${Number(p.preco).toFixed(2)}</span>
-            <button class="btn-adicionar" onclick="abrirModal('${p.id}')">Adicionar</button>
-        </div>
-    `,
-    )
-    .join("");
-
-  // Atualizar carrinho
-  atualizarCarrinho();
-}
-
-// ======================================
-// FILTRAR POR CATEGORIA
-// ======================================
-
-function filtrarCategoria(categoriaId) {
-  categoriaAtiva = categoriaId;
-  renderizarLoja();
-}
-
-// ======================================
-// MOSTRAR ERRO
-// ======================================
-
-function mostrarErro(titulo, mensagem) {
-  document.getElementById("heroLoja").innerHTML = `
-        <div class="overlay">
-            <div style="text-align:center;color:#fff;padding:40px;">
-                <h2>${titulo}</h2>
-                <p>${mensagem}</p>
-            </div>
-        </div>
-    `;
-}
-
-// ======================================
-// MODAL PRODUTO
-// ======================================
-
-function abrirModal(id) {
-  const produto = dadosCardapio.produtos.find((p) => p.id === id);
-  if (!produto) return;
-
-  produtoSelecionado = produto;
-  document.getElementById("produtoNome").textContent = produto.nome;
-  document.getElementById("produtoPreco").textContent =
-    `R$ ${Number(produto.preco).toFixed(2)}`;
-  document.getElementById("quantidadeInput").value = 1;
-  document.getElementById("observacao").value = "";
-  atualizarSubtotalModal();
-  document.getElementById("modalProduto").classList.add("ativo");
-  document.body.classList.add("sem-scroll");
-}
-
-function fecharModal() {
-  document.getElementById("modalProduto").classList.remove("ativo");
-  document.body.classList.remove("sem-scroll");
-}
-
-document.getElementById("fecharModal").addEventListener("click", fecharModal);
-document.getElementById("modalProduto").addEventListener("click", (e) => {
-  if (e.target.id === "modalProduto") fecharModal();
-});
-
-function atualizarSubtotalModal() {
-  if (!produtoSelecionado) return;
-  const qtd = Number(document.getElementById("quantidadeInput").value);
-  const subtotal = produtoSelecionado.preco * qtd;
-  document.getElementById("subtotalModal").textContent =
-    `Total: R$ ${subtotal.toFixed(2)}`;
-}
-
-document
-  .getElementById("quantidadeInput")
-  .addEventListener("input", atualizarSubtotalModal);
-
-document.getElementById("maisBtn").addEventListener("click", () => {
-  const input = document.getElementById("quantidadeInput");
-  input.value = Number(input.value) + 1;
-  atualizarSubtotalModal();
-});
-
-document.getElementById("menosBtn").addEventListener("click", () => {
-  const input = document.getElementById("quantidadeInput");
-  if (Number(input.value) > 1) {
-    input.value = Number(input.value) - 1;
-    atualizarSubtotalModal();
-  }
-});
-
-// ======================================
-// ADICIONAR AO CARRINHO
-// ======================================
-
-document.getElementById("adicionarCarrinho").addEventListener("click", () => {
-  if (!produtoSelecionado) return;
-
-  const qtd = Number(document.getElementById("quantidadeInput").value);
-  const obs = document.getElementById("observacao").value;
-
-  const existente = carrinho.find(
-    (item) => item.id === produtoSelecionado.id && item.observacao === obs,
-  );
-
-  if (existente) {
-    existente.quantidade += qtd;
-  } else {
-    carrinho.push({
-      ...produtoSelecionado,
-      chave: crypto.randomUUID(),
-      quantidade: qtd,
-      observacao: obs,
-    });
-  }
-
-  fecharModal();
-  atualizarCarrinho();
-  salvarCarrinho();
-});
-
-// ======================================
-// CARRINHO
-// ======================================
-
-function atualizarCarrinho() {
-  const container = document.getElementById("itensCarrinho");
-  container.innerHTML = "";
-
-  let total = 0;
-
-  carrinho.forEach((item) => {
-    const subtotal = item.preco * item.quantidade;
-    total += subtotal;
-
-    container.innerHTML += `
-            <div class="carrinho-item">
-                <h4>${item.nome}</h4>
-                <p>${item.quantidade}x - R$ ${subtotal.toFixed(2)}</p>
-                ${item.observacao ? `<small>${item.observacao}</small>` : ""}
-                <button class="btn-remover" onclick="removerItem('${item.chave}')">Remover</button>
-            </div>
-        `;
-  });
-
-  const totalFinal = total + taxaEntrega;
-  document.getElementById("totalCarrinho").textContent =
-    `Total: R$ ${totalFinal.toFixed(2)}`;
-
-  const badge = document.getElementById("badgeCarrinho");
-  badge.textContent = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
-}
-
-function removerItem(chave) {
-  carrinho = carrinho.filter((item) => item.chave !== chave);
-  atualizarCarrinho();
-  salvarCarrinho();
+  return Math.min(cupomAplicado.valor, subtotal);
 }
 
 function salvarCarrinho() {
@@ -347,75 +60,641 @@ function salvarCarrinho() {
 }
 
 function carregarCarrinhoSalvo() {
-  const salvo = localStorage.getItem("carrinho");
-  if (salvo) {
-    carrinho = JSON.parse(salvo);
-    atualizarCarrinho();
+  try {
+    const salvo = localStorage.getItem("carrinho");
+    carrinho = salvo ? JSON.parse(salvo) : [];
+  } catch {
+    carrinho = [];
   }
 }
 
 // ======================================
-// CARRINHO TOGGLE
+// CARDÁPIO — carregar e renderizar
 // ======================================
 
-document.getElementById("btnCarrinho").addEventListener("click", () => {
-  document.getElementById("carrinho").classList.toggle("aberto");
-});
+async function carregarCardapio() {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/publico/empresas/${empresaId}/cardapio`,
+    );
 
-document.getElementById("fecharCarrinho").addEventListener("click", () => {
-  document.getElementById("carrinho").classList.remove("aberto");
-});
+    const dados = await response.json();
 
-// ======================================
-// TIPO DE ENTREGA
-// ======================================
+    if (!response.ok) throw new Error(dados?.message || "Loja não encontrada");
 
-function alternarTipoEntrega(tipo) {
-  tipoEntrega = tipo;
-  const btnEntrega = document.getElementById("btnEntrega");
-  const btnRetirada = document.getElementById("btnRetirada");
-  const camposEntrega = document.getElementById("camposEntrega");
-  const avisoRetirada = document.getElementById("avisoRetirada");
+    dadosCardapio = dados;
+    renderizarLoja(dados.empresa);
+    renderizarCategorias(dados.categorias);
+    renderizarProdutos(dados.categorias, dados.produtos);
+    atualizarBarraSacola();
+  } catch (error) {
+    console.error("Erro ao carregar cardápio:", error);
+    document.getElementById("nomeLoja").textContent = "Loja não encontrada";
+  }
+}
 
-  if (tipo === "Entrega") {
-    btnEntrega.classList.add("ativo");
-    btnRetirada.classList.remove("ativo");
-    camposEntrega.style.display = "flex";
-    avisoRetirada.style.display = "none";
+function renderizarLoja(empresa) {
+  document.getElementById("nomeLoja").textContent =
+    empresa.nome_fantasia || "Loja";
+
+  const partesEndereco = [empresa.bairro, empresa.cidade].filter(Boolean);
+  document.getElementById("enderecoLoja").textContent = partesEndereco.length
+    ? `📍 ${partesEndereco.join(" — ")}`
+    : "";
+
+  // Logo
+  const logo = document.getElementById("logoLoja");
+  const logoPlaceholder = document.getElementById("logoPlaceholder");
+  if (empresa.logo_url) {
+    logo.src = empresa.logo_url;
+    logo.hidden = false;
+    logoPlaceholder.hidden = true;
   } else {
-    btnRetirada.classList.add("ativo");
-    btnEntrega.classList.remove("ativo");
-    camposEntrega.style.display = "none";
-    avisoRetirada.style.display = "block";
-    taxaEntrega = 0;
-    bairroSelecionado = "Retirada na loja";
+    logo.hidden = true;
+    logoPlaceholder.hidden = false;
   }
-  atualizarCarrinho();
+
+  aplicarBannerLoja(empresa.banner_url);
+
+  // Avaliação — só mostra se o backend já devolver isso um dia
+  if (empresa.avaliacao) {
+    const el = document.getElementById("avaliacaoLoja");
+    el.textContent = `⭐ ${Number(empresa.avaliacao).toFixed(1)}${empresa.total_avaliacoes ? ` (${empresa.total_avaliacoes})` : ""}`;
+    el.hidden = false;
+  }
+
+  // Pedido mínimo — idem
+  if (empresa.pedido_minimo) {
+    const el = document.getElementById("pedidoMinimoLoja");
+    el.textContent = `Pedido mínimo ${formatarPreco(empresa.pedido_minimo)}`;
+    el.hidden = false;
+  }
+
+  // Cupons — placeholder até existir endpoint de cupons da loja
+  if (Array.isArray(empresa.cupons) && empresa.cupons.length > 0) {
+    document.getElementById("qtdCupons").textContent = empresa.cupons.length;
+    document.getElementById("lojaCupons").hidden = false;
+  }
 }
 
-document
-  .getElementById("btnEntrega")
-  .addEventListener("click", () => alternarTipoEntrega("Entrega"));
-document
-  .getElementById("btnRetirada")
-  .addEventListener("click", () => alternarTipoEntrega("Retirada"));
+function aplicarBannerLoja(bannerUrl) {
+  const img = document.getElementById("bannerLojaImg");
+  if (!bannerUrl) {
+    img.hidden = true;
+    return;
+  }
+
+  const teste = new Image();
+  teste.onload = () => {
+    img.src = bannerUrl;
+    img.hidden = false;
+  };
+  teste.onerror = () => {
+    img.hidden = true;
+  };
+  teste.src = bannerUrl;
+}
+
+function renderizarCategorias(categorias) {
+  const nav = document.getElementById("navCategorias");
+  nav.innerHTML = "";
+
+  categorias.forEach((cat, indice) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `categoria-link${indice === 0 ? " ativo" : ""}`;
+    btn.textContent = cat.nome;
+    btn.onclick = () => {
+      document
+        .querySelectorAll(".categoria-link")
+        .forEach((el) => el.classList.remove("ativo"));
+      btn.classList.add("ativo");
+      document
+        .getElementById(`categoria-${cat.id}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    nav.appendChild(btn);
+  });
+}
+
+function renderizarProdutos(categorias, produtos) {
+  const main = document.getElementById("produtosMain");
+  main.innerHTML = "";
+
+  categorias.forEach((cat) => {
+    const produtosDaCategoria = produtos.filter(
+      (p) => p.categoria_id === cat.id,
+    );
+    if (produtosDaCategoria.length === 0) return;
+
+    const secao = document.createElement("section");
+    secao.id = `categoria-${cat.id}`;
+
+    const titulo = document.createElement("h2");
+    titulo.className = "titulo-categoria";
+    titulo.textContent = cat.nome;
+    secao.appendChild(titulo);
+
+    const lista = document.createElement("div");
+    lista.className = "produtos-lista";
+
+    produtosDaCategoria.forEach((produto) => {
+      lista.appendChild(criarItemProduto(produto));
+    });
+
+    secao.appendChild(lista);
+    main.appendChild(secao);
+  });
+}
+
+function criarItemProduto(produto) {
+  const item = document.createElement("div");
+  item.className = "produto-item";
+  item.dataset.produtoId = produto.id;
+
+  item.innerHTML = `
+    <img src="${produto.imagem_url || ""}" alt="${produto.nome}" onerror="this.style.visibility='hidden'">
+    <div class="produto-item-info">
+      <h3>${produto.nome}</h3>
+      <p>${produto.descricao || ""}</p>
+      <span class="preco">${formatarPreco(produto.preco)}</span>
+    </div>
+    <div class="produto-item-acao"></div>
+  `;
+
+  item.querySelector("img").onclick = () => abrirModalProduto(produto);
+  item.querySelector(".produto-item-info").onclick = () =>
+    abrirModalProduto(produto);
+
+  renderizarAcaoProduto(item, produto);
+
+  return item;
+}
+
+function renderizarAcaoProduto(item, produto) {
+  const acao = item.querySelector(".produto-item-acao");
+  const noCarrinho = carrinho.filter(
+    (i) => i.produtoId === produto.id && !i.observacao,
+  );
+  const qtd = noCarrinho.reduce((soma, i) => soma + i.quantidade, 0);
+
+  if (qtd === 0) {
+    acao.innerHTML = `<button class="btn-add-produto" type="button">+</button>`;
+    acao.querySelector("button").onclick = (e) => {
+      e.stopPropagation();
+      adicionarAoCarrinhoRapido(produto);
+    };
+  } else {
+    acao.innerHTML = `
+      <div class="stepper-produto">
+        <button type="button" data-acao="menos">-</button>
+        <span>${qtd}</span>
+        <button type="button" data-acao="mais">+</button>
+      </div>
+    `;
+    acao.querySelector('[data-acao="menos"]').onclick = (e) => {
+      e.stopPropagation();
+      removerUmaUnidadeRapida(produto);
+    };
+    acao.querySelector('[data-acao="mais"]').onclick = (e) => {
+      e.stopPropagation();
+      adicionarAoCarrinhoRapido(produto);
+    };
+  }
+}
+
+function reRenderizarAcoesProdutos() {
+  document.querySelectorAll(".produto-item").forEach((item) => {
+    const produto = dadosCardapio.produtos.find(
+      (p) => p.id === item.dataset.produtoId,
+    );
+    if (produto) renderizarAcaoProduto(item, produto);
+  });
+}
 
 // ======================================
-// BAIRROS
+// CARRINHO — adicionar/remover rápido (sem observação)
 // ======================================
 
-let bairrosDisponiveis = [];
+function adicionarAoCarrinhoRapido(produto) {
+  const existente = carrinho.find(
+    (i) => i.produtoId === produto.id && !i.observacao,
+  );
+
+  if (existente) {
+    existente.quantidade += 1;
+  } else {
+    carrinho.push({
+      id: `${produto.id}-${Date.now()}`,
+      produtoId: produto.id,
+      nome: produto.nome,
+      preco: Number(produto.preco),
+      quantidade: 1,
+      observacao: "",
+    });
+  }
+
+  salvarCarrinho();
+  reRenderizarAcoesProdutos();
+  atualizarBarraSacola();
+}
+
+function removerUmaUnidadeRapida(produto) {
+  const existente = carrinho.find(
+    (i) => i.produtoId === produto.id && !i.observacao,
+  );
+  if (!existente) return;
+
+  existente.quantidade -= 1;
+  if (existente.quantidade <= 0) {
+    carrinho = carrinho.filter((i) => i.id !== existente.id);
+  }
+
+  salvarCarrinho();
+  reRenderizarAcoesProdutos();
+  atualizarBarraSacola();
+}
+
+// ======================================
+// MODAL PRODUTO (customização com observação)
+// ======================================
+
+function abrirModalProduto(produto) {
+  produtoAtual = produto;
+  document.getElementById("produtoNome").textContent = produto.nome;
+  document.getElementById("produtoPreco").textContent = formatarPreco(
+    produto.preco,
+  );
+  document.getElementById("quantidadeInput").value = 1;
+  document.getElementById("observacao").value = "";
+  atualizarSubtotalModal();
+
+  document.getElementById("modalProduto").classList.add("ativo");
+  document.body.classList.add("sem-scroll");
+}
+
+function fecharModalProduto() {
+  document.getElementById("modalProduto").classList.remove("ativo");
+  document.body.classList.remove("sem-scroll");
+}
+
+function atualizarSubtotalModal() {
+  const qtd = Number(document.getElementById("quantidadeInput").value) || 1;
+  const total = produtoAtual ? produtoAtual.preco * qtd : 0;
+  document.getElementById("subtotalModal").textContent =
+    `Total: ${formatarPreco(total)}`;
+}
+
+document.getElementById("fecharModal").onclick = fecharModalProduto;
+document.getElementById("modalProduto").onclick = (e) => {
+  if (e.target.id === "modalProduto") fecharModalProduto();
+};
+
+document.getElementById("menosBtn").onclick = () => {
+  const input = document.getElementById("quantidadeInput");
+  input.value = Math.max(1, Number(input.value) - 1);
+  atualizarSubtotalModal();
+};
+
+document.getElementById("maisBtn").onclick = () => {
+  const input = document.getElementById("quantidadeInput");
+  input.value = Number(input.value) + 1;
+  atualizarSubtotalModal();
+};
+
+document
+  .getElementById("quantidadeInput")
+  .addEventListener("input", atualizarSubtotalModal);
+
+document.getElementById("adicionarCarrinho").onclick = () => {
+  if (!produtoAtual) return;
+
+  const qtd = Number(document.getElementById("quantidadeInput").value) || 1;
+  const observacao = document.getElementById("observacao").value.trim();
+
+  carrinho.push({
+    id: `${produtoAtual.id}-${Date.now()}`,
+    produtoId: produtoAtual.id,
+    nome: produtoAtual.nome,
+    preco: Number(produtoAtual.preco),
+    quantidade: qtd,
+    observacao,
+  });
+
+  salvarCarrinho();
+  reRenderizarAcoesProdutos();
+  atualizarBarraSacola();
+  fecharModalProduto();
+};
+
+// ======================================
+// BARRA "VER SACOLA"
+// ======================================
+
+function atualizarBarraSacola() {
+  const barra = document.getElementById("barraSacola");
+  const qtdTotal = carrinho.reduce((soma, i) => soma + i.quantidade, 0);
+
+  if (qtdTotal === 0) {
+    barra.hidden = true;
+    return;
+  }
+
+  barra.hidden = false;
+  document.getElementById("qtdSacola").textContent =
+    `${qtdTotal} ${qtdTotal === 1 ? "item" : "itens"}`;
+  document.getElementById("totalSacolaBarra").textContent =
+    formatarPreco(subtotalCarrinho());
+}
+
+document.getElementById("barraSacola").onclick = abrirModalSacola;
+
+// ======================================
+// ETAPA 1: SACOLA
+// ======================================
+
+function abrirModalSacola() {
+  if (!dadosCardapio) return;
+
+  document.getElementById("sacolaLogoLoja").src =
+    dadosCardapio.empresa.logo_url || "";
+  document.getElementById("sacolaNomeLoja").textContent =
+    dadosCardapio.empresa.nome_fantasia;
+
+  renderizarItensSacola();
+  renderizarUpsell("upsellSacola");
+  atualizarResumoSacola();
+
+  document.getElementById("modalSacola").classList.add("ativo");
+  document.body.classList.add("sem-scroll");
+}
+
+function fecharModalSacola() {
+  document.getElementById("modalSacola").classList.remove("ativo");
+  document.body.classList.remove("sem-scroll");
+}
+
+function renderizarItensSacola() {
+  const container = document.getElementById("itensSacola");
+
+  if (carrinho.length === 0) {
+    container.innerHTML = `<p class="empty-state">Sua sacola está vazia.</p>`;
+    return;
+  }
+
+  container.innerHTML = carrinho
+    .map(
+      (item) => `
+      <div class="item-sacola">
+        <div class="item-sacola-info">
+          <h4>${item.quantidade}x ${item.nome}</h4>
+          ${item.observacao ? `<small>${item.observacao}</small>` : ""}
+        </div>
+        <span class="item-sacola-preco">${formatarPreco(item.preco * item.quantidade)}</span>
+      </div>
+    `,
+    )
+    .join("");
+}
+
+function renderizarUpsell(containerId) {
+  const container = document.getElementById(containerId);
+  if (!dadosCardapio) {
+    container.innerHTML = "";
+    return;
+  }
+
+  const idsNoCarrinho = new Set(carrinho.map((i) => i.produtoId));
+  const sugestoes = dadosCardapio.produtos
+    .filter((p) => !idsNoCarrinho.has(p.id))
+    .slice(0, 6);
+
+  if (sugestoes.length === 0) {
+    container.innerHTML = "";
+    return;
+  }
+
+  container.innerHTML = `
+    <p class="upsell-inline-titulo">🔥 Combina com seu pedido</p>
+    <div class="upsell-inline-lista">
+      ${sugestoes
+        .map(
+          (produto) => `
+        <div class="upsell-card">
+          <img src="${produto.imagem_url || ""}" alt="${produto.nome}" onerror="this.style.visibility='hidden'">
+          <h5>${produto.nome}</h5>
+          <span class="preco">${formatarPreco(produto.preco)}</span>
+          <button type="button" data-produto-id="${produto.id}">Adicionar</button>
+        </div>
+      `,
+        )
+        .join("")}
+    </div>
+  `;
+
+  container.querySelectorAll("button[data-produto-id]").forEach((btn) => {
+    btn.onclick = () => {
+      const produto = dadosCardapio.produtos.find(
+        (p) => p.id === btn.dataset.produtoId,
+      );
+      if (!produto) return;
+      adicionarAoCarrinhoRapido(produto);
+      renderizarItensSacola();
+      renderizarUpsell(containerId);
+      atualizarResumoSacola();
+    };
+  });
+}
+
+function atualizarResumoSacola() {
+  const subtotal = subtotalCarrinho();
+  const desconto = descontoCupom(subtotal);
+  const totalSemEntrega = Math.max(0, subtotal - desconto);
+
+  document.getElementById("subtotalSacola").textContent =
+    formatarPreco(subtotal);
+  document.getElementById("totalSemEntregaSacola").textContent =
+    formatarPreco(totalSemEntrega);
+
+  document.getElementById("btnContinuarEntrega").disabled =
+    carrinho.length === 0;
+}
+
+document.getElementById("fecharSacola").onclick = fecharModalSacola;
+document.getElementById("modalSacola").addEventListener("click", (e) => {
+  if (e.target.id === "modalSacola") fecharModalSacola();
+});
+
+// ⚠️ PLACEHOLDER — ainda não existe endpoint de cupons no backend.
+// Isso aqui já deixa a UI pronta; quando o endpoint existir, é só
+// ajustar a URL/formato da resposta abaixo.
+document.getElementById("btnAplicarCupom").onclick = async () => {
+  const codigo = document.getElementById("cupomInput").value.trim();
+  const status = document.getElementById("cupomStatus");
+
+  if (!codigo) return;
+
+  status.textContent = "Verificando cupom...";
+  status.className = "cupom-status";
+
+  try {
+    const response = await fetch(
+      `${API_URL}/api/publico/empresas/${empresaId}/cupons/validar`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo }),
+      },
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) throw new Error(data?.message || "Cupom inválido");
+
+    cupomAplicado = {
+      codigo,
+      tipo: data.tipo || "percentual",
+      valor: Number(data.valor) || 0,
+    };
+
+    status.textContent = `Cupom "${codigo}" aplicado!`;
+    status.className = "cupom-status sucesso";
+  } catch (error) {
+    console.error(error);
+    cupomAplicado = null;
+    status.textContent = "Cupons ainda não estão disponíveis nesta loja.";
+    status.className = "cupom-status erro";
+  }
+
+  atualizarResumoSacola();
+};
+
+document.getElementById("btnContinuarEntrega").onclick = () => {
+  if (carrinho.length === 0) return;
+  fecharModalSacola();
+  abrirModalEntrega();
+};
+
+// ======================================
+// ETAPA 2: ENTREGA
+// ======================================
+
+async function abrirModalEntrega() {
+  document.getElementById("modalEntrega").classList.add("ativo");
+  document.body.classList.add("sem-scroll");
+  atualizarResumoEntrega();
+
+  if (tipoEntrega === "Entrega" && !enderecoTexto) {
+    await localizarClienteAutomaticamente();
+  }
+}
+
+function fecharModalEntrega() {
+  document.getElementById("modalEntrega").classList.remove("ativo");
+  document.body.classList.remove("sem-scroll");
+}
+
+// ⚠️ Geolocalização + geocodificação reversa via Nominatim (OpenStreetMap),
+// que é gratuito mas tem limite de uso — pra produção/alto volume vale
+// trocar por um provedor pago (Google Geocoding, Mapbox etc.).
+function localizarClienteAutomaticamente() {
+  const textoEndereco = document.getElementById("textoEndereco");
+
+  if (!navigator.geolocation) {
+    textoEndereco.textContent =
+      "Não conseguimos localizar você. Informe o endereço manualmente.";
+    mostrarFormEnderecoManual();
+    return Promise.resolve();
+  }
+
+  textoEndereco.textContent = "Localizando seu endereço...";
+
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      async (posicao) => {
+        const { latitude, longitude } = posicao.coords;
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+          );
+          const dados = await response.json();
+
+          enderecoTexto =
+            dados?.display_name ||
+            `Lat ${latitude.toFixed(5)}, Long ${longitude.toFixed(5)}`;
+
+          window.ultimaLocalizacaoCliente = { latitude, longitude };
+
+          textoEndereco.textContent = enderecoTexto;
+        } catch (error) {
+          console.error("Erro na geocodificação reversa:", error);
+          textoEndereco.textContent =
+            "Não conseguimos identificar seu endereço. Informe manualmente.";
+          mostrarFormEnderecoManual();
+        }
+
+        resolve();
+      },
+      () => {
+        textoEndereco.textContent =
+          "Não conseguimos acessar sua localização. Informe o endereço manualmente.";
+        mostrarFormEnderecoManual();
+        resolve();
+      },
+    );
+  });
+}
+
+function mostrarFormEnderecoManual() {
+  document.getElementById("enderecoConfirmado").hidden = true;
+  document.getElementById("formEnderecoManual").hidden = false;
+}
+
+function mostrarEnderecoConfirmado() {
+  document.getElementById("enderecoConfirmado").hidden = false;
+  document.getElementById("formEnderecoManual").hidden = true;
+}
+
+document.getElementById("btnTrocarEndereco").onclick =
+  mostrarFormEnderecoManual;
+
+document.getElementById("btnUsarLocalizacao").onclick = async () => {
+  mostrarEnderecoConfirmado();
+  await localizarClienteAutomaticamente();
+};
+
+function selecionarTipoEntrega(tipo) {
+  tipoEntrega = tipo;
+
+  document
+    .getElementById("btnEntregaStep")
+    .classList.toggle("ativo", tipo === "Entrega");
+  document
+    .getElementById("btnRetiradaStep")
+    .classList.toggle("ativo", tipo === "Retirada");
+
+  document.getElementById("enderecoConfirmado").hidden = tipo !== "Entrega";
+  document.getElementById("formEnderecoManual").hidden = true;
+  document.getElementById("avisoRetiradaStep").hidden = tipo !== "Retirada";
+
+  taxaEntrega = tipo === "Entrega" ? taxaEntrega : 0;
+  atualizarResumoEntrega();
+}
+
+document.getElementById("btnEntregaStep").onclick = () =>
+  selecionarTipoEntrega("Entrega");
+document.getElementById("btnRetiradaStep").onclick = () =>
+  selecionarTipoEntrega("Retirada");
 
 async function carregarBairros() {
-  const select = document.getElementById("bairroCliente");
+  const select = document.getElementById("bairroClienteSelect");
 
   try {
     const response = await fetch(
       `${API_URL}/api/publico/empresas/${empresaId}/tabela-precos`,
     );
-
     const dados = await response.json();
-
     bairrosDisponiveis = response.ok && Array.isArray(dados) ? dados : [];
   } catch (error) {
     console.error("Erro ao carregar bairros:", error);
@@ -423,25 +702,192 @@ async function carregarBairros() {
   }
 
   select.innerHTML = '<option value="">Selecione o bairro</option>';
-
   bairrosDisponiveis.forEach((b) => {
-    select.innerHTML += `<option value="${b.bairro}">${b.bairro} - R$ ${Number(b.valor).toFixed(2)}</option>`;
+    select.innerHTML += `<option value="${b.bairro}">${b.bairro} - ${formatarPreco(b.valor)}</option>`;
   });
 
   select.onchange = () => {
     const bairro = bairrosDisponiveis.find((b) => b.bairro === select.value);
-    if (bairro && tipoEntrega === "Entrega") {
+    if (bairro) {
       taxaEntrega = Number(bairro.valor);
       bairroSelecionado = bairro.bairro;
-    } else {
-      taxaEntrega = 0;
+      enderecoTexto = document
+        .getElementById("enderecoClienteInput")
+        .value.trim();
     }
-    atualizarCarrinho();
+    atualizarResumoEntrega();
   };
 }
 
+document
+  .getElementById("enderecoClienteInput")
+  .addEventListener("input", (e) => {
+    enderecoTexto = e.target.value.trim();
+  });
+
+function atualizarResumoEntrega() {
+  const subtotal = subtotalCarrinho();
+  const desconto = descontoCupom(subtotal);
+  const totalSemEntrega = Math.max(0, subtotal - desconto);
+  const totalComEntrega =
+    totalSemEntrega + (tipoEntrega === "Entrega" ? taxaEntrega : 0);
+
+  document.getElementById("subtotalEntrega").textContent =
+    formatarPreco(totalSemEntrega);
+  document.getElementById("taxaEntregaValor").textContent =
+    tipoEntrega === "Entrega" ? formatarPreco(taxaEntrega) : "Grátis";
+  document.getElementById("totalComEntrega").textContent =
+    formatarPreco(totalComEntrega);
+
+  const podeContinuar =
+    tipoEntrega === "Retirada" ||
+    (enderecoTexto && (bairroSelecionado || window.ultimaLocalizacaoCliente));
+  document.getElementById("btnContinuarPagamento").disabled = !podeContinuar;
+}
+
+document.getElementById("fecharEntrega").onclick = fecharModalEntrega;
+document.getElementById("modalEntrega").addEventListener("click", (e) => {
+  if (e.target.id === "modalEntrega") fecharModalEntrega();
+});
+
+document.getElementById("btnContinuarPagamento").onclick = () => {
+  fecharModalEntrega();
+  abrirModalPagamento();
+};
+
 // ======================================
-// FINALIZAR PEDIDO
+// ETAPA 3: PAGAMENTO
+// ======================================
+
+function abrirModalPagamento() {
+  document.getElementById("pagamentoLogoLoja").src =
+    dadosCardapio.empresa.logo_url || "";
+  document.getElementById("pagamentoNomeLoja").textContent =
+    dadosCardapio.empresa.nome_fantasia;
+
+  atualizarResumoPagamento();
+
+  document.getElementById("modalPagamento").classList.add("ativo");
+  document.body.classList.add("sem-scroll");
+}
+
+function fecharModalPagamento() {
+  document.getElementById("modalPagamento").classList.remove("ativo");
+  document.body.classList.remove("sem-scroll");
+}
+
+function atualizarResumoPagamento() {
+  const subtotal = subtotalCarrinho();
+  const desconto = descontoCupom(subtotal);
+  const totalSemEntrega = Math.max(0, subtotal - desconto);
+  const entrega = tipoEntrega === "Entrega" ? taxaEntrega : 0;
+  const total = totalSemEntrega + entrega + TAXA_SERVICO;
+
+  const avisoCupom = document.getElementById("cupomAplicadoResumo");
+  if (cupomAplicado) {
+    avisoCupom.hidden = false;
+    avisoCupom.textContent = `🎟️ Cupom "${cupomAplicado.codigo}" aplicado (-${formatarPreco(desconto)})`;
+  } else {
+    avisoCupom.hidden = true;
+  }
+
+  document.getElementById("subtotalPagamento").textContent =
+    formatarPreco(totalSemEntrega);
+  document.getElementById("taxaEntregaPagamento").textContent =
+    entrega > 0 ? formatarPreco(entrega) : "Grátis";
+  document.getElementById("taxaServicoPagamento").textContent =
+    formatarPreco(TAXA_SERVICO);
+  document.getElementById("totalPagamento").textContent = formatarPreco(total);
+}
+
+document.querySelectorAll(".opcao-pagamento").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if (btn.disabled) return;
+    document
+      .querySelectorAll(".opcao-pagamento")
+      .forEach((el) => el.classList.remove("ativo"));
+    btn.classList.add("ativo");
+    metodoPagamentoSelecionado = btn.dataset.metodo;
+  });
+});
+
+document.getElementById("cpfNotaCheckbox").addEventListener("change", (e) => {
+  document.getElementById("cpfNotaInput").hidden = !e.target.checked;
+});
+
+document.getElementById("fecharPagamento").onclick = fecharModalPagamento;
+document.getElementById("modalPagamento").addEventListener("click", (e) => {
+  if (e.target.id === "modalPagamento") fecharModalPagamento();
+});
+
+document.getElementById("btnRevisarPedido").onclick = () => {
+  fecharModalPagamento();
+  abrirModalRevisar();
+};
+
+// ======================================
+// ETAPA 4: REVISAR PEDIDO
+// ======================================
+
+const METODOS_PAGAMENTO_LABEL = {
+  app: "Pagamento pelo app",
+  pix: "Pix",
+  credito: "Cartão de crédito",
+  debito: "Cartão de débito",
+};
+
+function abrirModalRevisar() {
+  const subtotal = subtotalCarrinho();
+  const desconto = descontoCupom(subtotal);
+  const totalSemEntrega = Math.max(0, subtotal - desconto);
+  const entrega = tipoEntrega === "Entrega" ? taxaEntrega : 0;
+  const total = totalSemEntrega + entrega + TAXA_SERVICO;
+
+  document.getElementById("revisaoTipoEntrega").textContent =
+    tipoEntrega === "Entrega" ? "Entrega" : "Retirada na loja";
+  document.getElementById("revisaoPrevisao").textContent =
+    tipoEntrega === "Entrega" ? "30–50 min" : "15–25 min";
+  document.getElementById("revisaoEndereco").textContent =
+    tipoEntrega === "Entrega"
+      ? enderecoTexto || "Endereço não informado"
+      : dadosCardapio?.empresa?.bairro
+        ? `Retirar em: ${dadosCardapio.empresa.bairro}`
+        : "Retirar na loja";
+
+  const blocoCupom = document.getElementById("revisaoCupomBloco");
+  if (cupomAplicado) {
+    blocoCupom.hidden = false;
+    document.getElementById("revisaoCupom").textContent =
+      `${cupomAplicado.codigo} (-${formatarPreco(desconto)})`;
+  } else {
+    blocoCupom.hidden = true;
+  }
+
+  document.getElementById("revisaoPagamento").textContent =
+    METODOS_PAGAMENTO_LABEL[metodoPagamentoSelecionado];
+  document.getElementById("revisaoTotal").textContent = formatarPreco(total);
+
+  document.getElementById("modalRevisar").classList.add("ativo");
+  document.body.classList.add("sem-scroll");
+}
+
+function fecharModalRevisar() {
+  document.getElementById("modalRevisar").classList.remove("ativo");
+  document.body.classList.remove("sem-scroll");
+}
+
+document.getElementById("fecharRevisar").onclick = fecharModalRevisar;
+document.getElementById("modalRevisar").addEventListener("click", (e) => {
+  if (e.target.id === "modalRevisar") fecharModalRevisar();
+});
+
+document.getElementById("btnAlterarPedido").onclick = () => {
+  fecharModalRevisar();
+  abrirModalPagamento();
+};
+
+// ======================================
+// PAGAR — cria o pedido e manda pro gateway
 // ======================================
 
 function montarItensTexto() {
@@ -454,163 +900,124 @@ function montarItensTexto() {
     .join(", ");
 }
 
-let ultimoPedidoEnviado = null;
+document.getElementById("btnPagarPedido").onclick = async () => {
+  const cliente_nome = prompt("Seu nome:");
+  if (!cliente_nome) return;
+  const cliente_telefone = prompt("Seu celular/WhatsApp:");
+  if (!cliente_telefone) return;
 
-document
-  .getElementById("finalizarPedido")
-  .addEventListener("click", async () => {
-    if (carrinho.length === 0) {
-      alert("Seu carrinho está vazio!");
-      return;
-    }
+  const subtotal = subtotalCarrinho();
+  const desconto = descontoCupom(subtotal);
 
-    const cliente_nome = document.getElementById("nomeCliente").value.trim();
-    const cliente_telefone = document
-      .getElementById("celularCliente")
-      .value.trim();
-    const endereco = document.getElementById("enderecoCliente").value.trim();
+  const dadosPedido = {
+    cliente_nome,
+    cliente_telefone,
+    itens: montarItensTexto(),
+    valor_total: Math.max(0, subtotal - desconto),
+    valor_entrega: tipoEntrega === "Entrega" ? taxaEntrega : 0,
+    tipo_entrega: tipoEntrega,
+    endereco: tipoEntrega === "Entrega" ? enderecoTexto : null,
+    bairro:
+      tipoEntrega === "Entrega"
+        ? bairroSelecionado || null
+        : "Retirada na loja",
+    cidade: dadosCardapio?.empresa?.cidade || null,
+    latitude: window.ultimaLocalizacaoCliente?.latitude || null,
+    longitude: window.ultimaLocalizacaoCliente?.longitude || null,
+    cupom: cupomAplicado?.codigo || null,
+    metodo_pagamento: metodoPagamentoSelecionado,
+    status_pagamento: "aguardando_pagamento",
+  };
 
-    if (!cliente_nome || !cliente_telefone) {
-      alert("Preencha nome e celular.");
-      return;
-    }
+  const botao = document.getElementById("btnPagarPedido");
+  botao.disabled = true;
+  botao.textContent = "Enviando pedido...";
 
-    if (tipoEntrega === "Entrega" && (!endereco || !bairroSelecionado)) {
-      alert("Preencha o endereço e selecione o bairro.");
-      return;
-    }
-
-    const valor_total = carrinho.reduce(
-      (sum, item) => sum + item.preco * item.quantidade,
-      0,
+  try {
+    const response = await fetch(
+      `${API_URL}/api/publico/empresas/${empresaId}/pedidos`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dadosPedido),
+      },
     );
 
-    const dadosPedido = {
-      cliente_nome,
-      cliente_telefone,
-      itens: montarItensTexto(),
-      valor_total,
-      valor_entrega: tipoEntrega === "Entrega" ? taxaEntrega : 0,
-      tipo_entrega: tipoEntrega,
-      endereco: tipoEntrega === "Entrega" ? endereco : null,
-      bairro:
-        tipoEntrega === "Entrega" ? bairroSelecionado : "Retirada na loja",
-      cidade: dadosCardapio?.empresa?.cidade || null,
-      latitude: null,
-      longitude: null,
-      // status inicial — o pedido só é confirmado de fato quando o
-      // gateway avisar (via webhook) que o pagamento passou.
-      status_pagamento: "aguardando_pagamento",
-    };
+    const data = await response.json().catch(() => ({}));
 
-    const botao = document.getElementById("finalizarPedido");
-    botao.disabled = true;
-    botao.textContent = "Enviando pedido...";
+    if (!response.ok) throw new Error(data?.message || "Erro ao enviar pedido");
 
-    try {
-      const response = await fetch(
-        `${API_URL}/api/publico/empresas/${empresaId}/pedidos`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(dadosPedido),
-        },
-      );
+    ultimoPedidoEnviado = data.pedido || dadosPedido;
 
-      const data = await response.json().catch(() => ({}));
+    await iniciarPagamentoPlataforma(ultimoPedidoEnviado);
 
-      if (!response.ok) {
-        throw new Error(data?.message || "Erro ao enviar pedido");
-      }
+    fecharModalRevisar();
+    abrirModalConfirmacao(dadosPedido);
 
-      ultimoPedidoEnviado = data.pedido || dadosPedido;
-      abrirModalConfirmacao(ultimoPedidoEnviado);
+    carrinho = [];
+    cupomAplicado = null;
+    localStorage.removeItem("carrinho");
+    atualizarBarraSacola();
+    reRenderizarAcoesProdutos();
+  } catch (error) {
+    console.error(error);
+    alert("Não foi possível enviar seu pedido agora. Tente novamente.");
+  } finally {
+    botao.disabled = false;
+    botao.textContent = "Pagar";
+  }
+};
 
-      carrinho = [];
-      localStorage.removeItem("carrinho");
-      atualizarCarrinho();
-      document.getElementById("carrinho").classList.remove("aberto");
-    } catch (error) {
-      console.error(error);
-      alert(
-        "Não foi possível enviar seu pedido agora. Tente novamente em instantes.",
-      );
-    } finally {
-      botao.disabled = false;
-      botao.textContent = "Finalizar Pedido";
+// ⚠️ PLACEHOLDER — falta escolher o gateway (Mercado Pago, PagBank,
+// Stripe, Asaas, Pagar.me...) pra isso virar de verdade. Quando o
+// endpoint existir, ele deve devolver { checkout_url } e a gente
+// redireciona o cliente pra lá antes de mostrar a confirmação.
+async function iniciarPagamentoPlataforma(pedido) {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/publico/empresas/${empresaId}/pedidos/${pedido.id}/pagamento`,
+      { method: "POST" },
+    );
+    const data = await response.json().catch(() => ({}));
+
+    if (response.ok && data.checkout_url) {
+      window.location.href = data.checkout_url;
     }
-  });
+  } catch (error) {
+    console.log("Gateway de pagamento ainda não configurado:", error);
+  }
+}
 
 // ======================================
-// MODAL CONFIRMAÇÃO + PAGAMENTO
+// CONFIRMAÇÃO FINAL
 // ======================================
 
 function abrirModalConfirmacao(dadosPedido) {
-  const total = dadosPedido.valor_total + dadosPedido.valor_entrega;
+  const total =
+    dadosPedido.valor_total + dadosPedido.valor_entrega + TAXA_SERVICO;
 
   document.getElementById("resumoConfirmacao").innerHTML = `
     <p><strong>Itens:</strong> ${dadosPedido.itens}</p>
-    <p><strong>Total:</strong> R$ ${total.toFixed(2)}</p>
+    <p><strong>Total:</strong> ${formatarPreco(total)}</p>
     <p><strong>${dadosPedido.tipo_entrega === "Entrega" ? "Entrega" : "Retirada"}:</strong>
-      ${dadosPedido.tipo_entrega === "Entrega" ? `${dadosPedido.endereco} — ${dadosPedido.bairro}` : "Retirada na loja"}
+      ${dadosPedido.tipo_entrega === "Entrega" ? dadosPedido.endereco || "" : "Retirada na loja"}
     </p>
   `;
 
   document.getElementById("modalConfirmacao").classList.add("ativo");
+  document.body.classList.add("sem-scroll");
 }
 
 function fecharModalConfirmacao() {
   document.getElementById("modalConfirmacao").classList.remove("ativo");
+  document.body.classList.remove("sem-scroll");
 }
 
-document
-  .getElementById("fecharConfirmacao")
-  .addEventListener("click", fecharModalConfirmacao);
-
+document.getElementById("fecharConfirmacao").onclick = fecharModalConfirmacao;
 document.getElementById("modalConfirmacao").addEventListener("click", (e) => {
   if (e.target.id === "modalConfirmacao") fecharModalConfirmacao();
 });
-
-document.getElementById("btnNovoPedido").addEventListener("click", () => {
-  fecharModalConfirmacao();
-});
-
-// ⚠️ PLACEHOLDER — ainda não sei qual gateway vocês vão usar
-// (Mercado Pago, PagBank, Stripe, Asaas, Pagar.me...). O real vai
-// ser: chamar o backend, que cria uma sessão/checkout no gateway e
-// devolve uma URL — aí sim a gente redireciona o cliente pra lá.
-document
-  .getElementById("btnPagarConfirmacao")
-  .addEventListener("click", async () => {
-    if (!ultimoPedidoEnviado) return;
-
-    const botao = document.getElementById("btnPagarConfirmacao");
-    botao.disabled = true;
-    botao.textContent = "Abrindo pagamento...";
-
-    try {
-      const response = await fetch(
-        `${API_URL}/api/publico/empresas/${empresaId}/pedidos/${ultimoPedidoEnviado.id}/pagamento`,
-        { method: "POST" },
-      );
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok || !data.checkout_url) {
-        throw new Error("Pagamento pela plataforma ainda não está ligado.");
-      }
-
-      window.location.href = data.checkout_url;
-    } catch (error) {
-      console.error(error);
-      alert(
-        "O pagamento pela plataforma ainda está sendo configurado. Aguarde a loja confirmar seu pedido.",
-      );
-    } finally {
-      botao.disabled = false;
-      botao.textContent = "Ir para o pagamento";
-    }
-  });
+document.getElementById("btnNovoPedido").onclick = fecharModalConfirmacao;
 
 // ======================================
 // INICIALIZAÇÃO
