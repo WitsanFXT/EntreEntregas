@@ -91,84 +91,94 @@ function renderizarLojas(lojas) {
 
 function criarCardLoja(loja) {
   const card = document.createElement("a");
+
   card.className = "loja-card";
+
   card.href = `/loja/${loja.id}`;
 
-  // Banner
-  const banner = document.createElement("div");
-  banner.className = "loja-card-banner";
+  const categoria = loja.categoria || "Geral";
 
-  if (loja.banner_url) {
-    const img = document.createElement("img");
-    img.src = loja.banner_url;
-    img.alt = loja.nome_fantasia;
-    img.onerror = () => {
-      img.style.display = "none";
-      const placeholder = document.createElement("div");
-      placeholder.className = "placeholder-banner";
-      placeholder.textContent = "🏪";
-      banner.appendChild(placeholder);
-    };
-    banner.appendChild(img);
-  } else {
-    const placeholder = document.createElement("div");
-    placeholder.className = "placeholder-banner";
-    placeholder.textContent = "🏪";
-    banner.appendChild(placeholder);
-  }
+  const cidade = loja.cidade || "";
 
-  // Body
-  const body = document.createElement("div");
-  body.className = "loja-card-body";
+  const bairro = loja.bairro || "";
 
-  // Logo
-  const logo = document.createElement("img");
-  logo.className = "loja-card-logo";
-  logo.src = loja.logo_url || "";
-  logo.alt = loja.nome_fantasia;
-  logo.onerror = () => {
-    logo.style.display = "none";
-  };
+  const bannerHTML = loja.banner_url
+    ? `
+      <img
+        src="${loja.banner_url}"
+        alt="${loja.nome_fantasia}"
+      >
+    `
+    : `
+      <div class="placeholder-banner">
+        🏪
+      </div>
+    `;
 
-  // Info
-  const info = document.createElement("div");
-  info.className = "loja-card-info";
+  const logoHTML = loja.logo_url
+    ? `
+      <img
+        class="loja-card-logo"
+        src="${loja.logo_url}"
+        alt="${loja.nome_fantasia}"
+      >
+    `
+    : "";
 
-  const nome = document.createElement("h3");
-  nome.textContent = loja.nome_fantasia || "Loja";
+  card.innerHTML = `
 
-  const categoria = document.createElement("div");
-  categoria.className = "loja-categoria";
-  categoria.textContent = loja.categoria || "Geral";
+    <div class="loja-card-banner">
 
-  const meta = document.createElement("div");
-  meta.className = "loja-meta";
+      ${bannerHTML}
 
-  const status = document.createElement("span");
-  status.className = `loja-status aberto`;
-  status.textContent = "🟢 Aberto";
+      <div class="card-badge">
+        🔥 Destaque
+      </div>
 
-  const localizacao = document.createElement("span");
-  localizacao.textContent = `📍 ${loja.bairro || ""} ${loja.cidade ? "- " + loja.cidade : ""}`;
+    </div>
 
-  meta.appendChild(status);
-  if (loja.bairro || loja.cidade) {
-    meta.appendChild(localizacao);
-  }
+    <div class="loja-card-body">
 
-  info.appendChild(nome);
-  info.appendChild(categoria);
-  info.appendChild(meta);
+      ${logoHTML}
 
-  body.appendChild(logo);
-  body.appendChild(info);
+      <div class="loja-card-info">
 
-  card.appendChild(banner);
-  card.appendChild(body);
+        <h3>
+          ${loja.nome_fantasia}
+        </h3>
+
+        <div class="loja-categoria">
+          ${categoria}
+        </div>
+
+        <div class="card-rating">
+          ⭐ 4.9
+        </div>
+
+        <div class="card-delivery">
+          🛵 Entrega rápida
+        </div>
+
+        <div class="loja-meta">
+
+          <span class="loja-status">
+            🟢 Aberto
+          </span>
+
+          <span>
+            📍 ${bairro}
+          </span>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  `;
 
   return card;
 }
-
 // ======================================
 // FILTRAR LOJAS
 // ======================================
@@ -206,9 +216,18 @@ function filtrarLojas() {
 // ======================================
 
 function mostrarLoading() {
-  lojasGrid.innerHTML = "";
-  loadingLojas.style.display = "block";
+  loadingLojas.style.display = "none";
+
   semLojas.style.display = "none";
+
+  lojasGrid.innerHTML = `
+
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+    <div class="skeleton-card"></div>
+
+  `;
 }
 
 function mostrarErro(mensagem) {
@@ -240,16 +259,17 @@ inputBusca?.addEventListener("keyup", (e) => {
 
 // Categorias
 categoriasFiltros?.addEventListener("click", (e) => {
-  const btn = e.target.closest(".categoria-filtro");
+  const btn = e.target.closest(".categoria-card");
   if (!btn) return;
 
-  // Remove ativo de todos
   document
-    .querySelectorAll(".categoria-filtro")
+    .querySelectorAll(".categoria-card")
     .forEach((b) => b.classList.remove("ativo"));
+
   btn.classList.add("ativo");
 
   categoriaAtiva = btn.dataset.categoria;
+
   filtrarLojas();
 });
 
