@@ -21,9 +21,11 @@ const TAXA_SERVICO = 0;
 
 const params = new URLSearchParams(window.location.search);
 
+const lojaId = params.get("id");
+
 console.log("Loja:", lojaId);
 
-const lojaId = new URLSearchParams(window.location.search).get("id");
+//const lojaId = new URLSearchParams(window.location.search).get("id");
 
 console.log("📡 API_URL:", API_URL);
 console.log("🏪 Empresa ID:", empresaId);
