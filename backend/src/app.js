@@ -28,18 +28,48 @@ const lojaPath = path.resolve(__dirname, "../../frontend/public/loja");
 console.log("📁 Loja path:", lojaPath);
 app.use("/loja", express.static(lojaPath));
 
+// ======================================
+// ROTA PARA O APP PÚBLICO (raiz)
+// ======================================
+
+const appPath = path.resolve(frontendPath, "public/index.html");
+console.log("📄 App path:", appPath);
+console.log("📄 App existe?", fs.existsSync(appPath));
+
+app.get("/", (req, res) => {
+  console.log("🏠 Acessando página inicial do app");
+  if (fs.existsSync(appPath)) {
+    res.sendFile(appPath);
+  } else {
+    res.status(404).send(`<h1>❌ Página do app não encontrada</h1>`);
+  }
+});
+
+// ======================================
+// 🔥 ROTA DA LOJA - DEVE VIR ANTES DO FALLBACK
+// ======================================
+
 const lojaHtmlPath = path.resolve(lojaPath, "index.html");
 console.log("📄 Loja HTML:", lojaHtmlPath);
 console.log("📄 Loja existe?", fs.existsSync(lojaHtmlPath));
 
 app.get("/loja/:empresaId", (req, res) => {
   console.log("🛒 Acessando loja para empresa:", req.params.empresaId);
+
+  // Verifica se o arquivo existe
   if (fs.existsSync(lojaHtmlPath)) {
     res.sendFile(lojaHtmlPath);
   } else {
-    res.status(404).send(`<h1>❌ Página da loja não encontrada</h1>`);
+    res.status(404).send(`
+      <h1>❌ Página da loja não encontrada</h1>
+      <p>Caminho: ${lojaHtmlPath}</p>
+    `);
   }
 });
+
+// ======================================
+// ROTA DO DASHBOARD
+// ======================================
 
 const dashboardPath = path.resolve(frontendPath, "empresa/dashboard.html");
 console.log("📄 Dashboard path:", dashboardPath);
@@ -109,6 +139,7 @@ app.listen(PORT, () => {
   console.log(`\n🚀 Servidor rodando na porta ${PORT}`);
   console.log(`📁 Frontend: ${frontendPath}`);
   console.log(`📁 Loja: ${lojaPath}`);
+  console.log(`📍 App: http://localhost:${PORT}/`);
   console.log(`📍 Dashboard: http://localhost:${PORT}/dashboard`);
   console.log(`🛒 Loja: http://localhost:${PORT}/loja/SEU_ID`);
   console.log(

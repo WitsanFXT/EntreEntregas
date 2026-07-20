@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>EntreEntregas - Peça agora!</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- ================= HEADER ================= -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="logo-area">
+          <span class="logo-icon">🛵</span>
+          <h1>EntreEntregas</h1>
+        </div>
+        <div class="header-actions">
+          <button id="btnLocalizacao" class="btn-localizacao" type="button">
+            📍 <span id="textoLocalizacao">Unai, MG</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ================= BUSCA ================= -->
+    <section class="busca-section">
+      <div class="busca-container">
+        <input
+          id="inputBusca"
+          type="text"
+          placeholder="🔍 Buscar lojas ou produtos..."
+          class="input-busca"
+        />
+        <button id="btnBuscar" class="btn-buscar" type="button">Buscar</button>
+      </div>
+    </section>
+
+    <!-- ================= CATEGORIAS (FILTROS) ================= -->
+    <section class="categorias-section">
+      <div class="categorias-scroll" id="categoriasFiltros">
+        <button class="categoria-filtro ativo" data-categoria="todos">
+          Todos
+        </button>
+        <button class="categoria-filtro" data-categoria="restaurante">
+          🍔 Restaurantes
+        </button>
+        <button class="categoria-filtro" data-categoria="farmacia">
+          💊 Farmácias
+        </button>
+        <button class="categoria-filtro" data-categoria="mercado">
+          🛒 Mercados
+        </button>
+        <button class="categoria-filtro" data-categoria="lanchonete">
+          🍟 Lanchonetes
+        </button>
+        <button class="categoria-filtro" data-categoria="pizza">
+          🍕 Pizzarias
+        </button>
+        <button class="categoria-filtro" data-categoria="acai">🥤 Açaí</button>
+        <button class="categoria-filtro" data-categoria="padaria">
+          🥖 Padarias
+        </button>
+      </div>
+    </section>
+
+    <!-- ================= LISTA DE LOJAS ================= -->
+    <main class="lojas-container">
+      <div class="lojas-grid" id="lojasGrid">
+        <!-- Lojas serão renderizadas via JS -->
+      </div>
+      <div id="loadingLojas" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Carregando lojas...</p>
+      </div>
+      <div id="semLojas" class="empty-state" style="display: none">
+        <span class="empty-icon">🏪</span>
+        <h3>Nenhuma loja encontrada</h3>
+        <p>Tente buscar por outra categoria ou termo.</p>
+      </div>
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="app-footer">
+      <p>© 2026 EntreEntregas - Todos os direitos reservados</p>
+      <p class="footer-version">v1.0.0</p>
+    </footer>
+
+    <!-- ================= MODAL DE LOCALIZAÇÃO ================= -->
+    <div id="modalLocalizacao" class="modal">
+      <div class="modal-content">
+        <button id="fecharModalLocalizacao" class="btn-fechar-modal">×</button>
+        <h2>📍 Sua localização</h2>
+        <p>Informe seu endereço para ver lojas próximas</p>
+        <input
+          id="inputEndereco"
+          type="text"
+          placeholder="Digite seu endereço"
+        />
+        <button id="btnConfirmarEndereco" class="btn-primary">
+          Confirmar endereço
+        </button>
+        <button id="btnUsarLocalizacaoAtual" class="btn-secondary">
+          📍 Usar localização atual
+        </button>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,553 @@
+/* ======================================
+   ENTREENTREGAS - APP PÚBLICO
+   Estilo iFood-like
+====================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary: #ff6b35;
+  --primary-dark: #e55a2b;
+  --primary-light: #fff0e8;
+  --secondary: #1a1a2e;
+  --gray-light: #f5f5f5;
+  --gray: #e8e8e8;
+  --gray-dark: #999;
+  --text-dark: #1a1a1a;
+  --text-muted: #666;
+  --white: #ffffff;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --radius: 16px;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  background: var(--gray-light);
+  color: var(--text-dark);
+  min-height: 100vh;
+  padding-bottom: 30px;
+}
+
+/* ======================================
+   HEADER
+====================================== */
+
+.app-header {
+  background: var(--secondary);
+  color: var(--white);
+  padding: 16px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  font-size: 28px;
+}
+
+.logo-area h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.btn-localizacao {
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  color: var(--white);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s;
+}
+
+.btn-localizacao:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ======================================
+   BUSCA
+====================================== */
+
+.busca-section {
+  padding: 16px 20px;
+  background: var(--white);
+  border-bottom: 1px solid var(--gray);
+  position: sticky;
+  top: 76px;
+  z-index: 99;
+}
+
+.busca-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 10px;
+}
+
+.input-busca {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid var(--gray);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s;
+  background: var(--gray-light);
+}
+
+.input-busca:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--white);
+}
+
+.btn-buscar {
+  padding: 12px 24px;
+  background: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-buscar:hover {
+  background: var(--primary-dark);
+}
+
+/* ======================================
+   CATEGORIAS (FILTROS)
+====================================== */
+
+.categorias-section {
+  padding: 12px 20px;
+  background: var(--white);
+  border-bottom: 1px solid var(--gray);
+}
+
+.categorias-scroll {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 0;
+  scrollbar-width: none;
+}
+
+.categorias-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.categoria-filtro {
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1.5px solid var(--gray);
+  background: var(--white);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.categoria-filtro:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.categoria-filtro.ativo {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--white);
+}
+
+/* ======================================
+   LOJAS GRID
+====================================== */
+
+.lojas-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.lojas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* ======================================
+   CARD DA LOJA (estilo iFood)
+====================================== */
+
+.loja-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.loja-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+.loja-card-banner {
+  width: 100%;
+  height: 160px;
+  background: var(--gray);
+  position: relative;
+  overflow: hidden;
+}
+
+.loja-card-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.loja-card-banner .placeholder-banner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  background: linear-gradient(135deg, #ff6b35, #ff8f5e);
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.loja-card-body {
+  padding: 16px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.loja-card-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--gray);
+  border: 2px solid var(--white);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: -28px;
+}
+
+.loja-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.loja-card-info h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.loja-card-info .loja-categoria {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.loja-card-info .loja-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.loja-card-info .loja-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.loja-status {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.loja-status.aberto {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+}
+
+.loja-status.fechado {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+/* ======================================
+   LOADING / EMPTY STATE
+====================================== */
+
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--gray);
+  border-top: 3px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.empty-icon {
+  font-size: 56px;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+
+/* ======================================
+   MODAL
+====================================== */
+
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 99999;
+}
+
+.modal.ativo {
+  display: flex;
+}
+
+.modal-content {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 30px;
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+  animation: modalIn 0.25s ease;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.btn-fechar-modal {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.modal-content h2 {
+  margin-bottom: 8px;
+}
+
+.modal-content p {
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.modal-content input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--gray);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+.btn-secondary {
+  width: 100%;
+  padding: 14px;
+  background: var(--gray-light);
+  color: var(--text-dark);
+  border: 2px solid var(--gray);
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ======================================
+   FOOTER
+====================================== */
+
+.app-footer {
+  text-align: center;
+  padding: 30px 20px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--gray);
+  background: var(--white);
+}
+
+.footer-version {
+  font-size: 0.7rem;
+  margin-top: 4px;
+}
+
+/* ======================================
+   RESPONSIVO
+====================================== */
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .btn-localizacao {
+    font-size: 0.75rem;
+    padding: 6px 12px;
+  }
+
+  .busca-section {
+    top: 68px;
+  }
+
+  .lojas-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .loja-card-banner {
+    height: 120px;
+  }
+
+  .loja-card-body {
+    padding: 12px;
+  }
+
+  .loja-card-logo {
+    width: 44px;
+    height: 44px;
+    margin-top: -22px;
+  }
+
+  .loja-card-info h3 {
+    font-size: 0.88rem;
+  }
+
+  .categoria-filtro {
+    font-size: 0.75rem;
+    padding: 6px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .lojas-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .logo-area h1 {
+    font-size: 1.1rem;
+  }
+
+  .modal-content {
+    padding: 20px;
+  }
+}
