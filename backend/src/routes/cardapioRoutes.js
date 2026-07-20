@@ -1,27 +1,66 @@
 const express = require("express");
-
 const router = express.Router();
-
 const auth = require("../middleware/auth");
-
 const categoriaController = require("../controllers/categoriaController");
-
 const produtoController = require("../controllers/produtoController");
 
-router.post("/categorias", auth, categoriaController.criarCategoria);
+// ======================================
+// MIDDLEWARE PARA OBTER EMPRESA_ID (se não veio do auth)
+// ======================================
 
-router.get("/categorias", auth, categoriaController.listarCategorias);
+const obterEmpresaId = async (req, res, next) => {
+  try {
+    // Se já tiver no req (veio do auth), usa
+    if (req.empresaId) {
+      return next();
+    }
 
-router.put("/categorias/:id", auth, categoriaController.editarCategoria);
+    // Se tiver no decoded, usa
+    if (req.decodificado?.empresa_id) {
+      req.empresaId = req.decodificado.empresa_id;
+      return next();
+    }
 
-router.delete("/categorias/:id", auth, categoriaController.excluirCategoria);
+    // Se não, busca do banco
+    const supabase = require("../config/supabase");
+    const { data: empresa, error } = await supabase
+      .from("empresas")
+      .select("id")
+      .eq("usuario_id", req.usuario.id)
+      .single();
 
-router.post("/produtos", auth, produtoController.criarProduto);
+    if (error || !empresa) {
+      return res.status(404).json({
+        message: "Empresa não encontrada",
+      });
+    }
 
-router.get("/produtos", auth, produtoController.listarProdutos);
+    req.empresaId = empresa.id;
+    next();
+  } catch (error) {
+    console.error("❌ Erro ao obter empresa:", error);
+    res.status(500).json({
+      message: "Erro ao obter empresa",
+    });
+  }
+};
 
-router.put("/produtos/:id", auth, produtoController.editarProduto);
+// ======================================
+// ROTAS DE CATEGORIAS
+// ======================================
 
-router.delete("/produtos/:id", auth, produtoController.excluirProduto);
+router.post("/categorias", auth, obterEmpresaId, categoriaController.criar);
+router.get("/categorias", auth, obterEmpresaId, categoriaController.listar);
+router.put("/categorias/:id", auth, categoriaController.atualizar);
+router.delete("/categorias/:id", auth, categoriaController.excluir);
+
+// ======================================
+// ROTAS DE PRODUTOS
+// ======================================
+
+router.post("/produtos", auth, obterEmpresaId, produtoController.criar);
+router.get("/produtos", auth, obterEmpresaId, produtoController.listar);
+router.put("/produtos/:id", auth, produtoController.atualizar);
+router.delete("/produtos/:id", auth, produtoController.excluir);
 
 module.exports = router;

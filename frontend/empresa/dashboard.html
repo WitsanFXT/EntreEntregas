@@ -56,7 +56,7 @@
             🍔 Cardápio
           </button>
 
-          <button class="menu-item em-breve" type="button" title="Em breve">
+          <button id="navFinanceiro" class="menu-item" data-tela="financeiro">
             💰 Financeiro
           </button>
 
@@ -629,6 +629,176 @@
         </div>
 
         <!-- ===================================================
+     TELA FINANCEIRO
+==================================================== -->
+        <section id="telaFinanceiro" class="tela-app">
+          <div class="page-header">
+            <h2>💰 Financeiro</h2>
+            <div class="financeiro-actions">
+              <button
+                id="btnExportarRelatorio"
+                type="button"
+                class="acao btn-secondary"
+              >
+                📥 Exportar Relatório
+              </button>
+              <button
+                id="btnAtualizarFinanceiro"
+                type="button"
+                class="acao btn-primary"
+              >
+                🔄 Atualizar
+              </button>
+            </div>
+          </div>
+
+          <!-- Filtros -->
+          <section class="card">
+            <div class="filtros-financeiro">
+              <div class="field-row">
+                <div>
+                  <label class="field-label">Período</label>
+                  <select id="filtroPeriodo">
+                    <option value="hoje">Hoje</option>
+                    <option value="semana">Última semana</option>
+                    <option value="mes" selected>Último mês</option>
+                    <option value="ano">Último ano</option>
+                    <option value="personalizado">Personalizado</option>
+                  </select>
+                </div>
+                <div id="campoDataPersonalizado" style="display: none">
+                  <label class="field-label">Data inicial</label>
+                  <input type="date" id="dataInicioPersonalizado" />
+                  <label class="field-label">Data final</label>
+                  <input type="date" id="dataFimPersonalizado" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Cards de resumo -->
+          <section class="metric-grid" id="metricFinanceiro">
+            <div class="metric-card">
+              <span>FATURAMENTO TOTAL</span>
+              <h2 id="metricFaturamentoTotal">R$ 0,00</h2>
+              <small id="metricFaturamentoVariacao">+0%</small>
+            </div>
+
+            <div class="metric-card">
+              <span>PEDIDOS CONCLUÍDOS</span>
+              <h2 id="metricTotalPedidos">0</h2>
+              <small id="metricPedidosVariacao">+0%</small>
+            </div>
+
+            <div class="metric-card">
+              <span>TICKET MÉDIO</span>
+              <h2 id="metricTicketMedio">R$ 0,00</h2>
+              <small id="metricTicketVariacao">+0%</small>
+            </div>
+
+            <div class="metric-card">
+              <span>ENTREGAS</span>
+              <h2 id="metricTotalEntregas">R$ 0,00</h2>
+              <small id="metricEntregasVariacao">+0%</small>
+            </div>
+          </section>
+
+          <!-- Gráfico -->
+          <section class="card">
+            <div class="card-header">
+              <h3>📊 Faturamento por período</h3>
+            </div>
+            <div class="grafico-container">
+              <canvas id="graficoFaturamento" height="250"></canvas>
+            </div>
+          </section>
+
+          <!-- Canais de venda -->
+          <section class="card">
+            <div class="card-header">
+              <h3>📈 Canais de venda</h3>
+            </div>
+            <div id="canaisVendaFinanceiro">
+              <div class="channel-item">
+                <div class="channel-info">
+                  <span>iFood</span>
+                  <strong id="canalIfoodFinanceiro">R$ 0,00</strong>
+                </div>
+                <div class="progress">
+                  <div
+                    id="canalIfoodBar"
+                    class="progress-fill ifood"
+                    style="width: 0%"
+                  ></div>
+                </div>
+              </div>
+
+              <div class="channel-item">
+                <div class="channel-info">
+                  <span>Manual</span>
+                  <strong id="canalManualFinanceiro">R$ 0,00</strong>
+                </div>
+                <div class="progress">
+                  <div
+                    id="canalManualBar"
+                    class="progress-fill manual"
+                    style="width: 0%"
+                  ></div>
+                </div>
+              </div>
+
+              <div class="channel-item">
+                <div class="channel-info">
+                  <span>Site Próprio</span>
+                  <strong id="canalSiteFinanceiro">R$ 0,00</strong>
+                </div>
+                <div class="progress">
+                  <div
+                    id="canalSiteBar"
+                    class="progress-fill site"
+                    style="width: 0%"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Lista de transações -->
+          <section class="card">
+            <div class="card-header">
+              <h3>📋 Últimas transações</h3>
+              <div class="transacoes-filtros">
+                <select id="filtroStatusTransacoes">
+                  <option value="todos">Todos os status</option>
+                  <option value="aguardando">Aguardando</option>
+                  <option value="confirmado">Confirmado</option>
+                  <option value="em_preparo">Em preparo</option>
+                  <option value="saiu_para_entrega">Saiu p/ entrega</option>
+                  <option value="entregue">Entregue</option>
+                  <option value="cancelado">Cancelado</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="listaTransacoes">
+              <p class="empty-state">Carregando transações...</p>
+            </div>
+
+            <div
+              class="paginacao-container"
+              id="paginacaoTransacoes"
+              style="display: none"
+            >
+              <button id="btnPaginaAnterior" class="btn-mini">
+                ◀ Anterior
+              </button>
+              <span id="infoPagina">Página 1 de 1</span>
+              <button id="btnProximaPagina" class="btn-mini">Próxima ▶</button>
+            </div>
+          </section>
+        </section>
+
+        <!-- ===================================================
              TELA CONFIGURAÇÕES
         ==================================================== -->
         <section id="telaConfiguracoes" class="tela-app">
@@ -854,6 +1024,8 @@
 
     <!-- ================= SCRIPTS ================= -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- GRÁFICOS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="empresa.js"></script>
   </body>

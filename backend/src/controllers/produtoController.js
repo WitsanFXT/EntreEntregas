@@ -1,65 +1,20 @@
-// ======================================
-// CRIAR PRODUTO
-// ======================================
-
 const supabase = require("../config/supabase");
-const crypto = require("crypto");
-
-exports.criarProduto = async (req, res) => {
-  try {
-    console.log("USUARIO:", req.usuario);
-    console.log("EMPRESA_ID:", req.usuario?.empresa_id);
-    const empresa_id = req.usuario.empresa_id;
-    const { categoria_id, nome, descricao, preco, imagem_url } = req.body;
-
-    if (!categoria_id || !nome || preco == null) {
-      return res.status(400).json({
-        message: "Categoria, nome e preço são obrigatórios",
-      });
-    }
-
-    const { data, error } = await supabase
-      .from("produtos")
-      .insert({
-        id: crypto.randomUUID(),
-        empresa_id,
-        categoria_id,
-        nome,
-        descricao,
-        preco,
-        imagem_url,
-        ativo: true,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.log("ERRO SUPABASE AO CRIAR PRODUTO:", error);
-      return res.status(500).json({
-        message: "Erro ao criar produto",
-      });
-    }
-
-    return res.status(201).json({
-      message: "Produto criado com sucesso",
-      produto: data,
-    });
-  } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      message: "Erro ao criar produto",
-    });
-  }
-};
 
 // ======================================
 // LISTAR PRODUTOS
 // ======================================
 
-exports.listarProdutos = async (req, res) => {
+exports.listar = async (req, res) => {
   try {
-    const empresa_id = req.usuario.empresa_id;
+    const empresaId = req.empresaId;
+
+    if (!empresaId) {
+      return res.status(400).json({
+        message: "Empresa não identificada",
+      });
+    }
+
+    console.log("📦 Buscando produtos para empresa:", empresaId);
 
     const { data, error } = await supabase
       .from("produtos")
@@ -72,62 +27,118 @@ exports.listarProdutos = async (req, res) => {
         )
       `,
       )
-      .eq("empresa_id", empresa_id)
-      .order("created_at", {
-        ascending: false,
+      .eq("empresa_id", empresaId)
+      .order("nome", { ascending: true });
+
+    if (error) {
+      console.error("❌ Erro ao buscar produtos:", error);
+      return res.status(500).json({
+        message: "Erro ao buscar produtos",
+        error: error.message,
       });
+    }
 
-    if (error) throw error;
-
-    return res.json(data);
+    console.log(`✅ ${data?.length || 0} produtos encontrados`);
+    res.json(data || []);
   } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      message: "Erro ao listar produtos",
+    console.error("❌ Erro no controller de produtos:", error);
+    res.status(500).json({
+      message: "Erro interno ao listar produtos",
+      error: error.message,
     });
   }
 };
 
 // ======================================
-// EDITAR PRODUTO
+// CRIAR PRODUTO
 // ======================================
 
-exports.editarProduto = async (req, res) => {
+exports.criar = async (req, res) => {
   try {
-    const empresa_id = req.usuario.empresa_id;
+    const empresaId = req.empresaId;
+    const { nome, descricao, preco, categoria_id, imagem_url } = req.body;
 
-    const { id } = req.params;
+    if (!empresaId) {
+      return res.status(400).json({ message: "Empresa não identificada" });
+    }
 
-    const { categoria_id, nome, descricao, preco, imagem_url, ativo } =
-      req.body;
+    if (!nome || !preco || !categoria_id) {
+      return res.status(400).json({
+        message: "Nome, preço e categoria são obrigatórios",
+      });
+    }
 
     const { data, error } = await supabase
       .from("produtos")
-      .update({
-        categoria_id,
+      .insert({
         nome,
-        descricao,
-        preco,
-        imagem_url,
-        ativo,
+        descricao: descricao || "",
+        preco: Number(preco),
+        categoria_id,
+        imagem_url: imagem_url || "",
+        empresa_id: empresaId,
+        ativo: true,
       })
-      .eq("id", id)
-      .eq("empresa_id", empresa_id)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("❌ Erro ao criar produto:", error);
+      return res.status(500).json({
+        message: "Erro ao criar produto",
+        error: error.message,
+      });
+    }
 
-    return res.json({
-      message: "Produto atualizado",
-      produto: data,
-    });
+    res.status(201).json(data);
   } catch (error) {
-    console.error(error);
+    console.error("❌ Erro ao criar produto:", error);
+    res.status(500).json({
+      message: "Erro interno ao criar produto",
+      error: error.message,
+    });
+  }
+};
 
-    return res.status(500).json({
-      message: "Erro ao editar produto",
+// ======================================
+// ATUALIZAR PRODUTO
+// ======================================
+
+exports.atualizar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome, descricao, preco, categoria_id, imagem_url, ativo } =
+      req.body;
+
+    const updates = {};
+    if (nome !== undefined) updates.nome = nome;
+    if (descricao !== undefined) updates.descricao = descricao;
+    if (preco !== undefined) updates.preco = Number(preco);
+    if (categoria_id !== undefined) updates.categoria_id = categoria_id;
+    if (imagem_url !== undefined) updates.imagem_url = imagem_url;
+    if (ativo !== undefined) updates.ativo = ativo;
+
+    const { data, error } = await supabase
+      .from("produtos")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("❌ Erro ao atualizar produto:", error);
+      return res.status(500).json({
+        message: "Erro ao atualizar produto",
+        error: error.message,
+      });
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error("❌ Erro ao atualizar produto:", error);
+    res.status(500).json({
+      message: "Erro interno ao atualizar produto",
+      error: error.message,
     });
   }
 };
@@ -136,28 +147,26 @@ exports.editarProduto = async (req, res) => {
 // EXCLUIR PRODUTO
 // ======================================
 
-exports.excluirProduto = async (req, res) => {
+exports.excluir = async (req, res) => {
   try {
-    const empresa_id = req.usuario.empresa_id;
-
     const { id } = req.params;
 
-    const { error } = await supabase
-      .from("produtos")
-      .delete()
-      .eq("id", id)
-      .eq("empresa_id", empresa_id);
+    const { error } = await supabase.from("produtos").delete().eq("id", id);
 
-    if (error) throw error;
+    if (error) {
+      console.error("❌ Erro ao excluir produto:", error);
+      return res.status(500).json({
+        message: "Erro ao excluir produto",
+        error: error.message,
+      });
+    }
 
-    return res.json({
-      message: "Produto removido com sucesso",
-    });
+    res.json({ message: "Produto excluído com sucesso" });
   } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      message: "Erro ao excluir produto",
+    console.error("❌ Erro ao excluir produto:", error);
+    res.status(500).json({
+      message: "Erro interno ao excluir produto",
+      error: error.message,
     });
   }
 };

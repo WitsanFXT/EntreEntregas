@@ -1,113 +1,129 @@
 const supabase = require("../config/supabase");
 
 // ======================================
+// LISTAR CATEGORIAS
+// ======================================
+
+exports.listar = async (req, res) => {
+  try {
+    const empresaId = req.empresaId;
+
+    if (!empresaId) {
+      return res.status(400).json({
+        message: "Empresa não identificada",
+      });
+    }
+
+    console.log("📂 Buscando categorias para empresa:", empresaId);
+
+    const { data, error } = await supabase
+      .from("categorias")
+      .select("*")
+      .eq("empresa_id", empresaId)
+      .order("ordem", { ascending: true });
+
+    if (error) {
+      console.error("❌ Erro ao buscar categorias:", error);
+      return res.status(500).json({
+        message: "Erro ao buscar categorias",
+        error: error.message,
+      });
+    }
+
+    console.log(`✅ ${data?.length || 0} categorias encontradas`);
+    res.json(data || []);
+  } catch (error) {
+    console.error("❌ Erro no controller de categorias:", error);
+    res.status(500).json({
+      message: "Erro interno ao listar categorias",
+      error: error.message,
+    });
+  }
+};
+
+// ======================================
 // CRIAR CATEGORIA
 // ======================================
 
-exports.criarCategoria = async (req, res) => {
+exports.criar = async (req, res) => {
   try {
-    const { nome, ordem = 0 } = req.body;
+    const empresaId = req.empresaId;
+    const { nome } = req.body;
 
-    const empresa_id = req.usuario.empresa_id;
+    if (!empresaId) {
+      return res.status(400).json({ message: "Empresa não identificada" });
+    }
 
-    console.log("EMPRESA ID:", empresa_id);
-    console.log("BODY:", req.body);
+    if (!nome) {
+      return res
+        .status(400)
+        .json({ message: "Nome da categoria é obrigatório" });
+    }
 
     const { data, error } = await supabase
       .from("categorias")
       .insert({
-        empresa_id,
         nome,
-        ordem,
+        empresa_id: empresaId,
+        ordem: 0,
       })
       .select()
       .single();
 
     if (error) {
-      console.log("ERRO SUPABASE:", error);
-
-      return res.status(500).json(error);
-    }
-
-    return res.status(201).json(data);
-  } catch (err) {
-    console.log(err);
-
-    return res.status(500).json(err);
-  }
-};
-
-// ======================================
-// LISTAR CATEGORIAS
-// ======================================
-
-exports.listarCategorias = async (req, res) => {
-  try {
-    console.log("USUARIO JWT:", req.usuario);
-
-    const empresa_id = req.usuario.empresa_id;
-
-    console.log("EMPRESA ID:", empresa_id);
-
-    const { data, error } = await supabase
-      .from("categorias")
-      .select("*")
-      .eq("empresa_id", empresa_id);
-
-    console.log("CATEGORIAS:", data);
-
-    if (error) throw error;
-
-    return res.json(data);
-  } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      message: "Erro ao listar categorias",
-    });
-  }
-};
-
-// ======================================
-// EDITAR CATEGORIA
-// ======================================
-
-exports.editarCategoria = async (req, res) => {
-  try {
-    const empresa_id = req.usuario.empresa_id;
-
-    const { id } = req.params;
-
-    const { nome, ordem } = req.body;
-
-    const { data, error } = await supabase
-      .from("categorias")
-      .update({
-        nome,
-        ordem,
-      })
-      .eq("id", id)
-      .eq("empresa_id", empresa_id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    if (!data) {
-      return res.status(404).json({
-        message: "Categoria não encontrada",
+      console.error("❌ Erro ao criar categoria:", error);
+      return res.status(500).json({
+        message: "Erro ao criar categoria",
+        error: error.message,
       });
     }
 
-    return res.json({
-      message: "Categoria atualizada",
-      categoria: data,
-    });
+    res.status(201).json(data);
   } catch (error) {
-    console.error(error);
+    console.error("❌ Erro ao criar categoria:", error);
+    res.status(500).json({
+      message: "Erro interno ao criar categoria",
+      error: error.message,
+    });
+  }
+};
 
-    return res.status(500).json({
-      message: "Erro ao editar categoria",
+// ======================================
+// ATUALIZAR CATEGORIA
+// ======================================
+
+exports.atualizar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome } = req.body;
+
+    if (!nome) {
+      return res
+        .status(400)
+        .json({ message: "Nome da categoria é obrigatório" });
+    }
+
+    const { data, error } = await supabase
+      .from("categorias")
+      .update({ nome })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("❌ Erro ao atualizar categoria:", error);
+      return res.status(500).json({
+        message: "Erro ao atualizar categoria",
+        error: error.message,
+      });
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error("❌ Erro ao atualizar categoria:", error);
+    res.status(500).json({
+      message: "Erro interno ao atualizar categoria",
+      error: error.message,
     });
   }
 };
@@ -116,28 +132,26 @@ exports.editarCategoria = async (req, res) => {
 // EXCLUIR CATEGORIA
 // ======================================
 
-exports.excluirCategoria = async (req, res) => {
+exports.excluir = async (req, res) => {
   try {
-    const empresa_id = req.usuario.empresa_id;
-
     const { id } = req.params;
 
-    const { error } = await supabase
-      .from("categorias")
-      .delete()
-      .eq("id", id)
-      .eq("empresa_id", empresa_id);
+    const { error } = await supabase.from("categorias").delete().eq("id", id);
 
-    if (error) throw error;
+    if (error) {
+      console.error("❌ Erro ao excluir categoria:", error);
+      return res.status(500).json({
+        message: "Erro ao excluir categoria",
+        error: error.message,
+      });
+    }
 
-    return res.json({
-      message: "Categoria removida com sucesso",
-    });
+    res.json({ message: "Categoria excluída com sucesso" });
   } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      message: "Erro ao excluir categoria",
+    console.error("❌ Erro ao excluir categoria:", error);
+    res.status(500).json({
+      message: "Erro interno ao excluir categoria",
+      error: error.message,
     });
   }
 };

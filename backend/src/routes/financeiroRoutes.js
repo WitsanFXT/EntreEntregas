@@ -1,50 +1,31 @@
-const express =
-require("express");
+const express = require("express");
 
-const router =
-express.Router();
+const router = express.Router();
 
-const auth =
-require("../middleware/auth");
+const auth = require("../middleware/auth");
 
-const permissao =
-require("../middleware/permissao");
+const permissao = require("../middleware/permissao");
 
-const {
-
-resumo,
-extrato
-
-} = require("../controllers/financeiroController");
-
-
+const { resumo, extrato } = require("../controllers/financeiroController");
 
 router.get(
+  "/resumo",
 
-"/resumo",
+  auth,
 
-auth,
+  permissao("entregador"),
 
-permissao("entregador"),
-
-resumo
-
+  resumo,
 );
-
-
 
 router.get(
+  "/extrato",
 
-"/extrato",
+  auth,
 
-auth,
+  permissao("entregador"),
 
-permissao("entregador"),
-
-extrato
-
+  extrato,
 );
-
-
 
 module.exports = router;

@@ -2601,3 +2601,120 @@ button.acao:disabled {
   background: #dc2626;
   transform: scale(1.1);
 }
+
+/* ======================================
+   FINANCEIRO
+====================================== */
+
+.financeiro-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filtros-financeiro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-end;
+}
+
+.filtros-financeiro .field-row {
+  flex: 1;
+  min-width: 200px;
+}
+
+.grafico-container {
+  width: 100%;
+  max-height: 300px;
+}
+
+/* Transações */
+.transacao-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.transacao-row:hover {
+  background: #fafafa;
+  border-radius: 8px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.transacao-row .transacao-cliente {
+  display: flex;
+  flex-direction: column;
+}
+
+.transacao-row .transacao-cliente strong {
+  font-size: 0.9rem;
+}
+
+.transacao-row .transacao-cliente small {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.transacao-row .transacao-valor {
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.transacao-row .transacao-valor.positivo {
+  color: var(--success);
+}
+
+.transacao-row .transacao-valor.negativo {
+  color: var(--danger);
+}
+
+/* Paginação */
+.paginacao-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.paginacao-container button {
+  padding: 8px 16px;
+}
+
+.paginacao-container span {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 700px) {
+  .transacao-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 14px 0;
+  }
+
+  .transacao-row .transacao-valor {
+    text-align: left;
+  }
+
+  .financeiro-actions {
+    width: 100%;
+  }
+
+  .financeiro-actions .acao {
+    flex: 1;
+  }
+
+  .filtros-financeiro .field-row {
+    grid-template-columns: 1fr;
+  }
+}

@@ -24,17 +24,9 @@ const frontendPath = path.resolve(__dirname, "../../frontend");
 console.log("📁 Frontend path:", frontendPath);
 app.use(express.static(frontendPath));
 
-// ======================================
-// ARQUIVOS ESTÁTICOS DA LOJA - NOVO!
-// ======================================
-
 const lojaPath = path.resolve(__dirname, "../../frontend/public/loja");
 console.log("📁 Loja path:", lojaPath);
 app.use("/loja", express.static(lojaPath));
-
-// ======================================
-// ROTA PÚBLICA DA LOJA
-// ======================================
 
 const lojaHtmlPath = path.resolve(lojaPath, "index.html");
 console.log("📄 Loja HTML:", lojaHtmlPath);
@@ -42,20 +34,12 @@ console.log("📄 Loja existe?", fs.existsSync(lojaHtmlPath));
 
 app.get("/loja/:empresaId", (req, res) => {
   console.log("🛒 Acessando loja para empresa:", req.params.empresaId);
-
   if (fs.existsSync(lojaHtmlPath)) {
     res.sendFile(lojaHtmlPath);
   } else {
-    res.status(404).send(`
-      <h1>❌ Página da loja não encontrada</h1>
-      <p>Caminho: ${lojaHtmlPath}</p>
-    `);
+    res.status(404).send(`<h1>❌ Página da loja não encontrada</h1>`);
   }
 });
-
-// ======================================
-// ROTA PARA O DASHBOARD
-// ======================================
 
 const dashboardPath = path.resolve(frontendPath, "empresa/dashboard.html");
 console.log("📄 Dashboard path:", dashboardPath);
@@ -65,10 +49,7 @@ app.get("/dashboard", (req, res) => {
   if (fs.existsSync(dashboardPath)) {
     res.sendFile(dashboardPath);
   } else {
-    res.status(404).send(`
-      <h1>❌ Dashboard não encontrado</h1>
-      <p>Caminho: ${dashboardPath}</p>
-    `);
+    res.status(404).send(`<h1>❌ Dashboard não encontrado</h1>`);
   }
 });
 
@@ -82,22 +63,27 @@ const empresaRoutes = require("./routes/empresaRoutes");
 const entregadorRoutes = require("./routes/entregadorRoutes");
 const entregasRoutes = require("./routes/entregasRoutes");
 const financeiroRoutes = require("./routes/financeiroRoutes");
+const financeiroEmpresaRoutes = require("./routes/financeiroEmpresaRoutes");
 const pedidosRoutes = require("./routes/pedidosRoutes");
 const tabelaPrecosRoutes = require("./routes/tabelaPrecosRoutes");
 const cardapioRoutes = require("./routes/cardapioRoutes");
 const publicRoutes = require("./routes/Publicoroutes");
+
+// ======================================
+// REGISTRAR ROTAS - SEM DUPLICATAS
+// ======================================
 
 app.use("/api/auth", authRoutes);
 app.use("/api/perfil", perfilRoutes);
 app.use("/api/empresa", empresaRoutes);
 app.use("/api/entregador", entregadorRoutes);
 app.use("/api/entregas", entregasRoutes);
-app.use("/api/financeiro", financeiroRoutes);
+app.use("/api/financeiro", financeiroEmpresaRoutes);
+app.use("/api/financeiro/entregador", financeiroRoutes);
 app.use("/api/empresa/pedidos", pedidosRoutes);
 app.use("/api/tabela-precos", tabelaPrecosRoutes);
 app.use("/api/cardapio", cardapioRoutes);
 app.use("/api/publico", publicRoutes);
-app.use("/api/publico", require("./routes/Publicoroutes"));
 
 // ======================================
 // ROTA DE FALLBACK
