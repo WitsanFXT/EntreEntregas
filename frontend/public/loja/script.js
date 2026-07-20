@@ -19,6 +19,8 @@ const API_URL = (() => {
 
 const TAXA_SERVICO = 0;
 
+const lojaId = new URLSearchParams(window.location.search).get("id");
+
 console.log("📡 API_URL:", API_URL);
 console.log("🏪 Empresa ID:", empresaId);
 
