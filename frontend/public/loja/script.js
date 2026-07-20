@@ -6,20 +6,18 @@ const empresaId =
   new URLSearchParams(window.location.search).get("empresa") ||
   window.location.pathname.split("/").filter(Boolean).pop();
 
-// 🔥 CONFIGURAÇÃO CORRETA PARA PRODUÇÃO E DESENVOLVIMENTO
+// 🔥 CONFIGURAÇÃO PARA PRODUÇÃO E DESENVOLVIMENTO
 const API_URL = (() => {
-  // Se estiver em produção (Vercel), usa a URL da API
   if (
     window.location.hostname !== "localhost" &&
     window.location.hostname !== "127.0.0.1"
   ) {
-    // 🔥 MUDE PARA A URL DO SEU BACKEND NA PRODUÇÃO
-    // Exemplo: https://seu-backend.vercel.app
-    return "https://entre-entregas.vercel.app/"; // <-- AJUSTE ESTA URL
+    return "https://entre-entregas-backend.vercel.app";
   }
-  // Desenvolvimento local
   return "http://localhost:5500";
 })();
+
+const TAXA_SERVICO = 0;
 
 console.log("📡 API_URL:", API_URL);
 console.log("🏪 Empresa ID:", empresaId);
@@ -35,7 +33,7 @@ let taxaEntrega = 0;
 let bairroSelecionado = "";
 let enderecoTexto = "";
 let bairrosDisponiveis = [];
-let cupomAplicado = null; // { codigo, desconto }
+let cupomAplicado = null;
 let produtoAtual = null;
 let ultimoPedidoEnviado = null;
 let metodoPagamentoSelecionado = "app";
@@ -86,18 +84,28 @@ async function carregarCardapio() {
       `${API_URL}/api/publico/empresas/${empresaId}/cardapio`,
     );
 
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
     const dados = await response.json();
 
-    if (!response.ok) throw new Error(dados?.message || "Loja não encontrada");
+    if (!dados.empresa) {
+      throw new Error("Empresa não encontrada");
+    }
 
     dadosCardapio = dados;
     renderizarLoja(dados.empresa);
     renderizarCategorias(dados.categorias);
     renderizarProdutos(dados.categorias, dados.produtos);
     atualizarBarraSacola();
+
+    console.log("✅ Cardápio carregado:", dados.empresa.nome_fantasia);
   } catch (error) {
-    console.error("Erro ao carregar cardápio:", error);
+    console.error("❌ Erro ao carregar cardápio:", error);
     document.getElementById("nomeLoja").textContent = "Loja não encontrada";
+    document.querySelector(".loja-status").textContent = "🔴 Loja indisponível";
+    document.querySelector(".loja-status").className = "loja-status fechado";
   }
 }
 
@@ -110,7 +118,7 @@ function renderizarLoja(empresa) {
     ? `📍 ${partesEndereco.join(" — ")}`
     : "";
 
-  // 🔥 LOGO - sem placeholder
+  // Logo
   const logo = document.getElementById("logoLoja");
   if (empresa.logo_url) {
     logo.src = empresa.logo_url;
@@ -125,21 +133,8 @@ function renderizarLoja(empresa) {
   // Avaliação
   if (empresa.avaliacao) {
     const el = document.getElementById("avaliacaoLoja");
-    el.textContent = `⭐ ${Number(empresa.avaliacao).toFixed(1)}${empresa.total_avaliacoes ? ` (${empresa.total_avaliacoes})` : ""}`;
+    el.textContent = `⭐ ${Number(empresa.avaliacao).toFixed(1)}`;
     el.hidden = false;
-  }
-
-  // Pedido mínimo
-  if (empresa.pedido_minimo) {
-    const el = document.getElementById("pedidoMinimoLoja");
-    el.textContent = `Pedido mínimo ${formatarPreco(empresa.pedido_minimo)}`;
-    el.hidden = false;
-  }
-
-  // Cupons
-  if (Array.isArray(empresa.cupons) && empresa.cupons.length > 0) {
-    document.getElementById("qtdCupons").textContent = empresa.cupons.length;
-    document.getElementById("lojaCupons").hidden = false;
   }
 }
 
@@ -165,6 +160,10 @@ function renderizarCategorias(categorias) {
   const nav = document.getElementById("navCategorias");
   nav.innerHTML = "";
 
+  if (!categorias || categorias.length === 0) {
+    return;
+  }
+
   categorias.forEach((cat, indice) => {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -187,9 +186,11 @@ function renderizarProdutos(categorias, produtos) {
   const main = document.getElementById("produtosMain");
   main.innerHTML = "";
 
+  if (!categorias || !produtos) return;
+
   categorias.forEach((cat) => {
     const produtosDaCategoria = produtos.filter(
-      (p) => p.categoria_id === cat.id,
+      (p) => p.categoria_id === cat.id && p.ativo !== false,
     );
     if (produtosDaCategoria.length === 0) return;
 
@@ -218,8 +219,10 @@ function criarItemProduto(produto) {
   item.className = "produto-item";
   item.dataset.produtoId = produto.id;
 
+  const imgSrc = produto.imagem_url || "";
+
   item.innerHTML = `
-    <img src="${produto.imagem_url || ""}" alt="${produto.nome}" onerror="this.style.visibility='hidden'">
+    <img src="${imgSrc}" alt="${produto.nome}" onerror="this.style.display='none'">
     <div class="produto-item-info">
       <h3>${produto.nome}</h3>
       <p>${produto.descricao || ""}</p>
@@ -271,7 +274,7 @@ function renderizarAcaoProduto(item, produto) {
 
 function reRenderizarAcoesProdutos() {
   document.querySelectorAll(".produto-item").forEach((item) => {
-    const produto = dadosCardapio.produtos.find(
+    const produto = dadosCardapio?.produtos?.find(
       (p) => p.id === item.dataset.produtoId,
     );
     if (produto) renderizarAcaoProduto(item, produto);
@@ -279,7 +282,7 @@ function reRenderizarAcoesProdutos() {
 }
 
 // ======================================
-// CARRINHO — adicionar/remover rápido (sem observação)
+// CARRINHO — adicionar/remover rápido
 // ======================================
 
 function adicionarAoCarrinhoRapido(produto) {
@@ -322,7 +325,7 @@ function removerUmaUnidadeRapida(produto) {
 }
 
 // ======================================
-// MODAL PRODUTO (customização com observação)
+// MODAL PRODUTO
 // ======================================
 
 function abrirModalProduto(produto) {
@@ -444,7 +447,7 @@ function renderizarItensSacola() {
   const container = document.getElementById("itensSacola");
 
   if (carrinho.length === 0) {
-    container.innerHTML = `<p class="empty-state">Sua sacola está vazia.</p>`;
+    container.innerHTML = `<p style="text-align:center;color:#999;padding:20px;">Sua sacola está vazia.</p>`;
     return;
   }
 
@@ -472,7 +475,7 @@ function renderizarUpsell(containerId) {
 
   const idsNoCarrinho = new Set(carrinho.map((i) => i.produtoId));
   const sugestoes = dadosCardapio.produtos
-    .filter((p) => !idsNoCarrinho.has(p.id))
+    .filter((p) => !idsNoCarrinho.has(p.id) && p.ativo !== false)
     .slice(0, 6);
 
   if (sugestoes.length === 0) {
@@ -487,7 +490,7 @@ function renderizarUpsell(containerId) {
         .map(
           (produto) => `
         <div class="upsell-card">
-          <img src="${produto.imagem_url || ""}" alt="${produto.nome}" onerror="this.style.visibility='hidden'">
+          <img src="${produto.imagem_url || ""}" alt="${produto.nome}" onerror="this.style.display='none'">
           <h5>${produto.nome}</h5>
           <span class="preco">${formatarPreco(produto.preco)}</span>
           <button type="button" data-produto-id="${produto.id}">Adicionar</button>
@@ -531,9 +534,7 @@ document.getElementById("modalSacola").addEventListener("click", (e) => {
   if (e.target.id === "modalSacola") fecharModalSacola();
 });
 
-// ⚠️ PLACEHOLDER — ainda não existe endpoint de cupons no backend.
-// Isso aqui já deixa a UI pronta; quando o endpoint existir, é só
-// ajustar a URL/formato da resposta abaixo.
+// Cupom
 document.getElementById("btnAplicarCupom").onclick = async () => {
   const codigo = document.getElementById("cupomInput").value.trim();
   const status = document.getElementById("cupomStatus");
@@ -568,7 +569,7 @@ document.getElementById("btnAplicarCupom").onclick = async () => {
   } catch (error) {
     console.error(error);
     cupomAplicado = null;
-    status.textContent = "Cupons ainda não estão disponíveis nesta loja.";
+    status.textContent = "Cupom inválido ou não disponível.";
     status.className = "cupom-status erro";
   }
 
@@ -588,34 +589,7 @@ document.getElementById("btnContinuarEntrega").onclick = () => {
 async function abrirModalEntrega() {
   document.getElementById("modalEntrega").classList.add("ativo");
   document.body.classList.add("sem-scroll");
-  atualizarResumoEntrega();
 
-  if (tipoEntrega === "Entrega" && !enderecoTexto) {
-    await localizarClienteAutomaticamente();
-  }
-}
-
-function fecharModalEntrega() {
-  document.getElementById("modalEntrega").classList.remove("ativo");
-  document.body.classList.remove("sem-scroll");
-}
-
-// ⚠️ Geolocalização + geocodificação reversa via Nominatim (OpenStreetMap),
-// que é gratuito mas tem limite de uso — pra produção/alto volume vale
-// trocar por um provedor pago (Google Geocoding, Mapbox etc.).
-// ======================================
-// GEOLOCALIZAÇÃO - com fallback para erro CORS
-// ======================================
-
-// ======================================
-// ETAPA 2: ENTREGA - VERSÃO SIMPLIFICADA
-// ======================================
-
-async function abrirModalEntrega() {
-  document.getElementById("modalEntrega").classList.add("ativo");
-  document.body.classList.add("sem-scroll");
-
-  // 🔥 Mostra o formulário manual diretamente
   mostrarFormEnderecoManual();
   atualizarResumoEntrega();
 }
@@ -631,7 +605,6 @@ function mostrarFormEnderecoManual() {
 }
 
 function mostrarEnderecoConfirmado() {
-  // 🔥 Agora mostra o endereço digitado
   const endereco = document.getElementById("enderecoClienteInput").value.trim();
   const bairro = document.getElementById("bairroClienteSelect").value;
 
@@ -643,26 +616,9 @@ function mostrarEnderecoConfirmado() {
   }
 }
 
-// 🔥 Remove a função localizarClienteAutomaticamente e btnUsarLocalizacao
-// Remova também os event listeners relacionados
-
-function mostrarFormEnderecoManual() {
-  document.getElementById("enderecoConfirmado").hidden = true;
-  document.getElementById("formEnderecoManual").hidden = false;
-}
-
-function mostrarEnderecoConfirmado() {
-  document.getElementById("enderecoConfirmado").hidden = false;
-  document.getElementById("formEnderecoManual").hidden = true;
-}
-
-document.getElementById("btnTrocarEndereco").onclick =
-  mostrarFormEnderecoManual;
-
-/*document.getElementById("btnUsarLocalizacao").onclick = async () => {
-  mostrarEnderecoConfirmado();
-  await localizarClienteAutomaticamente();
-};*/
+document.getElementById("btnTrocarEndereco").onclick = () => {
+  mostrarFormEnderecoManual();
+};
 
 function selecionarTipoEntrega(tipo) {
   tipoEntrega = tipo;
@@ -688,40 +644,46 @@ document.getElementById("btnRetiradaStep").onclick = () =>
   selecionarTipoEntrega("Retirada");
 
 // ======================================
-// BAIRROS - Buscar da tabela_precos
-// ======================================
-
-// ======================================
-// BAIRROS - Buscar da tabela_precos (CORRIGIDO)
+// BAIRROS - Buscar da tabela_precos (Supabase)
 // ======================================
 
 async function carregarBairros() {
   const select = document.getElementById("bairroClienteSelect");
 
   try {
-    // 🔥 BUSCA DA TABELA_PRECOS
-    const response = await fetch(`${API_URL}/api/publico/tabela-precos`);
+    const url = `${API_URL}/api/publico/tabela-precos`;
+    console.log("📡 Buscando bairros em:", url);
 
-    console.log(
-      "📡 Buscando bairros em:",
-      `${API_URL}/api/publico/tabela-precos`,
-    );
+    const response = await fetch(url);
+    console.log("📊 Status da resposta:", response.status);
 
     if (!response.ok) {
-      throw new Error(`Erro ${response.status} ao carregar bairros`);
+      const errorText = await response.text();
+      console.error("❌ Erro na resposta:", errorText);
+      throw new Error(`Erro ${response.status}: ${errorText}`);
     }
 
     const dados = await response.json();
+    console.log("📦 Dados recebidos:", dados.length, "bairros");
 
-    // Ordena por bairro
-    bairrosDisponiveis = Array.isArray(dados)
-      ? dados.sort((a, b) => a.bairro.localeCompare(b.bairro))
-      : [];
-
-    console.log("📋 Bairros carregados:", bairrosDisponiveis.length);
+    if (Array.isArray(dados) && dados.length > 0) {
+      bairrosDisponiveis = dados.sort((a, b) =>
+        a.bairro.localeCompare(b.bairro),
+      );
+      console.log(
+        `✅ ${bairrosDisponiveis.length} bairros carregados da Supabase`,
+      );
+    } else {
+      console.warn("⚠️ Nenhum bairro encontrado, usando fallback");
+      bairrosDisponiveis = [
+        { bairro: "Centro", valor: 5.0 },
+        { bairro: "Bairro A", valor: 8.0 },
+        { bairro: "Bairro B", valor: 10.0 },
+      ];
+    }
   } catch (error) {
     console.error("❌ Erro ao carregar bairros:", error);
-    // Fallback: bairros padrão
+    // Fallback
     bairrosDisponiveis = [
       { bairro: "Centro", valor: 5.0 },
       { bairro: "Bairro A", valor: 8.0 },
@@ -741,12 +703,20 @@ async function carregarBairros() {
     select.appendChild(option);
   });
 
-  // Evento de mudança - atualiza a taxa de entrega
+  console.log("📋 Select populado com", bairrosDisponiveis.length, "bairros");
+
+  // Evento de mudança
   select.onchange = () => {
     const bairro = bairrosDisponiveis.find((b) => b.bairro === select.value);
     if (bairro) {
       taxaEntrega = Number(bairro.valor);
       bairroSelecionado = bairro.bairro;
+      console.log(
+        "📍 Bairro selecionado:",
+        bairroSelecionado,
+        "Taxa:",
+        taxaEntrega,
+      );
     } else {
       taxaEntrega = 0;
       bairroSelecionado = "";
@@ -754,23 +724,21 @@ async function carregarBairros() {
     atualizarResumoEntrega();
   };
 }
+
 // ======================================
 // GERENCIAR ENDEREÇO
 // ======================================
 
-// Quando o usuário digitar o endereço
 document
   .getElementById("enderecoClienteInput")
   .addEventListener("input", (e) => {
     enderecoTexto = e.target.value.trim();
-    // Se tiver endereço e bairro, mostra confirmado
     const bairro = document.getElementById("bairroClienteSelect").value;
     if (enderecoTexto && bairro) {
       mostrarEnderecoConfirmado();
     }
   });
 
-// Quando o usuário selecionar o bairro
 document
   .getElementById("bairroClienteSelect")
   .addEventListener("change", () => {
@@ -780,10 +748,9 @@ document
     }
   });
 
-// Botão "Trocar endereço"
-document.getElementById("btnTrocarEndereco").onclick = () => {
-  mostrarFormEnderecoManual();
-};
+// ======================================
+// RESUMO DA ENTREGA
+// ======================================
 
 function atualizarResumoEntrega() {
   const subtotal = subtotalCarrinho();
@@ -799,12 +766,10 @@ function atualizarResumoEntrega() {
   document.getElementById("totalComEntrega").textContent =
     formatarPreco(totalComEntrega);
 
-  // 🔥 Verifica se tem endereço e bairro para liberar o botão
   const endereco = document.getElementById("enderecoClienteInput").value.trim();
   const bairro = document.getElementById("bairroClienteSelect").value;
 
   const podeContinuar = tipoEntrega === "Retirada" || (endereco && bairro);
-
   document.getElementById("btnContinuarPagamento").disabled = !podeContinuar;
 }
 
@@ -824,9 +789,9 @@ document.getElementById("btnContinuarPagamento").onclick = () => {
 
 function abrirModalPagamento() {
   document.getElementById("pagamentoLogoLoja").src =
-    dadosCardapio.empresa.logo_url || "";
+    dadosCardapio?.empresa?.logo_url || "";
   document.getElementById("pagamentoNomeLoja").textContent =
-    dadosCardapio.empresa.nome_fantasia;
+    dadosCardapio?.empresa?.nome_fantasia || "Loja";
 
   atualizarResumoPagamento();
 
@@ -844,10 +809,7 @@ function atualizarResumoPagamento() {
   const desconto = descontoCupom(subtotal);
   const totalSemEntrega = Math.max(0, subtotal - desconto);
   const entrega = tipoEntrega === "Entrega" ? taxaEntrega : 0;
-  const total =
-    totalSemEntrega +
-    entrega +
-    (typeof TAXA_SERVICO !== "undefined" ? TAXA_SERVICO : 0);
+  const total = totalSemEntrega + entrega + TAXA_SERVICO;
 
   const avisoCupom = document.getElementById("cupomAplicadoResumo");
   if (cupomAplicado) {
@@ -861,9 +823,8 @@ function atualizarResumoPagamento() {
     formatarPreco(totalSemEntrega);
   document.getElementById("taxaEntregaPagamento").textContent =
     entrega > 0 ? formatarPreco(entrega) : "Grátis";
-  document.getElementById("taxaServicoPagamento").textContent = formatarPreco(
-    typeof TAXA_SERVICO !== "undefined" ? TAXA_SERVICO : 0,
-  );
+  document.getElementById("taxaServicoPagamento").textContent =
+    formatarPreco(TAXA_SERVICO);
   document.getElementById("totalPagamento").textContent = formatarPreco(total);
 }
 
@@ -903,21 +864,13 @@ const METODOS_PAGAMENTO_LABEL = {
   debito: "Cartão de débito",
 };
 
-// ======================================
-// ETAPA 4: REVISAR PEDIDO - COMPLETO
-// ======================================
-
 function abrirModalRevisar() {
   const subtotal = subtotalCarrinho();
   const desconto = descontoCupom(subtotal);
   const totalSemEntrega = Math.max(0, subtotal - desconto);
   const entrega = tipoEntrega === "Entrega" ? taxaEntrega : 0;
-  const total =
-    totalSemEntrega +
-    entrega +
-    (typeof TAXA_SERVICO !== "undefined" ? TAXA_SERVICO : 0);
+  const total = totalSemEntrega + entrega + TAXA_SERVICO;
 
-  // Busca os dados do endereço
   const endereco = document.getElementById("enderecoClienteInput").value.trim();
   const bairro = document.getElementById("bairroClienteSelect").value;
   const enderecoCompleto =
@@ -966,23 +919,8 @@ document.getElementById("btnAlterarPedido").onclick = () => {
   abrirModalPagamento();
 };
 
-function fecharModalRevisar() {
-  document.getElementById("modalRevisar").classList.remove("ativo");
-  document.body.classList.remove("sem-scroll");
-}
-
-document.getElementById("fecharRevisar").onclick = fecharModalRevisar;
-document.getElementById("modalRevisar").addEventListener("click", (e) => {
-  if (e.target.id === "modalRevisar") fecharModalRevisar();
-});
-
-document.getElementById("btnAlterarPedido").onclick = () => {
-  fecharModalRevisar();
-  abrirModalPagamento();
-};
-
 // ======================================
-// PAGAR — cria o pedido e manda pro gateway
+// PAGAR — cria o pedido
 // ======================================
 
 function montarItensTexto() {
@@ -1017,8 +955,6 @@ document.getElementById("btnPagarPedido").onclick = async () => {
         ? bairroSelecionado || null
         : "Retirada na loja",
     cidade: dadosCardapio?.empresa?.cidade || null,
-    latitude: window.ultimaLocalizacaoCliente?.latitude || null,
-    longitude: window.ultimaLocalizacaoCliente?.longitude || null,
     cupom: cupomAplicado?.codigo || null,
     metodo_pagamento: metodoPagamentoSelecionado,
     status_pagamento: "aguardando_pagamento",
@@ -1056,17 +992,13 @@ document.getElementById("btnPagarPedido").onclick = async () => {
     reRenderizarAcoesProdutos();
   } catch (error) {
     console.error(error);
-    alert("Não foi possível enviar seu pedido agora. Tente novamente.");
+    alert("Não foi possível enviar seu pedido. Tente novamente.");
   } finally {
     botao.disabled = false;
     botao.textContent = "Pagar";
   }
 };
 
-// ⚠️ PLACEHOLDER — falta escolher o gateway (Mercado Pago, PagBank,
-// Stripe, Asaas, Pagar.me...) pra isso virar de verdade. Quando o
-// endpoint existir, ele deve devolver { checkout_url } e a gente
-// redireciona o cliente pra lá antes de mostrar a confirmação.
 async function iniciarPagamentoPlataforma(pedido) {
   try {
     const response = await fetch(
@@ -1079,7 +1011,7 @@ async function iniciarPagamentoPlataforma(pedido) {
       window.location.href = data.checkout_url;
     }
   } catch (error) {
-    console.log("Gateway de pagamento ainda não configurado:", error);
+    console.log("Gateway de pagamento não configurado:", error);
   }
 }
 
@@ -1121,3 +1053,5 @@ document.getElementById("btnNovoPedido").onclick = fecharModalConfirmacao;
 carregarCarrinhoSalvo();
 carregarCardapio();
 carregarBairros();
+
+console.log("🚀 Loja inicializada com sucesso!");
