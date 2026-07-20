@@ -14,6 +14,13 @@ router.get("/me", auth, permissao("empresa"), empresaController.me);
 
 router.put("/me", auth, permissao("empresa"), empresaController.atualizar);
 
+router.put(
+  "/personalizacao",
+  auth,
+  permissao("empresa"),
+  empresaController.atualizarPersonalizacao,
+);
+
 router.post(
   "/entrega/:id/tentar-novamente",
   auth,

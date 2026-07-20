@@ -351,19 +351,40 @@
 
             <div class="personalizacao-grid">
               <div class="upload-box upload-logo">
-                <label class="field-label" for="logoLoja">Logo da loja</label>
+                <label class="field-label" for="logoLojaUrl"
+                  >Logo da loja</label
+                >
                 <div class="upload-preview" id="previewLogo">
                   <img id="previewLogoImg" alt="Logo da loja" hidden />
-                  <span id="previewLogoPlaceholder">🏬</span>
+                  <span id="previewLogoPlaceholder" class="upload-placeholder">
+                    <span class="upload-placeholder-icon">🏬</span>
+                    <small>Sem logo</small>
+                  </span>
+                  <button
+                    type="button"
+                    class="upload-remove"
+                    id="removeLogoBtn"
+                    title="Remover logo"
+                    hidden
+                  >
+                    ✕
+                  </button>
                 </div>
-                <label for="logoLoja" class="acao btn-secondary btn-upload">
-                  Escolher logo
-                </label>
-                <input type="file" id="logoLoja" accept="image/*" hidden />
+                <div class="upload-controls">
+                  <label class="btn-upload-file" for="logoLoja"
+                    >📤 Enviar do computador</label
+                  >
+                  <input type="file" id="logoLoja" accept="image/*" hidden />
+                </div>
+                <input
+                  type="url"
+                  id="logoLojaUrl"
+                  placeholder="ou cole a URL da imagem"
+                />
               </div>
 
               <div class="upload-box upload-banner">
-                <label class="field-label" for="bannerLoja"
+                <label class="field-label" for="bannerLojaUrl"
                   >Banner do cardápio</label
                 >
                 <div
@@ -371,16 +392,41 @@
                   id="previewBanner"
                 >
                   <img id="previewBannerImg" alt="Banner da loja" hidden />
-                  <span id="previewBannerPlaceholder"
-                    >Nenhum banner selecionado</span
+                  <span
+                    id="previewBannerPlaceholder"
+                    class="upload-placeholder"
                   >
+                    <span class="upload-placeholder-icon">🖼️</span>
+                    <small>Nenhum banner selecionado</small>
+                  </span>
+                  <button
+                    type="button"
+                    class="upload-remove"
+                    id="removeBannerBtn"
+                    title="Remover banner"
+                    hidden
+                  >
+                    ✕
+                  </button>
                 </div>
-                <label for="bannerLoja" class="acao btn-secondary btn-upload">
-                  Escolher banner
-                </label>
-                <input type="file" id="bannerLoja" accept="image/*" hidden />
+                <div class="upload-controls">
+                  <label class="btn-upload-file" for="bannerLoja"
+                    >📤 Enviar do computador</label
+                  >
+                  <input type="file" id="bannerLoja" accept="image/*" hidden />
+                </div>
+                <input
+                  type="url"
+                  id="bannerLojaUrl"
+                  placeholder="ou cole a URL da imagem"
+                />
               </div>
             </div>
+            <p class="card-subtitulo card-subtitulo-dica">
+              💡 Dica: envie do computador (fica salvo automaticamente na nuvem)
+              ou cole o link de uma imagem já hospedada. Lembre de clicar em
+              <strong>Salvar personalização</strong> depois.
+            </p>
 
             <button
               id="btnSalvarPersonalizacao"
@@ -423,21 +469,36 @@
             </div>
           </section>
 
-          <!-- PRÉVIA DO CARDÁPIO (o que o cliente final vai ver) -->
+          <!-- PRÉVIA DO CARDÁPIO -->
           <section class="card">
             <div class="card-header">
               <h3>👀 Prévia do cardápio do cliente</h3>
+              <button
+                id="btnAtualizarPreview"
+                class="acao btn-secondary"
+                type="button"
+              >
+                🔄 Atualizar
+              </button>
             </div>
             <p class="card-subtitulo">
               É assim que sua loja vai aparecer para quem for fazer o pedido.
+              <span class="preview-info"
+                >(atualiza automaticamente após salvar)</span
+              >
             </p>
 
             <div class="preview-cardapio-frame">
-              <div class="preview-cardapio" id="previewCardapio">
-                <p class="empty-state">
-                  Adicione categorias e produtos para ver a prévia.
-                </p>
+              <div class="preview-loading-overlay" id="previewLoading">
+                <div class="preview-loading-spinner"></div>
+                <span>Carregando prévia...</span>
               </div>
+              <iframe
+                id="previewCardapioIframe"
+                class="preview-iframe"
+                src=""
+                loading="lazy"
+              ></iframe>
             </div>
           </section>
         </section>
@@ -525,6 +586,16 @@
             <label class="field-label" for="produto_imagem_url"
               >URL da imagem</label
             >
+            <div
+              class="upload-preview upload-preview-produto"
+              id="previewProduto"
+            >
+              <img id="previewProdutoImg" alt="Prévia do produto" hidden />
+              <span id="previewProdutoPlaceholder" class="upload-placeholder">
+                <span class="upload-placeholder-icon">🍔</span>
+                <small>Sem imagem</small>
+              </span>
+            </div>
             <input
               id="produto_imagem_url"
               type="text"

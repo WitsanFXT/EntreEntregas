@@ -87,6 +87,272 @@ function mostrarToast(mensagem, tipo = "") {
   }, 3200);
 }
 
+// ==============================
+// PERSONALIZAÇÃO DA LOJA
+// ==============================
+
+const logoLojaUrl = document.getElementById("logoLojaUrl");
+const bannerLojaUrl = document.getElementById("bannerLojaUrl");
+
+const previewLogoImg = document.getElementById("previewLogoImg");
+const previewBannerImg = document.getElementById("previewBannerImg");
+
+const previewLogo = document.getElementById("previewLogo");
+const previewLogoPlaceholder = document.getElementById(
+  "previewLogoPlaceholder",
+);
+
+const previewBanner = document.getElementById("previewBanner");
+const previewBannerPlaceholder = document.getElementById(
+  "previewBannerPlaceholder",
+);
+
+const removeLogoBtn = document.getElementById("removeLogoBtn");
+const removeBannerBtn = document.getElementById("removeBannerBtn");
+
+// Atualiza uma caixa de preview (logo, banner ou imagem de produto) a
+// partir do valor de um input de URL. Cuida de: mostrar/esconder a
+// imagem x o placeholder, marcar erro quando a URL não carrega, e
+// mostrar/esconder o botãozinho de remover (quando existir).
+const previewLoading = document.getElementById("previewLoading");
+
+// =================================
+// FUNÇÕES DE PREVIEW DE IMAGEM
+// =================================
+
+// Atualiza uma caixa de preview (logo, banner ou imagem de produto) a
+// partir do valor de um input de URL.
+function atualizarPreviewImagem(inputEl, imgEl, placeholderEl, removeBtnEl) {
+  if (!inputEl || !imgEl || !placeholderEl) return;
+
+  const url = (inputEl.value || "").trim();
+  const box = imgEl.closest(".upload-preview");
+
+  box?.classList.remove("upload-preview--erro");
+
+  imgEl.onload = () => box?.classList.remove("upload-preview--erro");
+  imgEl.onerror = () => {
+    imgEl.hidden = true;
+    placeholderEl.hidden = false;
+    box?.classList.add("upload-preview--erro");
+    if (removeBtnEl) removeBtnEl.hidden = false;
+  };
+
+  if (url) {
+    imgEl.src = url;
+    imgEl.hidden = false;
+    placeholderEl.hidden = true;
+    if (removeBtnEl) removeBtnEl.hidden = false;
+  } else {
+    imgEl.hidden = true;
+    imgEl.removeAttribute("src");
+    placeholderEl.hidden = false;
+    if (removeBtnEl) removeBtnEl.hidden = true;
+  }
+}
+
+// =================================
+// PREVIEW COM IFRAME
+// =================================
+
+function atualizarPreview() {
+  // Verifica se o iframe existe
+  const iframe = document.getElementById("previewCardapioIframe");
+  if (!iframe) {
+    console.warn("Elemento #previewCardapioIframe não encontrado");
+    return;
+  }
+
+  if (!empresaAtual?.id) {
+    console.log("Aguardando empresa carregar...");
+    return;
+  }
+
+  // Mostra loading
+  iframe.classList.add("carregando");
+  const loading = document.getElementById("previewLoading");
+  if (loading) loading.classList.add("mostrar");
+
+  // Constrói a URL
+  const url = `${window.location.origin}/loja/${empresaAtual.id}`;
+  iframe.src = url;
+
+  // Remove loading após carregar
+  iframe.onload = () => {
+    iframe.classList.remove("carregando");
+    if (loading) loading.classList.remove("mostrar");
+  };
+
+  // Timeout de segurança
+  setTimeout(() => {
+    iframe.classList.remove("carregando");
+    if (loading) loading.classList.remove("mostrar");
+  }, 5000);
+}
+
+logoLojaUrl.addEventListener("input", () => {
+  atualizarPreviewImagem(
+    logoLojaUrl,
+    previewLogoImg,
+    previewLogoPlaceholder,
+    removeLogoBtn,
+  );
+  atualizarPreviewCardapio();
+});
+
+bannerLojaUrl.addEventListener("input", () => {
+  atualizarPreviewImagem(
+    bannerLojaUrl,
+    previewBannerImg,
+    previewBannerPlaceholder,
+    removeBannerBtn,
+  );
+  atualizarPreviewCardapio();
+});
+
+removeLogoBtn?.addEventListener("click", () => {
+  logoLojaUrl.value = "";
+  atualizarPreviewImagem(
+    logoLojaUrl,
+    previewLogoImg,
+    previewLogoPlaceholder,
+    removeLogoBtn,
+  );
+  atualizarPreviewCardapio();
+});
+
+removeBannerBtn?.addEventListener("click", () => {
+  bannerLojaUrl.value = "";
+  atualizarPreviewImagem(
+    bannerLojaUrl,
+    previewBannerImg,
+    previewBannerPlaceholder,
+    removeBannerBtn,
+  );
+  atualizarPreviewCardapio();
+});
+
+// Comprime uma imagem escolhida no computador e devolve um data URL
+// (base64) já redimensionado. Assim o valor cabe tranquilamente no
+// mesmo campo de texto (logoLojaUrl/bannerLojaUrl) e é salvo do mesmo
+// jeito que uma URL colada — sem precisar de um endpoint de upload.
+function comprimirImagemParaDataUrl(
+  arquivo,
+  larguraMaxima = 700,
+  qualidade = 0.82,
+) {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader();
+
+    leitor.onload = (evento) => {
+      const img = new Image();
+
+      img.onload = () => {
+        const escala = Math.min(1, larguraMaxima / img.width);
+        const largura = Math.round(img.width * escala);
+        const altura = Math.round(img.height * escala);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = largura;
+        canvas.height = altura;
+
+        canvas.getContext("2d").drawImage(img, 0, 0, largura, altura);
+        resolve(canvas.toDataURL("image/jpeg", qualidade));
+      };
+
+      img.onerror = () => reject(new Error("Não foi possível ler a imagem"));
+      img.src = evento.target.result;
+    };
+
+    leitor.onerror = () => reject(new Error("Não foi possível ler o arquivo"));
+    leitor.readAsDataURL(arquivo);
+  });
+}
+
+// ==============================
+// CATEGORIAS
+// ==============================
+
+const btnNovaCategoria = document.getElementById("btnNovaCategoria");
+
+const btnSalvarCategoria = document.getElementById("btnSalvarCategoria");
+
+const btnCancelarCategoria = document.getElementById("btnCancelarCategoria");
+
+const modalCategoria = document.getElementById("modalCategoria");
+
+const overlayCategoria = document.getElementById("overlayCategoria");
+
+const categoriaNome = document.getElementById("categoria_nome");
+
+const listaCategorias = document.getElementById("listaCategorias");
+
+// ==============================
+// PRODUTOS
+// ==============================
+
+const btnNovoProduto = document.getElementById("btnNovoProduto");
+
+const btnSalvarProduto = document.getElementById("btnSalvarProduto");
+
+const btnCancelarProduto = document.getElementById("btnCancelarProduto");
+
+const modalProduto = document.getElementById("modalProduto");
+
+const overlayProduto = document.getElementById("overlayProduto");
+
+const produtoNome = document.getElementById("produto_nome");
+
+const produtoDescricao = document.getElementById("produto_descricao");
+
+const produtoPreco = document.getElementById("produto_preco");
+
+const produtoCategoria = document.getElementById("produto_categoria");
+
+const produtoImagemUrl = document.getElementById("produto_imagem_url");
+
+const listaProdutos = document.getElementById("listaProdutos");
+
+const previewProdutoImg = document.getElementById("previewProdutoImg");
+const previewProdutoPlaceholder = document.getElementById(
+  "previewProdutoPlaceholder",
+);
+
+if (produtoImagemUrl && previewProdutoImg) {
+  produtoImagemUrl.addEventListener("input", () => {
+    atualizarPreviewImagem(
+      produtoImagemUrl,
+      previewProdutoImg,
+      previewProdutoPlaceholder,
+    );
+  });
+}
+
+// ==============================
+// PRÉVIA CARDÁPIO
+// ==============================
+
+const previewCardapio = document.getElementById("previewCardapio");
+
+// ==============================
+// PEDIDOS
+// ==============================
+
+const btnBuscarEndereco = document.getElementById("btnBuscarEndereco");
+
+// ==============================
+// ALERTAS
+// ==============================
+
+const alertBanner = document.getElementById("alertBanner");
+
+const qtdSemEntregador = document.getElementById("qtdSemEntregador");
+
+// ==============================
+// SISTEMA
+// ==============================
+
+const btnLogout = document.getElementById("btnLogout");
 // =================================
 // NAVEGAÇÃO ENTRE TELAS
 // =================================
@@ -560,14 +826,18 @@ function atualizarAlertBanner() {
     (e) => e.status === "sem_entregador",
   ).length;
 
-  document.getElementById("qtdSemEntregador").textContent = semEntregador;
-  document
-    .getElementById("alertBanner")
-    .classList.toggle("oculto", semEntregador === 0);
-
+  const qtdElement = document.getElementById("qtdSemEntregador");
+  const alertElement = document.getElementById("alertBanner");
   const badgeEntregas = document.getElementById("badgeEntregasSidebar");
-  badgeEntregas.textContent = semEntregador;
-  badgeEntregas.style.display = semEntregador > 0 ? "flex" : "none";
+
+  if (qtdElement) qtdElement.textContent = semEntregador;
+  if (alertElement)
+    alertElement.classList.toggle("oculto", semEntregador === 0);
+
+  if (badgeEntregas) {
+    badgeEntregas.textContent = semEntregador;
+    badgeEntregas.style.display = semEntregador > 0 ? "flex" : "none";
+  }
 }
 
 function renderizarEntregasAoVivo() {
@@ -1398,6 +1668,11 @@ function abrirModalProduto() {
   document.getElementById("produto_descricao").value = "";
   document.getElementById("produto_preco").value = "";
   document.getElementById("produto_imagem_url").value = "";
+  atualizarPreviewImagem(
+    produtoImagemUrl,
+    previewProdutoImg,
+    previewProdutoPlaceholder,
+  );
   preencherSelectCategorias();
 
   document.getElementById("overlayProduto").classList.add("ativo");
@@ -1419,7 +1694,7 @@ document.getElementById("btnSalvarProduto").onclick = async () => {
     descricao: document.getElementById("produto_descricao").value.trim(),
     preco: Number(document.getElementById("produto_preco").value),
     categoria_id: document.getElementById("produto_categoria").value,
-    imagem_url: document.getElementById("produto_imagem_url").value.trim(),
+    imagem_url: document.getElementById("produto_imagem_url").value,
   };
 
   if (!body.nome) {
@@ -1486,6 +1761,11 @@ function editarProduto(id) {
   document.getElementById("produto_preco").value = produto.preco || "";
   document.getElementById("produto_imagem_url").value =
     produto.imagem_url || "";
+  atualizarPreviewImagem(
+    produtoImagemUrl,
+    previewProdutoImg,
+    previewProdutoPlaceholder,
+  );
 
   preencherSelectCategorias(produto.categoria_id || produto.categorias?.id);
 
@@ -1518,97 +1798,146 @@ async function excluirProduto(id) {
 }
 
 // ---------- Personalização da loja (logo e banner) ----------
+// Estratégia: comprime a imagem no navegador e transforma num data URL
+// (base64) que entra no MESMO campo de texto da URL (logoLojaUrl /
+// bannerLojaUrl). Assim o salvamento sempre passa pelo mesmo caminho
+// simples — PUT /api/empresa/personalizacao com { logo_url, banner_url }
+// como texto — sem depender de um endpoint de upload/Storage separado.
 
-let logoLojaDataUrl = "";
-let bannerLojaDataUrl = "";
+const logoLoja = document.getElementById("logoLoja");
 
-function lerImagemComoDataUrl(arquivo) {
-  return new Promise((resolve, reject) => {
-    const leitor = new FileReader();
-    leitor.onload = () => resolve(leitor.result);
-    leitor.onerror = reject;
-    leitor.readAsDataURL(arquivo);
+if (logoLoja) {
+  logoLoja.addEventListener("change", async (evento) => {
+    const arquivo = evento.target.files?.[0];
+    if (!arquivo) return;
+
+    try {
+      const dataUrl = await comprimirImagemParaDataUrl(arquivo, 500, 0.85);
+      logoLojaUrl.value = dataUrl;
+      atualizarPreviewImagem(
+        logoLojaUrl,
+        previewLogoImg,
+        previewLogoPlaceholder,
+        removeLogoBtn,
+      );
+      atualizarPreviewCardapio();
+      mostrarToast(
+        'Logo pronta! Clique em "Salvar personalização" para aplicar.',
+        "sucesso",
+      );
+    } catch (error) {
+      console.error(error);
+      mostrarToast("Não foi possível processar essa imagem", "erro");
+    } finally {
+      evento.target.value = "";
+    }
   });
 }
 
-document
-  .getElementById("logoLoja")
-  .addEventListener("change", async (evento) => {
+const bannerLoja = document.getElementById("bannerLoja");
+
+if (bannerLoja) {
+  bannerLoja.addEventListener("change", async (evento) => {
     const arquivo = evento.target.files?.[0];
     if (!arquivo) return;
 
-    logoLojaDataUrl = await lerImagemComoDataUrl(arquivo);
-
-    const img = document.getElementById("previewLogoImg");
-    img.src = logoLojaDataUrl;
-    img.hidden = false;
-    document.getElementById("previewLogoPlaceholder").hidden = true;
-
-    atualizarPreviewCardapio();
+    try {
+      const dataUrl = await comprimirImagemParaDataUrl(arquivo, 1200, 0.8);
+      bannerLojaUrl.value = dataUrl;
+      atualizarPreviewImagem(
+        bannerLojaUrl,
+        previewBannerImg,
+        previewBannerPlaceholder,
+        removeBannerBtn,
+      );
+      atualizarPreviewCardapio();
+      mostrarToast(
+        'Banner pronto! Clique em "Salvar personalização" para aplicar.',
+        "sucesso",
+      );
+    } catch (error) {
+      console.error(error);
+      mostrarToast("Não foi possível processar essa imagem", "erro");
+    } finally {
+      evento.target.value = "";
+    }
   });
+}
 
-document
-  .getElementById("bannerLoja")
-  .addEventListener("change", async (evento) => {
-    const arquivo = evento.target.files?.[0];
-    if (!arquivo) return;
+const btnSalvarPersonalizacao = document.getElementById(
+  "btnSalvarPersonalizacao",
+);
 
-    bannerLojaDataUrl = await lerImagemComoDataUrl(arquivo);
+btnSalvarPersonalizacao.addEventListener("click", async () => {
+  const logo_url = logoLojaUrl.value.trim();
+  const banner_url = bannerLojaUrl.value.trim();
 
-    const img = document.getElementById("previewBannerImg");
-    img.src = bannerLojaDataUrl;
-    img.hidden = false;
-    document.getElementById("previewBannerPlaceholder").hidden = true;
-
-    atualizarPreviewCardapio();
-  });
-
-document.getElementById("btnSalvarPersonalizacao").onclick = async () => {
-  const botao = document.getElementById("btnSalvarPersonalizacao");
-  botao.disabled = true;
-  botao.textContent = "Salvando...";
+  const textoOriginal = btnSalvarPersonalizacao.textContent;
+  btnSalvarPersonalizacao.disabled = true;
+  btnSalvarPersonalizacao.textContent = "Salvando...";
 
   try {
     const response = await fetch(`${API}/api/empresa/personalizacao`, {
       method: "PUT",
       headers,
-      body: JSON.stringify({
-        logo_url: logoLojaDataUrl || undefined,
-        banner_url: bannerLojaDataUrl || undefined,
-      }),
+      body: JSON.stringify({ logo_url, banner_url }),
     });
 
-    if (!response.ok) throw new Error("Endpoint indisponível");
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data?.message || "Erro ao salvar personalização");
+    }
+
+    // guarda localmente pra sobreviver a troca de aba sem precisar
+    // buscar tudo de novo no servidor
+    if (empresaAtual) {
+      empresaAtual.logo_url = logo_url;
+      empresaAtual.banner_url = banner_url;
+    }
 
     mostrarToast("Personalização salva!", "sucesso");
+    atualizarPreviewCardapio();
   } catch (error) {
     console.error(error);
-    // A prévia já reflete as imagens escolhidas mesmo sem backend pronto.
     mostrarToast(
-      "Prévia atualizada. Conecte o endpoint de personalização para salvar de forma permanente.",
+      error.message || "Não foi possível salvar a personalização",
       "erro",
     );
   } finally {
-    botao.disabled = false;
-    botao.textContent = "Salvar personalização";
+    btnSalvarPersonalizacao.disabled = false;
+    btnSalvarPersonalizacao.textContent = textoOriginal;
   }
-};
+});
 
 // ---------- Prévia do cardápio (visão do cliente final) ----------
+
+// Evita que nome/descrição de produto ou categoria quebre o HTML da
+// prévia (ou permita injeção) se tiver <, >, & etc.
+function escaparHtml(texto) {
+  const div = document.createElement("div");
+  div.textContent = texto ?? "";
+  return div.innerHTML;
+}
 
 function atualizarPreviewCardapio() {
   const container = document.getElementById("previewCardapio");
   if (!container) return;
 
-  if (categoriasCache.length === 0 && produtosCache.length === 0) {
-    container.innerHTML = `<p class="empty-state">Adicione categorias e produtos para ver a prévia.</p>`;
-    return;
-  }
+  // Antes: se não houvesse categoria/produto nenhum, a prévia inteira
+  // sumia — e junto dela o logo e o banner, mesmo já preenchidos.
+  // Agora a "casca" da loja (banner, logo, nome) sempre aparece; só a
+  // lista de produtos mostra um aviso quando ainda está vazia.
+  const logo = logoLojaUrl.value.trim();
+  const banner = bannerLojaUrl.value.trim();
 
   const nomeLoja = empresaAtual?.nome_fantasia || "Sua loja";
 
   const categoriasHtml = categoriasCache
-    .map((cat) => `<span class="preview-categoria-pill">${cat.nome}</span>`)
+    .map(
+      (cat) =>
+        `<span class="preview-categoria-pill">${escaparHtml(cat.nome)}</span>`,
+    )
     .join("");
 
   const produtosHtml = produtosCache
@@ -1617,13 +1946,23 @@ function atualizarPreviewCardapio() {
         <div class="preview-produto-item">
           <img
             src="${produto.imagem_url || PLACEHOLDER_IMG}"
-            alt="${produto.nome}"
+            alt="${escaparHtml(produto.nome)}"
             onerror="this.src='${PLACEHOLDER_IMG}'"
           >
           <div class="preview-produto-info">
-            <h5>${produto.nome}</h5>
-            <p>${produto.descricao || ""}</p>
-            <strong>R$ ${Number(produto.preco || 0).toFixed(2)}</strong>
+            <h5>${escaparHtml(produto.nome)}</h5>
+            <p>${escaparHtml(produto.descricao || "")}</p>
+            <div class="preview-produto-rodape">
+              <strong>R$ ${Number(produto.preco || 0)
+                .toFixed(2)
+                .replace(".", ",")}</strong>
+              <button
+                class="mini-add"
+                type="button"
+                data-preco="${Number(produto.preco || 0)}"
+                aria-label="Adicionar ${escaparHtml(produto.nome)} ao carrinho"
+              >+</button>
+            </div>
           </div>
         </div>
       `,
@@ -1631,19 +1970,192 @@ function atualizarPreviewCardapio() {
     .join("");
 
   container.innerHTML = `
-    <img class="preview-banner" src="${bannerLojaDataUrl || ""}" alt="Banner da loja" ${bannerLojaDataUrl ? "" : "style='display:flex'"}>
-    <div class="preview-loja-info">
-      <img class="preview-logo" src="${logoLojaDataUrl || PLACEHOLDER_IMG}" alt="Logo">
-      <div>
-        <h4>${nomeLoja}</h4>
-        <span>🟢 Aberto agora</span>
-      </div>
+<div class="mini-cardapio">
+
+    <!-- BANNER -->
+    <div class="mini-banner">
+        <img
+            src="${banner || PLACEHOLDER_IMG}"
+            alt="Banner"
+            onerror="this.src='${PLACEHOLDER_IMG}'"
+        >
     </div>
-    <div class="preview-categorias">${categoriasHtml}</div>
-    <div class="preview-produtos">
-      ${produtosHtml || `<p class="empty-state">Nenhum produto cadastrado ainda.</p>`}
+
+    <!-- HEADER -->
+    <div class="mini-header">
+
+        <img
+            class="mini-logo"
+            src="${logo || PLACEHOLDER_IMG}"
+            alt="Logo"
+            onerror="this.src='${PLACEHOLDER_IMG}'"
+        >
+
+        <div class="mini-info">
+            <h3>${nomeLoja}</h3>
+
+            <div class="mini-meta">
+                <span>🟢 Aberto</span>
+                <span>⭐ 4.9</span>
+                <span>🚴 30-45 min</span>
+            </div>
+        </div>
+
     </div>
-  `;
+
+    <!-- BUSCA -->
+    <div class="mini-busca">
+        🔍 Buscar no cardápio...
+    </div>
+
+    <!-- CATEGORIAS -->
+    <div class="mini-categorias">
+        ${categoriasHtml}
+    </div>
+
+    <!-- PRODUTOS -->
+    <div class="mini-produtos">
+
+        ${
+          produtosCache.length
+            ? produtosCache
+                .slice(0, 5)
+                .map(
+                  (produto) => `
+                <div class="mini-produto">
+
+                    <img
+                        src="${produto.imagem_url || PLACEHOLDER_IMG}"
+                        alt="${produto.nome}"
+                        onerror="this.src='${PLACEHOLDER_IMG}'"
+                    >
+
+                    <div class="mini-produto-info">
+
+                        <h4>${produto.nome}</h4>
+
+                        <p>
+                            ${(produto.descricao || "").substring(0, 70)}
+                        </p>
+
+                        <div class="mini-produto-footer">
+
+                            <strong>
+                                R$ ${Number(produto.preco).toFixed(2)}
+                            </strong>
+
+                            <button>
+                                +
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            `,
+                )
+                .join("")
+            : `
+                <div class="empty-state">
+                    Nenhum produto cadastrado
+                </div>
+            `
+        }
+
+    </div>
+
+    <!-- BARRA CARRINHO -->
+    <div class="mini-carrinho">
+
+        <div>
+            <strong>2 itens</strong>
+            <small>R$ 48,90</small>
+        </div>
+
+        <button>
+            🛒 Ver Sacola
+        </button>
+
+    </div>
+
+</div>
+`;
+
+  const preview = document.getElementById("preview");
+  if (!preview) {
+    console.warn("Elemento #preview não encontrado no DOM");
+    return;
+  }
+
+  // =================================
+  // PREVIEW COM IFRAME
+  // =================================
+
+  const previewIframe = document.getElementById("previewCardapioIframe");
+  const previewLoading = document.getElementById("previewLoading");
+  const btnAtualizarPreview = document.getElementById("btnAtualizarPreview");
+
+  function atualizarPreview() {
+    if (!empresaAtual?.id) {
+      console.log("Aguardando empresa carregar...");
+      return;
+    }
+
+    // Mostra loading
+    previewIframe?.classList.add("carregando");
+    previewLoading?.classList.add("mostrar");
+
+    // Constrói a URL
+    const url = `${window.location.origin}/loja/${empresaAtual.id}`;
+    previewIframe.src = url;
+
+    // Remove loading após carregar
+    previewIframe.onload = () => {
+      previewIframe.classList.remove("carregando");
+      previewLoading?.classList.remove("mostrar");
+    };
+
+    // Timeout de segurança
+    setTimeout(() => {
+      previewIframe.classList.remove("carregando");
+      previewLoading?.classList.remove("mostrar");
+    }, 5000);
+  }
+
+  // Botão para atualizar manualmente
+  btnAtualizarPreview?.addEventListener("click", () => {
+    atualizarPreview();
+    mostrarToast("🔄 Prévia atualizada!", "sucesso");
+  });
+
+  // Simula o carrinho dentro da própria prévia: cada clique no "+"
+  // soma na barra de baixo, só pra dar a sensação de cardápio real.
+  let miniQtd = 0;
+  let miniTotal = 0;
+
+  container.querySelectorAll(".mini-add").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      miniQtd += 1;
+      miniTotal += Number(botao.dataset.preco || 0);
+
+      const qtdEl = container.querySelector("#miniCartQtd");
+      const totalEl = container.querySelector("#miniCartTotal");
+
+      if (qtdEl)
+        qtdEl.textContent = `${miniQtd} ${miniQtd === 1 ? "item" : "itens"}`;
+      if (totalEl)
+        totalEl.textContent = `R$ ${miniTotal.toFixed(2).replace(".", ",")}`;
+    });
+  });
+}
+
+// Evita que nome/descrição de produto ou categoria quebre o HTML da
+// prévia (ou permita injeção) se tiver <, >, & etc.
+function escaparHtml(texto) {
+  const div = document.createElement("div");
+  div.textContent = texto ?? "";
+  return div.innerHTML;
 }
 
 // =================================
@@ -1680,6 +2192,22 @@ async function carregarConfiguracoes() {
     document.getElementById("cfg_cidade").value = empresa.cidade || "";
     document.getElementById("cfg_latitude").value = empresa.latitude ?? "";
     document.getElementById("cfg_longitude").value = empresa.longitude ?? "";
+
+    logoLojaUrl.value = empresa.logo_url || "";
+    bannerLojaUrl.value = empresa.banner_url || "";
+    atualizarPreviewImagem(
+      logoLojaUrl,
+      previewLogoImg,
+      previewLogoPlaceholder,
+      removeLogoBtn,
+    );
+    atualizarPreviewImagem(
+      bannerLojaUrl,
+      previewBannerImg,
+      previewBannerPlaceholder,
+      removeBannerBtn,
+    );
+    atualizarPreviewCardapio();
   } catch (error) {
     console.error(error);
     mostrarToast("Erro ao carregar configurações", "erro");
@@ -1747,17 +2275,150 @@ async function conectarEmpresa() {
     if (!empresa?.id) return;
 
     empresaAtual = empresa;
-    document.getElementById("nomeEmpresaTopo").textContent =
-      empresa.nome_fantasia || "Painel da empresa";
-    document.getElementById("avatarLoja").textContent = (
-      empresa.nome_fantasia || "E"
-    )
-      .charAt(0)
-      .toUpperCase();
+
+    // Atualiza interface
+    const nomeEmpresaTopo = document.getElementById("nomeEmpresaTopo");
+    const avatarLoja = document.getElementById("avatarLoja");
+
+    if (nomeEmpresaTopo) {
+      nomeEmpresaTopo.textContent =
+        empresa.nome_fantasia || "Painel da empresa";
+    }
+    if (avatarLoja) {
+      avatarLoja.textContent = (empresa.nome_fantasia || "E")
+        .charAt(0)
+        .toUpperCase();
+    }
+
+    // Popula logo/banner (verifica se os elementos existem)
+    const logoInput = document.getElementById("logoLojaUrl");
+    const bannerInput = document.getElementById("bannerLojaUrl");
+
+    if (logoInput) {
+      logoInput.value = empresa.logo_url || "";
+      // Chama a função de preview de imagem se existir
+      if (typeof atualizarPreviewImagem === "function") {
+        const previewLogoImg = document.getElementById("previewLogoImg");
+        const previewLogoPlaceholder = document.getElementById(
+          "previewLogoPlaceholder",
+        );
+        const removeLogoBtn = document.getElementById("removeLogoBtn");
+        atualizarPreviewImagem(
+          logoInput,
+          previewLogoImg,
+          previewLogoPlaceholder,
+          removeLogoBtn,
+        );
+      }
+    }
+
+    if (bannerInput) {
+      bannerInput.value = empresa.banner_url || "";
+      if (typeof atualizarPreviewImagem === "function") {
+        const previewBannerImg = document.getElementById("previewBannerImg");
+        const previewBannerPlaceholder = document.getElementById(
+          "previewBannerPlaceholder",
+        );
+        const removeBannerBtn = document.getElementById("removeBannerBtn");
+        atualizarPreviewImagem(
+          bannerInput,
+          previewBannerImg,
+          previewBannerPlaceholder,
+          removeBannerBtn,
+        );
+      }
+    }
+
+    // CARREGA O PREVIEW
+    setTimeout(atualizarPreview, 500);
   } catch (error) {
-    console.log(error);
+    console.log("Erro ao conectar empresa:", error);
   }
 }
+
+// =================================
+// ATUALIZAR PREVIEW AUTOMATICAMENTE
+// =================================
+
+// Quando salvar personalização
+const btnSalvarPersonalizacaoOriginal = document.getElementById(
+  "btnSalvarPersonalizacao",
+);
+if (btnSalvarPersonalizacaoOriginal) {
+  const clickHandler = btnSalvarPersonalizacaoOriginal.onclick;
+  btnSalvarPersonalizacaoOriginal.onclick = async (e) => {
+    if (clickHandler) await clickHandler(e);
+    setTimeout(atualizarPreview, 800);
+  };
+}
+
+// Quando salvar categoria
+const btnSalvarCategoriaPreview = document.getElementById("btnSalvarCategoria");
+if (btnSalvarCategoriaPreview) {
+  const originalHandler = btnSalvarCategoriaPreview.onclick;
+  btnSalvarCategoriaPreview.onclick = async (e) => {
+    if (originalHandler) await originalHandler(e);
+    setTimeout(atualizarPreview, 800);
+  };
+}
+
+// Quando salvar produto
+const btnSalvarProdutoPreview = document.getElementById("btnSalvarProduto");
+if (btnSalvarProdutoPreview) {
+  const originalHandler = btnSalvarProdutoPreview.onclick;
+  btnSalvarProdutoPreview.onclick = async (e) => {
+    if (originalHandler) await originalHandler(e);
+    setTimeout(atualizarPreview, 800);
+  };
+}
+
+// Quando excluir categoria ou produto
+// Usamos MutationObserver ou um event listener mais simples
+// Vamos sobrescrever as funções de exclusão para atualizar o preview
+
+// Guarda referência às funções originais
+const excluirCategoriaOriginal = window.excluirCategoria;
+if (excluirCategoriaOriginal) {
+  window.excluirCategoria = async (id) => {
+    await excluirCategoriaOriginal(id);
+    setTimeout(atualizarPreview, 800);
+  };
+}
+
+const excluirProdutoOriginal = window.excluirProduto;
+if (excluirProdutoOriginal) {
+  window.excluirProduto = async (id) => {
+    await excluirProdutoOriginal(id);
+    setTimeout(atualizarPreview, 800);
+  };
+}
+// =================================
+// INICIALIZAÇÃO
+// =================================
+
+document.addEventListener("DOMContentLoaded", () => {
+  inicializarMapa();
+});
+
+(async () => {
+  await conectarEmpresa();
+
+  await Promise.all([
+    carregarEntregas(),
+    carregarPedidos(),
+    carregarDashboardKpis(),
+    carregarCategorias(),
+    carregarProdutos(),
+    carregarBairros(),
+  ]);
+
+  // 🔥 Garante que o preview seja carregado mesmo se a empresa já estiver pronta
+  if (empresaAtual?.id) {
+    setTimeout(atualizarPreview, 500);
+  }
+
+  await iniciarRealtime();
+})();
 
 // =================================
 // SUPABASE REALTIME
@@ -1818,26 +2479,3 @@ document.getElementById("btnLogout").addEventListener("click", () => {
   localStorage.removeItem("usuario");
   window.location.href = "../login/login.html";
 });
-
-// =================================
-// INICIALIZAÇÃO
-// =================================
-
-document.addEventListener("DOMContentLoaded", () => {
-  inicializarMapa();
-});
-
-(async () => {
-  await conectarEmpresa();
-
-  await Promise.all([
-    carregarEntregas(),
-    carregarPedidos(),
-    carregarDashboardKpis(),
-    carregarCategorias(),
-    carregarProdutos(),
-    carregarBairros(),
-  ]);
-
-  await iniciarRealtime();
-})();

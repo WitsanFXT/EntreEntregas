@@ -92,6 +92,57 @@ exports.atualizar = async (req, res) => {
 };
 
 // ======================================
+// ATUALIZAR PERSONALIZAÇÃO (logo e banner)
+// PUT /api/empresa/personalizacao
+// ======================================
+// Recebe só as URLs (já hospedadas no Supabase Storage pelo painel),
+// nunca a imagem em si — por isso não tem risco de 413 aqui.
+
+exports.atualizarPersonalizacao = async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
+
+    const { logo_url, banner_url } = req.body;
+
+    if (!logo_url && !banner_url) {
+      return res.status(400).json({
+        message: "Envie ao menos logo_url ou banner_url.",
+      });
+    }
+
+    const camposParaAtualizar = {};
+    if (logo_url) camposParaAtualizar.logo_url = logo_url;
+    if (banner_url) camposParaAtualizar.banner_url = banner_url;
+
+    const { data: empresa, error } = await supabase
+      .from("empresas")
+      .update(camposParaAtualizar)
+      .eq("usuario_id", usuarioId)
+      .select()
+      .single();
+
+    if (error) {
+      console.log(error);
+
+      return res.status(400).json({
+        message: "Erro ao salvar personalização.",
+      });
+    }
+
+    return res.json({
+      message: "Personalização salva com sucesso.",
+      empresa,
+    });
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      message: "Erro interno.",
+    });
+  }
+};
+
+// ======================================
 // TENTAR NOVAMENTE (fluxo sem entregador)
 // POST /api/empresa/entrega/:id/tentar-novamente
 // ======================================

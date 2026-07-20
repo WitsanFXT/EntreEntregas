@@ -1618,6 +1618,7 @@ button.acao:disabled {
 }
 
 .upload-preview {
+  position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
   border-radius: 16px;
@@ -1629,6 +1630,9 @@ button.acao:disabled {
   overflow: hidden;
   margin-bottom: 10px;
   font-size: 2.2rem;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .upload-preview img {
@@ -1642,21 +1646,97 @@ button.acao:disabled {
   border-radius: 12px;
 }
 
-.upload-preview-banner span {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  font-weight: 600;
-  padding: 0 12px;
-  text-align: center;
+.upload-preview-produto {
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  font-size: 1.8rem;
+  margin-top: 8px;
 }
 
-.btn-upload {
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 0 12px;
+}
+
+.upload-placeholder-icon {
+  font-size: 1.6em;
+  line-height: 1;
+}
+
+.upload-placeholder small {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* estado de erro: URL colada não carregou */
+.upload-preview--erro {
+  border-color: var(--danger);
+  border-style: solid;
+  background: #fdeceb;
+}
+
+.upload-preview--erro .upload-placeholder {
+  color: var(--danger);
+}
+
+.upload-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(20, 20, 22, 0.65);
+  color: #fff;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+}
+
+.upload-remove:hover {
+  background: var(--danger);
+}
+
+.upload-controls {
+  margin-bottom: 8px;
+}
+
+.btn-upload-file {
+  display: block;
   width: 100%;
-  min-height: 40px;
-  padding: 10px 16px;
-  font-size: 0.85rem;
+  min-height: 38px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  color: var(--text-dark);
+  font-size: 0.82rem;
+  font-weight: 700;
   text-align: center;
   cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.btn-upload-file:hover {
+  border-color: var(--brand-primary);
+  background: #fff7f0;
+}
+
+.card-subtitulo-dica {
+  margin-top: -4px;
+  margin-bottom: 4px;
 }
 
 @media (max-width: 640px) {
@@ -1852,110 +1932,6 @@ button.acao:disabled {
   padding: 40px 20px;
 }
 
-.preview-banner {
-  width: 100%;
-  aspect-ratio: 16 / 7;
-  object-fit: cover;
-  background: linear-gradient(135deg, #ffb570, #ff6b00);
-  display: block;
-}
-
-.preview-loja-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 16px 6px;
-  margin-top: -28px;
-}
-
-.preview-logo {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  border: 3px solid #fff;
-  background: #f4f5f7;
-  object-fit: cover;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-}
-
-.preview-loja-info h4 {
-  font-size: 1rem;
-}
-
-.preview-loja-info span {
-  font-size: 0.75rem;
-  color: var(--success);
-  font-weight: 700;
-}
-
-.preview-categorias {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 12px 16px;
-}
-
-.preview-categoria-pill {
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: #f4f5f7;
-  font-size: 0.75rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.preview-produtos {
-  padding: 4px 16px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.preview-produto-item {
-  display: flex;
-  gap: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.preview-produto-item:last-child {
-  border-bottom: none;
-}
-
-.preview-produto-item img {
-  width: 64px;
-  height: 64px;
-  border-radius: 10px;
-  object-fit: cover;
-  flex-shrink: 0;
-  background: #f4f5f7;
-}
-
-.preview-produto-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.preview-produto-info h5 {
-  font-size: 0.88rem;
-  margin-bottom: 2px;
-}
-
-.preview-produto-info p {
-  font-size: 0.76rem;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.preview-produto-info strong {
-  font-size: 0.85rem;
-  color: var(--brand-primary);
-}
-
 @media (max-width: 640px) {
   .cardapio-actions {
     width: 100%;
@@ -1963,5 +1939,580 @@ button.acao:disabled {
 
   .cardapio-actions .acao {
     flex: 1;
+  }
+}
+
+/* ==========================
+   MINI PREVIEW CARDÁPIO
+========================== */
+
+.preview-cardapio {
+  padding: 0;
+  background: #f6f7f9;
+}
+
+.mini-cardapio {
+  background: #f6f7f9;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  max-height: 640px;
+  scrollbar-width: thin;
+}
+
+.mini-banner {
+  width: 100%;
+  height: 150px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #ffb570, #ff6b00);
+}
+
+.mini-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.mini-topo {
+  display: flex;
+  gap: 14px;
+  padding: 0 18px 16px;
+  align-items: flex-end;
+  background: #fff;
+}
+
+.mini-logo {
+  width: 76px;
+  height: 76px;
+  border-radius: 18px;
+  object-fit: cover;
+  border: 4px solid #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  margin-top: -38px;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.mini-loja-info {
+  padding-top: 10px;
+  min-width: 0;
+}
+
+.mini-loja-info h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  color: #16a34a;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+}
+
+.mini-detalhes {
+  margin-top: 3px;
+  color: #6b7280;
+  font-size: 0.78rem;
+}
+
+.mini-categorias {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 14px 18px;
+  background: #fff;
+  border-bottom: 1px solid #eef0f3;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.preview-categoria-pill {
+  background: #f3f4f6;
+  padding: 7px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #3a3d45;
+}
+
+.mini-produtos {
+  padding: 14px 18px 110px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preview-produto-item {
+  display: flex;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 16px;
+  padding: 10px;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.preview-produto-item:hover {
+  box-shadow: 0 6px 18px rgba(20, 20, 22, 0.08);
+  transform: translateY(-1px);
+}
+
+.preview-produto-item img {
+  width: 78px;
+  height: 78px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #f3f4f6;
+}
+
+.preview-produto-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-produto-info h5 {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.preview-produto-info p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 0.78rem;
+  line-height: 1.35;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.preview-produto-rodape {
+  margin-top: auto;
+  padding-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.preview-produto-info strong {
+  color: #16a34a;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.mini-add {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: none;
+  background: linear-gradient(135deg, #ff7a00, #ff5500);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.12s ease;
+}
+
+.mini-add:hover {
+  transform: scale(1.08);
+}
+
+.mini-add:active {
+  transform: scale(0.92);
+}
+
+.mini-empty {
+  text-align: center;
+  padding: 46px 20px;
+  color: #9799a6;
+  font-size: 0.9rem;
+}
+
+.mini-carrinho {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(135deg, #1c8a44, #16a34a);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  z-index: 3;
+  box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.mini-carrinho div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.mini-carrinho strong {
+  font-size: 0.92rem;
+}
+
+.mini-carrinho span {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.mini-carrinho button {
+  background: #fff;
+  color: #16a34a;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.mini-carrinho button:hover {
+  transform: translateY(-1px);
+}
+
+.mini-cardapio {
+  width: 100%;
+  background: #f8f8f8;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.mini-banner {
+  height: 180px;
+}
+
+.mini-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mini-header {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  padding: 16px;
+  margin-top: -40px;
+}
+
+.mini-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 18px;
+  border: 4px solid #fff;
+  background: #fff;
+  object-fit: cover;
+}
+
+.mini-info h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.mini-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #666;
+  margin-top: 6px;
+}
+
+.mini-busca {
+  margin: 0 16px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 999px;
+  padding: 12px 16px;
+  color: #888;
+}
+
+.mini-categorias {
+  display: flex;
+  gap: 8px;
+  overflow: auto;
+  padding: 16px;
+}
+
+.preview-categoria-pill {
+  background: #fff3e8;
+  color: #ff6600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.mini-produtos {
+  padding: 0 16px 90px;
+}
+
+.mini-produto {
+  display: flex;
+  gap: 12px;
+  background: #fff;
+  padding: 10px;
+  border-radius: 14px;
+  margin-bottom: 12px;
+}
+
+.mini-produto img {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.mini-produto-info {
+  flex: 1;
+}
+
+.mini-produto-info h4 {
+  margin: 0 0 4px;
+}
+
+.mini-produto-info p {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.mini-produto-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.mini-produto-footer button {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: #ff6b00;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.mini-carrinho {
+  position: sticky;
+  bottom: 0;
+  background: #16a34a;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.mini-carrinho button {
+  border: none;
+  background: #fff;
+  color: #16a34a;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 10px;
+}
+
+/* ======================================
+   PREVIEW COM IFRAME
+====================================== */
+
+.preview-cardapio-frame {
+  background: #f6f4f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 8px;
+  position: relative;
+}
+
+.preview-iframe {
+  width: 100%;
+  height: 780px;
+  border: none;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: opacity 0.3s ease;
+}
+
+.preview-iframe.carregando {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.preview-info {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: normal;
+}
+
+/* Loading overlay */
+.preview-loading-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px 30px;
+  border-radius: 12px;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.preview-loading-overlay.mostrar {
+  display: flex;
+}
+
+.preview-loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #f0f0f0;
+  border-top: 3px solid #ff6b35;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .preview-iframe {
+    height: 600px;
+  }
+}
+
+@media (max-width: 480px) {
+  .preview-iframe {
+    height: 500px;
+  }
+  .preview-cardapio-frame {
+    padding: 8px;
+  }
+}
+
+/* ======================================
+   PREVIEW COM IFRAME
+====================================== */
+
+.preview-cardapio-frame {
+  background: #f6f4f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 8px;
+  position: relative;
+}
+
+.preview-iframe {
+  width: 100%;
+  height: 780px;
+  border: none;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: opacity 0.3s ease;
+}
+
+.preview-iframe.carregando {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.preview-info {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: normal;
+}
+
+/* Loading overlay */
+.preview-loading-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px 30px;
+  border-radius: 12px;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.preview-loading-overlay.mostrar {
+  display: flex;
+}
+
+.preview-loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #f0f0f0;
+  border-top: 3px solid #ff6b35;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .preview-iframe {
+    height: 600px;
+  }
+}
+
+@media (max-width: 480px) {
+  .preview-iframe {
+    height: 500px;
+  }
+  .preview-cardapio-frame {
+    padding: 8px;
   }
 }

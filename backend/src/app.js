@@ -2,8 +2,79 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
+const fs = require("fs");
 
-const iniciarVerificacaoTimeouts = require("./services/verificarTimeouts");
+const app = express();
+
+// Middlewares
+app.use(
+  cors({
+    origin: "*",
+    credentials: true,
+  }),
+);
+app.use(express.json());
+
+// ======================================
+// ARQUIVOS ESTÁTICOS
+// ======================================
+
+const frontendPath = path.resolve(__dirname, "../../frontend");
+console.log("📁 Frontend path:", frontendPath);
+app.use(express.static(frontendPath));
+
+// ======================================
+// ARQUIVOS ESTÁTICOS DA LOJA - NOVO!
+// ======================================
+
+const lojaPath = path.resolve(__dirname, "../../frontend/public/loja");
+console.log("📁 Loja path:", lojaPath);
+app.use("/loja", express.static(lojaPath));
+
+// ======================================
+// ROTA PÚBLICA DA LOJA
+// ======================================
+
+const lojaHtmlPath = path.resolve(lojaPath, "index.html");
+console.log("📄 Loja HTML:", lojaHtmlPath);
+console.log("📄 Loja existe?", fs.existsSync(lojaHtmlPath));
+
+app.get("/loja/:empresaId", (req, res) => {
+  console.log("🛒 Acessando loja para empresa:", req.params.empresaId);
+
+  if (fs.existsSync(lojaHtmlPath)) {
+    res.sendFile(lojaHtmlPath);
+  } else {
+    res.status(404).send(`
+      <h1>❌ Página da loja não encontrada</h1>
+      <p>Caminho: ${lojaHtmlPath}</p>
+    `);
+  }
+});
+
+// ======================================
+// ROTA PARA O DASHBOARD
+// ======================================
+
+const dashboardPath = path.resolve(frontendPath, "empresa/dashboard.html");
+console.log("📄 Dashboard path:", dashboardPath);
+console.log("📄 Dashboard existe?", fs.existsSync(dashboardPath));
+
+app.get("/dashboard", (req, res) => {
+  if (fs.existsSync(dashboardPath)) {
+    res.sendFile(dashboardPath);
+  } else {
+    res.status(404).send(`
+      <h1>❌ Dashboard não encontrado</h1>
+      <p>Caminho: ${dashboardPath}</p>
+    `);
+  }
+});
+
+// ======================================
+// ROTAS DA API
+// ======================================
 
 const authRoutes = require("./routes/authRoutes");
 const perfilRoutes = require("./routes/perfilRoutes");
@@ -14,16 +85,7 @@ const financeiroRoutes = require("./routes/financeiroRoutes");
 const pedidosRoutes = require("./routes/pedidosRoutes");
 const tabelaPrecosRoutes = require("./routes/tabelaPrecosRoutes");
 const cardapioRoutes = require("./routes/cardapioRoutes");
-
-const app = express();
-
-app.use(
-  cors({
-    origin: "*",
-  }),
-);
-
-app.use(express.json());
+const publicRoutes = require("./routes/Publicoroutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/perfil", perfilRoutes);
@@ -34,17 +96,37 @@ app.use("/api/financeiro", financeiroRoutes);
 app.use("/api/empresa/pedidos", pedidosRoutes);
 app.use("/api/tabela-precos", tabelaPrecosRoutes);
 app.use("/api/cardapio", cardapioRoutes);
+app.use("/api/publico", publicRoutes);
 
-// Job de expiração/redistribuição de entregas. Não depende mais de
-// socket nenhum — só lê/grava no banco, e quem escuta (empresa e
-// entregador) recebe as mudanças via Supabase Realtime.
-iniciarVerificacaoTimeouts();
+// ======================================
+// ROTA DE FALLBACK
+// ======================================
 
-app.listen(process.env.PORT || 5500, () => {
-  console.log(`Servidor rodando na porta ${process.env.PORT || 5500}`);
+app.use((req, res) => {
+  console.log("❌ Rota não encontrada:", req.url);
+  res.status(404).json({
+    error: "Rota não encontrada",
+    path: req.url,
+  });
 });
 
-// Job de expiração
+// ======================================
+// INICIAR SERVIDOR
+// ======================================
+
+const iniciarVerificacaoTimeouts = require("./services/verificarTimeouts");
 iniciarVerificacaoTimeouts();
+
+const PORT = process.env.PORT || 5500;
+app.listen(PORT, () => {
+  console.log(`\n🚀 Servidor rodando na porta ${PORT}`);
+  console.log(`📁 Frontend: ${frontendPath}`);
+  console.log(`📁 Loja: ${lojaPath}`);
+  console.log(`📍 Dashboard: http://localhost:${PORT}/dashboard`);
+  console.log(`🛒 Loja: http://localhost:${PORT}/loja/SEU_ID`);
+  console.log(
+    `📡 API: http://localhost:${PORT}/api/publico/empresas/ID/cardapio\n`,
+  );
+});
 
 module.exports = app;
