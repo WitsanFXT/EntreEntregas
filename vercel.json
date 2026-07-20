@@ -27,21 +27,6 @@
     },
 
     {
-      "src": "/loja/script.js",
-      "dest": "/frontend/public/loja/script.js"
-    },
-
-    {
-      "src": "/loja/style.css",
-      "dest": "/frontend/public/loja/style.css"
-    },
-
-    {
-      "src": "/loja/(.*)",
-      "dest": "/frontend/public/loja/index.html"
-    },
-
-    {
       "src": "/(.*)",
       "dest": "frontend/$1"
     }
