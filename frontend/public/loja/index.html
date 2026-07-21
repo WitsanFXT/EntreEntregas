@@ -28,11 +28,24 @@
           <p class="loja-endereco" id="enderecoLoja">📍 —</p>
 
           <div class="loja-meta">
-            <span class="loja-status aberto" id="statusLoja"
-              >🟢 Aberto agora</span
-            >
-            <span class="loja-avaliacao" id="avaliacaoLoja" hidden>⭐ —</span>
-          </div>
+
+    <span class="loja-status aberto" id="statusLoja">
+        🟢 Aberto agora
+    </span>
+
+    <span class="loja-avaliacao" id="avaliacaoLoja" hidden>
+        ⭐ 4.9
+    </span>
+
+    <span class="loja-tempo">
+        🕒 25-35 min
+    </span>
+
+    <span class="loja-entrega">
+        🛵 Entrega rápida
+    </span>
+
+</div>
 
           <p class="loja-pedido-minimo" id="pedidoMinimoLoja" hidden></p>
         </div>
@@ -43,11 +56,42 @@
       </button>
     </header>
 
+    <section class="loja-destaques">
+
+    <div class="destaque-card">
+        <strong>🚚 Entrega</strong>
+        <span>até 35 min</span>
+    </div>
+
+    <div class="destaque-card">
+        <strong>⭐ Avaliação</strong>
+        <span>4.9 de 5</span>
+    </div>
+
+    <div class="destaque-card">
+        <strong>🔥 Mais pedido</strong>
+        <span>Lanches</span>
+    </div>
+
+</section>
+
     <!-- ================= CATEGORIAS (NAV) ================= -->
     <nav class="categorias" id="navCategorias"></nav>
 
     <!-- ================= PRODUTOS ================= -->
-    <main id="produtosMain"></main>
+    <main id="produtosMain">
+
+    <div id="loadingProdutos" class="loading-produtos">
+
+        <div class="skeleton skeleton-banner"></div>
+
+        <div class="skeleton skeleton-produto"></div>
+        <div class="skeleton skeleton-produto"></div>
+        <div class="skeleton skeleton-produto"></div>
+
+    </div>
+
+</main>
 
     <!-- ================= BARRA "VER SACOLA" ================= -->
     <button id="barraSacola" class="barra-sacola" type="button" hidden>
@@ -306,7 +350,7 @@
     <!-- ================= CONFIRMAÇÃO FINAL ================= -->
     <div id="modalConfirmacao" class="modal">
       <div class="modal-content">
-        <button id="fecharConfirmacao" class="btn-fechar-pix" type="button">
+        <button id="fecharConfirmacao" class="btn-fechar-modal" type="button"></button>
           ×
         </button>
         <h2 id="tituloConfirmacao">✅ Pedido enviado!</h2>
@@ -323,10 +367,32 @@
 
     <!-- ================= FOOTER ================= -->
     <footer>
-      <h3>📞 Contato</h3>
-      <p id="footerTelefone">(38) 99999-9999</p>
-      <p id="footerInstagram">@entreentregas</p>
-    </footer>
+
+    <div class="footer-logo">
+
+        <h3 id="footerNomeLoja">
+            EntreEntregas
+        </h3>
+
+    </div>
+
+    <div class="footer-info">
+
+        <p id="footerTelefone">
+            (38) 99999-9999
+        </p>
+
+        <p id="footerInstagram">
+            @entreentregas
+        </p>
+
+    </div>
+
+    <small>
+        Powered by EntreEntregas
+    </small>
+
+</footer>
 
     <script src="/public/loja/script.js"></script>
   </body>

@@ -94,7 +94,9 @@ function criarCardLoja(loja) {
 
   card.className = "loja-card";
 
-  card.href = `/frontend/public/loja/index.html?id=${loja.id}`;
+  card.href = `/loja/${loja.id}`;
+
+  card.dataset.id = loja.id;
 
   const categoria = loja.categoria || "Geral";
 

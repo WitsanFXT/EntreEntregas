@@ -57,6 +57,22 @@ app.get("/", (req, res) => {
   }
 });
 
+app.get("/loja/:id", (req, res) => {
+  const arquivo = path.join(
+    __dirname,
+    "..",
+    "..",
+    "frontend",
+    "public",
+    "loja",
+    "index.html",
+  );
+
+  console.log(arquivo);
+
+  res.sendFile(arquivo);
+});
+
 // ======================================
 // 🔥 ROTA DA LOJA - DEVE VIR ANTES DO FALLBACK
 // ======================================

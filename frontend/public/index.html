@@ -4,15 +4,25 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover"
     />
 
-    <title>EntreEntregas | Delivery Rápido</title>
+    <title>EntreEntregas | Delivery Rápido em Unaí</title>
+    <meta name="theme-color" content="#171310" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta
+      name="description"
+      content="Peça comida, mercado e farmácia com entrega rápida em Unaí - MG."
+    />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
 
@@ -35,8 +45,13 @@
             </div>
           </div>
 
-          <button id="btnLocalizacao" class="location-button" type="button">
-            <span>📍</span>
+          <button
+            id="btnLocalizacao"
+            class="location-button"
+            type="button"
+            aria-label="Alterar localização de entrega"
+          >
+            <span aria-hidden="true">📍</span>
             <span id="textoLocalizacao"> Unaí - MG </span>
           </button>
         </div>
@@ -49,20 +64,25 @@
 
     <section class="hero">
       <div class="hero-overlay"></div>
+      <div class="hero-glow"></div>
 
       <div class="container">
         <div class="hero-content">
-          <span class="hero-badge"> 🔥 Delivery mais rápido da cidade </span>
+          <span class="hero-badge">
+            <span aria-hidden="true">🔥</span> O delivery mais rápido da cidade
+          </span>
 
-          <h2>Peça comida, mercado, farmácia e muito mais</h2>
+          <h2>Sua fome pede <span class="hero-highlight">pressa</span></h2>
 
-          <p>Tudo o que você precisa entregue na sua porta.</p>
+          <p>Comida, mercado, farmácia e muito mais — direto na sua porta.</p>
 
           <div class="hero-search">
+            <span class="hero-search-icon" aria-hidden="true">🔍</span>
+
             <input
               id="inputBusca"
               type="text"
-              placeholder="Buscar lojas..."
+              placeholder="Buscar lojas, categorias..."
               class="hero-input"
             />
 
@@ -72,6 +92,8 @@
           </div>
         </div>
       </div>
+
+      <div class="hero-scallop" aria-hidden="true"></div>
     </section>
 
     <!-- ========================================= -->
@@ -126,7 +148,8 @@
     <section class="promocoes">
       <div class="container">
         <div class="section-title">
-          <h3>🔥 Promoções</h3>
+          <h3>Cupons do dia</h3>
+          <p>Resgate antes que acabe</p>
         </div>
 
         <div class="promo-scroll">
@@ -161,7 +184,8 @@
     <section class="destaques">
       <div class="container">
         <div class="section-title">
-          <h3>⭐ Lojas em Destaque</h3>
+          <h3>Em alta agora</h3>
+          <p>O que a cidade mais está pedindo</p>
         </div>
 
         <div class="destaque-scroll">
@@ -190,7 +214,7 @@
     <main class="lojas-section">
       <div class="container">
         <div class="section-title">
-          <h3>🏪 Todas as Lojas</h3>
+          <h3>Todas as lojas</h3>
           <p>Escolha onde deseja comprar</p>
         </div>
 
@@ -217,6 +241,7 @@
 
     <footer class="footer">
       <div class="container">
+        <div class="brand-icon footer-icon">🛵</div>
         <h4>EntreEntregas</h4>
 
         <p>Delivery rápido para sua cidade.</p>
@@ -231,11 +256,17 @@
 
     <div id="modalLocalizacao" class="modal">
       <div class="modal-content">
-        <button id="fecharModalLocalizacao" class="btn-fechar-modal">×</button>
+        <button
+          id="fecharModalLocalizacao"
+          class="btn-fechar-modal"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
 
         <h2>📍 Sua localização</h2>
 
-        <p>Informe seu endereço.</p>
+        <p>Informe seu endereço para vermos as lojas mais perto de você.</p>
 
         <input
           id="inputEndereco"

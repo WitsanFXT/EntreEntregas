@@ -1,9 +1,41 @@
-/* ======================================
-   ENTREENTREGAS - LOJA PÚBLICA
-   Estilo "Brasa & Carvão" (visual tipo iFood)
-====================================== */
+/* ==========================================================
+   ENTREENTREGAS 2026
+   PREMIUM STORE UI
+   PARTE 1
+========================================================== */
 
-@import url("https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+
+:root {
+  --primary: #ff5a1f;
+  --primary-dark: #e24711;
+
+  --secondary: #ff9f43;
+
+  --success: #10b981;
+  --danger: #ef4444;
+
+  --dark: #121212;
+  --dark-2: #1e1e1e;
+
+  --text: #222;
+  --text-light: #666;
+
+  --bg: #f5f7fb;
+  --card: #ffffff;
+
+  --border: #ececec;
+
+  --radius-sm: 12px;
+  --radius: 18px;
+  --radius-lg: 26px;
+
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+  --shadow: 0 12px 35px rgba(0, 0, 0, 0.08);
+
+  --shadow-lg: 0 25px 60px rgba(0, 0, 0, 0.12);
+}
 
 * {
   margin: 0;
@@ -11,53 +43,57 @@
   box-sizing: border-box;
 }
 
-:root {
-  --carvao: #1b1512;
-  --carvao-claro: #2a2019;
-  --brasa: #e8541e;
-  --brasa-escura: #b8290f;
-  --dourado: #c9962e;
-  --dourado-escuro: #9c7420;
-  --creme: #fffbf5;
-  --fundo: #f3ece1;
-  --fumaca: #362b24;
-  --fumaca-clara: #7a6b5d;
-  --branco: #ffffff;
-  --borda: rgba(27, 21, 18, 0.1);
-  --sombra-brasa: 0 8px 24px rgba(232, 84, 30, 0.35);
-  --sombra-card: 0 2px 12px rgba(27, 21, 18, 0.08);
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  font-family: "Work Sans", Arial, sans-serif;
-  background: var(--fundo);
-  color: var(--fumaca);
-  line-height: 1.5;
-  padding-bottom: 90px; /* espaço pra barra "ver sacola" flutuante */
+  font-family: "Inter", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  padding-bottom: 120px;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
 }
 
 body.sem-scroll {
   overflow: hidden;
 }
 
-/* ======================================
-   CARD DA LOJA (estilo iFood)
-====================================== */
+/* ==========================================================
+   HEADER
+========================================================== */
 
 .loja-card {
-  background: var(--branco);
-  max-width: 900px;
-  margin: 0 auto;
-  border-radius: 0 0 20px 20px;
+  max-width: 1200px;
+  margin: auto;
+
+  background: #fff;
+
   overflow: hidden;
-  box-shadow: var(--sombra-card);
+
+  box-shadow: var(--shadow);
+
+  position: relative;
 }
 
 .loja-banner {
-  width: 100%;
-  aspect-ratio: 16 / 6;
-  background: linear-gradient(135deg, var(--carvao), var(--carvao-claro));
+  height: 320px;
+
+  background: linear-gradient(135deg, #ff5a1f, #ff8d34);
+
   position: relative;
+
   overflow: hidden;
 }
 
@@ -67,121 +103,183 @@ body.sem-scroll {
   object-fit: cover;
 }
 
-.loja-info {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 16px 18px 10px;
-  position: relative;
+.loja-banner::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background: linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.55));
 }
 
-.loja-logo,
-.loja-logo-placeholder {
-  width: 72px;
-  height: 72px;
-  border-radius: 16px;
-  object-fit: cover;
-  border: 3px solid var(--branco);
-  box-shadow: 0 4px 14px rgba(27, 21, 18, 0.2);
-  margin-top: -34px;
-  background: var(--fundo);
-  flex-shrink: 0;
-}
+.btn-voltar-app {
+  position: absolute;
 
-.loja-logo-placeholder {
+  top: 25px;
+  left: 25px;
+
+  width: 48px;
+  height: 48px;
+
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.15);
+
+  backdrop-filter: blur(10px);
+
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 30px;
+
+  color: #fff;
+
+  font-size: 28px;
+
+  text-decoration: none;
+
+  z-index: 50;
+}
+
+.loja-info {
+  display: flex;
+
+  gap: 20px;
+
+  padding: 0 30px 25px;
+
+  margin-top: -60px;
+
+  position: relative;
+
+  z-index: 5;
+}
+
+.loja-logo {
+  width: 120px;
+  height: 120px;
+
+  border-radius: 24px;
+
+  border: 5px solid #fff;
+
+  object-fit: cover;
+
+  background: #fff;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+
+  flex-shrink: 0;
 }
 
 .loja-info-texto {
   flex: 1;
-  min-width: 0;
-  padding-top: 4px;
+  padding-top: 60px;
 }
 
 .loja-info-texto h1 {
-  font-family: "Anton", sans-serif;
-  font-weight: 400;
-  font-size: 1.4rem;
-  text-transform: uppercase;
-  color: var(--fumaca);
+  font-size: 2rem;
+
+  font-weight: 800;
+
+  color: #222;
 }
 
 .loja-endereco {
-  color: var(--fumaca-clara);
-  font-size: 0.85rem;
-  margin-top: 4px;
+  margin-top: 6px;
+
+  color: #666;
+
+  font-size: 0.95rem;
 }
 
 .loja-meta {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
+
   flex-wrap: wrap;
+
+  gap: 10px;
+
+  margin-top: 14px;
 }
 
 .loja-status {
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 4px 10px;
+  padding: 8px 14px;
+
   border-radius: 999px;
+
+  font-size: 0.82rem;
+
+  font-weight: 700;
 }
 
 .loja-status.aberto {
-  background: rgba(22, 163, 74, 0.12);
-  color: #16a34a;
+  background: #e8fff1;
+
+  color: #0c9b4d;
 }
 
 .loja-status.fechado {
-  background: rgba(220, 38, 38, 0.12);
-  color: #dc2626;
+  background: #ffe9e9;
+
+  color: #d72f2f;
 }
 
 .loja-avaliacao {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--dourado-escuro);
-}
+  padding: 8px 14px;
 
-.loja-pedido-minimo {
-  font-size: 0.78rem;
-  color: var(--fumaca-clara);
-  margin: 6px 18px 12px;
+  border-radius: 999px;
+
+  background: #fff4d7;
+
+  color: #cb8a00;
+
+  font-weight: 700;
 }
 
 .loja-cupons {
-  display: block;
-  width: calc(100% - 36px);
-  margin: 4px 18px 16px;
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1.5px dashed var(--dourado);
-  background: rgba(201, 150, 46, 0.08);
-  color: var(--dourado-escuro);
-  font-size: 0.85rem;
+  width: calc(100% - 60px);
+
+  margin: 0 30px 25px;
+
+  padding: 16px;
+
+  border-radius: 16px;
+
+  color: #fff;
+
   font-weight: 700;
-  text-align: left;
-  cursor: pointer;
+
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+
+  box-shadow: 0 12px 30px rgba(255, 90, 31, 0.25);
 }
 
-/* ======================================
-   CATEGORIAS (NAV)
-====================================== */
+/* ==========================================================
+   CATEGORIAS
+========================================================== */
 
 .categorias {
-  display: flex;
-  gap: 10px;
-  padding: 14px 15px;
-  background: rgba(255, 251, 245, 0.95);
-  backdrop-filter: blur(6px);
   position: sticky;
+
   top: 0;
+
   z-index: 100;
-  box-shadow: 0 2px 10px rgba(27, 21, 18, 0.08);
+
+  display: flex;
+
+  gap: 12px;
+
   overflow-x: auto;
+
+  padding: 14px 18px;
+
+  background: rgba(255, 255, 255, 0.95);
+
+  backdrop-filter: blur(12px);
+
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+
   scrollbar-width: none;
 }
 
@@ -191,193 +289,261 @@ body.sem-scroll {
 
 .categoria-link {
   flex-shrink: 0;
-  text-align: center;
-  text-decoration: none;
-  background: var(--carvao);
-  color: var(--creme);
-  padding: 10px 16px;
+
+  padding: 12px 18px;
+
   border-radius: 999px;
-  font-size: 13px;
+
+  background: #fff;
+
+  border: 1px solid #ececec;
+
   font-weight: 600;
-  transition: all 0.25s ease;
-  white-space: nowrap;
-  cursor: pointer;
-  border: none;
+
+  transition: 0.25s;
 }
 
 .categoria-link:hover,
 .categoria-link.ativo {
-  background: var(--brasa);
+  background: var(--primary);
+
+  color: #fff;
+
+  border-color: var(--primary);
+
   transform: translateY(-2px);
-  box-shadow: var(--sombra-brasa);
 }
 
-/* ======================================
-   PRODUTOS — lista por categoria (estilo iFood)
-====================================== */
+/* ==========================================================
+   PRODUTOS
+========================================================== */
 
 #produtosMain {
-  padding: 6px 16px 20px;
-  max-width: 900px;
-  margin: 0 auto;
+  max-width: 1200px;
+
+  margin: auto;
+
+  padding: 25px;
 }
 
 .titulo-categoria {
-  padding: 22px 4px 10px;
-  font-family: "Anton", sans-serif;
-  font-weight: 400;
-  text-transform: uppercase;
-  font-size: 19px;
-  color: var(--fumaca);
+  font-size: 1.5rem;
+
+  font-weight: 800;
+
+  margin-bottom: 20px;
+
+  color: #222;
 }
 
 .produtos-lista {
   display: flex;
+
   flex-direction: column;
-  gap: 10px;
+
+  gap: 14px;
 }
 
 .produto-item {
+  background: #fff;
+
+  border-radius: 22px;
+
+  padding: 15px;
+
   display: flex;
+
   align-items: center;
-  gap: 12px;
-  background: var(--branco);
-  border-radius: 14px;
-  padding: 12px;
-  box-shadow: var(--sombra-card);
-  cursor: pointer;
+
+  gap: 16px;
+
+  transition: 0.25s;
+
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+}
+
+.produto-item:hover {
+  transform: translateY(-2px);
+
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
 }
 
 .produto-item img {
-  width: 84px;
-  height: 84px;
-  border-radius: 10px;
+  width: 100px;
+
+  height: 100px;
+
+  border-radius: 18px;
+
   object-fit: cover;
+
   flex-shrink: 0;
 }
 
 .produto-item-info {
   flex: 1;
-  min-width: 0;
 }
 
 .produto-item-info h3 {
-  font-size: 0.98rem;
-  margin-bottom: 3px;
+  font-size: 1.05rem;
+
+  font-weight: 700;
+
+  margin-bottom: 6px;
 }
 
 .produto-item-info p {
-  color: var(--fumaca-clara);
-  font-size: 0.8rem;
-  margin-bottom: 6px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  color: #777;
+
+  font-size: 0.9rem;
+
+  margin-bottom: 10px;
 }
 
-.produto-item-info .preco {
-  font-weight: 700;
-  color: var(--dourado-escuro);
-  font-size: 0.95rem;
-}
+.preco {
+  font-size: 1.1rem;
 
-.produto-item-acao {
-  flex-shrink: 0;
+  font-weight: 800;
+
+  color: var(--primary);
 }
 
 .btn-add-produto {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  border: none;
-  background: linear-gradient(135deg, var(--brasa), var(--brasa-escura));
-  color: var(--branco);
-  font-size: 20px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: var(--sombra-brasa);
+  width: 48px;
+
+  height: 48px;
+
+  border-radius: 14px;
+
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+
+  color: #fff;
+
+  font-size: 24px;
+
+  font-weight: 800;
+
+  box-shadow: 0 10px 25px rgba(255, 90, 31, 0.3);
 }
 
 .stepper-produto {
   display: flex;
+
   align-items: center;
-  gap: 8px;
-  background: var(--fundo);
-  border-radius: 10px;
-  padding: 4px;
+
+  gap: 10px;
+
+  background: #f5f5f5;
+
+  padding: 5px;
+
+  border-radius: 12px;
 }
 
 .stepper-produto button {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: none;
-  background: var(--brasa);
-  color: var(--branco);
-  font-size: 16px;
+  width: 34px;
+  height: 34px;
+
+  border-radius: 10px;
+
+  background: var(--primary);
+
+  color: #fff;
+
   font-weight: 700;
-  cursor: pointer;
 }
 
 .stepper-produto span {
-  min-width: 18px;
+  min-width: 20px;
+
   text-align: center;
+
   font-weight: 700;
-  font-size: 0.9rem;
 }
 
-/* ======================================
-   BARRA "VER SACOLA"
-====================================== */
+/* ==========================================================
+   BARRA SACOLA PREMIUM
+========================================================== */
 
 .barra-sacola {
   position: fixed;
-  left: 16px;
-  right: 16px;
-  bottom: 16px;
-  max-width: 868px;
-  margin: 0 auto;
+
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+
+  max-width: 1200px;
+
+  margin: auto;
+
+  z-index: 1000;
+
   display: flex;
+
   align-items: center;
+
   justify-content: space-between;
-  gap: 10px;
-  border: none;
-  border-radius: 14px;
-  padding: 16px 18px;
-  background: linear-gradient(135deg, var(--brasa), var(--brasa-escura));
-  color: var(--branco);
-  font-weight: 700;
-  font-size: 0.92rem;
-  cursor: pointer;
-  box-shadow: var(--sombra-brasa);
-  z-index: 500;
+
+  gap: 15px;
+
+  padding: 18px 24px;
+
+  border-radius: 20px;
+
+  color: #fff;
+
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+
+  box-shadow: 0 20px 50px rgba(255, 90, 31, 0.35);
 }
 
 .barra-sacola-qtd {
-  background: rgba(255, 255, 255, 0.2);
-  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.18);
+
+  padding: 8px 14px;
+
   border-radius: 999px;
-  font-size: 0.8rem;
+
+  font-weight: 700;
 }
 
 .barra-sacola-label {
   flex: 1;
+
   text-align: center;
+
+  font-size: 1rem;
+
+  font-weight: 700;
 }
 
-/* ======================================
-   MODAIS — genérico
-====================================== */
+.barra-sacola-total {
+  font-size: 1rem;
+
+  font-weight: 800;
+}
+
+/* ==========================================================
+   MODAL BASE
+========================================================== */
 
 .modal {
-  display: none;
   position: fixed;
+
   inset: 0;
-  background: rgba(27, 21, 18, 0.7);
-  justify-content: center;
+
+  display: none;
+
   align-items: center;
+
+  justify-content: center;
+
   padding: 20px;
+
+  background: rgba(0, 0, 0, 0.7);
+
+  backdrop-filter: blur(6px);
+
   z-index: 99999;
 }
 
@@ -387,653 +553,1174 @@ body.sem-scroll {
 
 .modal-content {
   width: 100%;
-  max-width: 440px;
+
+  max-width: 560px;
+
   max-height: 90vh;
+
   overflow-y: auto;
-  background: var(--creme);
-  border-radius: 22px;
-  padding: 24px;
+
+  background: #fff;
+
+  border-radius: 28px;
+
+  padding: 28px;
+
   position: relative;
+
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.2);
+}
+
+.modal-checkout {
+  max-width: 650px;
 }
 
 .btn-fechar-modal {
   position: absolute;
-  top: 10px;
-  right: 12px;
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: transparent;
-  color: var(--fumaca-clara);
-  font-size: 30px;
-  cursor: pointer;
+
+  top: 15px;
+  right: 15px;
+
+  width: 42px;
+  height: 42px;
+
+  border-radius: 50%;
+
+  background: #f3f3f3;
+
+  font-size: 26px;
+
+  color: #666;
 }
 
 .btn-fechar-modal:hover {
-  color: #c1391f;
+  background: #e8e8e8;
 }
 
-/* ======================================
-   MODAL PRODUTO (customização)
-====================================== */
+/* ==========================================================
+   MODAL PRODUTO
+========================================================== */
 
 #produtoNome {
-  font-family: "Anton", sans-serif;
-  font-weight: 400;
-  font-size: 1.4rem;
-  padding-right: 30px;
+  font-size: 1.6rem;
+
+  font-weight: 800;
+
+  margin-bottom: 8px;
+
+  padding-right: 40px;
 }
 
 #produtoPreco {
-  color: var(--dourado-escuro);
-  font-size: 20px;
-  font-weight: 700;
-  margin: 8px 0 20px;
+  color: var(--primary);
+
+  font-size: 1.5rem;
+
+  font-weight: 800;
+
+  margin-bottom: 25px;
 }
 
 .quantidade-container {
   display: flex;
+
   justify-content: center;
+
   align-items: center;
+
   gap: 12px;
-  margin: 20px 0;
+
+  margin-bottom: 25px;
 }
 
 .quantidade-container button {
-  width: 46px;
-  height: 46px;
-  border: none;
-  border-radius: 10px;
-  background: var(--brasa);
-  color: var(--branco);
-  font-size: 22px;
-  cursor: pointer;
-}
+  width: 50px;
+  height: 50px;
 
-.quantidade-container button:hover {
-  filter: brightness(1.08);
+  border-radius: 14px;
+
+  background: var(--primary);
+
+  color: #fff;
+
+  font-size: 24px;
+
+  font-weight: 700;
 }
 
 #quantidadeInput {
-  width: 80px;
-  height: 46px;
+  width: 90px;
+
+  height: 50px;
+
   text-align: center;
-  border: 2px solid rgba(27, 21, 18, 0.12);
-  border-radius: 10px;
-  font-size: 18px;
+
+  border: 2px solid #ececec;
+
+  border-radius: 14px;
+
+  font-size: 1.1rem;
+
   font-weight: 700;
 }
 
 #subtotalModal {
   text-align: center;
-  margin: 6px 0 18px;
-  color: var(--dourado-escuro);
-  font-size: 22px;
-  font-weight: 700;
+
+  color: var(--primary);
+
+  font-size: 1.4rem;
+
+  font-weight: 800;
+
+  margin-bottom: 20px;
 }
 
 #observacao {
   width: 100%;
-  min-height: 80px;
+
+  min-height: 100px;
+
+  border: 2px solid #ececec;
+
+  border-radius: 16px;
+
   resize: none;
-  padding: 12px 14px;
-  margin-bottom: 16px;
-  border: 1px solid rgba(27, 21, 18, 0.15);
-  border-radius: 10px;
-  font-family: "Work Sans", sans-serif;
-  font-size: 14px;
-}
 
-#adicionarCarrinho,
-.btn-continuar {
-  width: 100%;
   padding: 15px;
-  border: none;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--brasa), var(--brasa-escura));
-  color: var(--branco);
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: var(--sombra-brasa);
-  margin-top: 6px;
+
+  margin-bottom: 20px;
+
+  font-size: 0.95rem;
 }
 
-.btn-continuar:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.btn-secundario {
+#adicionarCarrinho {
   width: 100%;
-  padding: 14px;
-  border: 1.5px solid var(--borda);
-  border-radius: 12px;
-  background: transparent;
-  color: var(--fumaca);
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-top: 10px;
+
+  height: 58px;
+
+  border-radius: 16px;
+
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+
+  color: #fff;
+
+  font-size: 1rem;
+
+  font-weight: 800;
 }
 
-/* ======================================
-   MODAIS DE CHECKOUT (sacola / entrega / pagamento / revisão)
-====================================== */
-
-.modal-checkout {
-  max-width: 460px;
-}
+/* ==========================================================
+   HEADER CHECKOUT
+========================================================== */
 
 .checkout-header-loja {
   display: flex;
+
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding-right: 30px;
+
+  gap: 15px;
+
+  margin-bottom: 25px;
 }
 
 .checkout-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+  width: 70px;
+  height: 70px;
+
+  border-radius: 18px;
+
   object-fit: cover;
-  background: var(--fundo);
 }
 
 .checkout-header-loja h2 {
-  font-size: 1.1rem;
+  font-size: 1.3rem;
+
+  font-weight: 800;
 }
 
 .checkout-titulo {
-  font-family: "Anton", sans-serif;
-  font-weight: 400;
-  font-size: 1.1rem;
-  text-transform: uppercase;
-  margin: 14px 0 10px;
+  font-size: 1.2rem;
+
+  font-weight: 800;
+
+  margin-bottom: 20px;
 }
+
+/* ==========================================================
+   SACOLA
+========================================================== */
 
 .itens-sacola {
   display: flex;
+
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 14px;
+
+  gap: 12px;
+
+  margin-bottom: 20px;
 }
 
 .item-sacola {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--borda);
-}
+  background: #fafafa;
 
-.item-sacola-info h4 {
-  font-size: 0.9rem;
-}
+  border: 1px solid #ececec;
 
-.item-sacola-info small {
-  color: var(--fumaca-clara);
-  display: block;
-  margin-top: 2px;
-}
+  border-radius: 16px;
 
-.item-sacola-preco {
-  font-weight: 700;
-  color: var(--dourado-escuro);
-  font-size: 0.88rem;
-  white-space: nowrap;
+  padding: 14px;
 }
 
 .cupom-box {
   display: flex;
-  gap: 8px;
-  margin-top: 6px;
+
+  gap: 10px;
+
+  margin: 20px 0;
 }
 
 .cupom-box input {
   flex: 1;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--borda);
-  font-size: 14px;
+
+  height: 52px;
+
+  border: 2px solid #ececec;
+
+  border-radius: 14px;
+
+  padding: 0 14px;
 }
 
 .cupom-box button {
-  padding: 0 16px;
-  border: none;
-  border-radius: 10px;
-  background: var(--carvao);
-  color: var(--creme);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.cupom-status {
-  font-size: 0.8rem;
-  margin: 6px 0 4px;
-  color: var(--fumaca-clara);
-}
-
-.cupom-status.sucesso {
-  color: #16a34a;
-}
-
-.cupom-status.erro {
-  color: #dc2626;
-}
-
-.cupom-aplicado-resumo {
-  background: rgba(22, 163, 74, 0.1);
-  color: #16a34a;
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  margin-bottom: 12px;
-}
-
-.upsell-inline {
-  margin: 14px 0;
-}
-
-.upsell-inline:empty {
-  display: none;
-}
-
-.upsell-inline-titulo {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--fumaca-clara);
-  margin-bottom: 8px;
-}
-
-.upsell-inline-lista {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: none;
-}
-
-.upsell-inline-lista::-webkit-scrollbar {
-  display: none;
-}
-
-.upsell-card {
-  flex-shrink: 0;
   width: 120px;
-  background: var(--branco);
-  border: 1px solid var(--borda);
-  border-radius: 12px;
-  padding: 8px;
-  text-align: center;
-}
 
-.upsell-card img {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 6px;
-}
+  border-radius: 14px;
 
-.upsell-card h5 {
-  font-size: 0.75rem;
-  margin-bottom: 4px;
-  min-height: 28px;
-}
+  background: var(--dark);
 
-.upsell-card .preco {
-  font-size: 0.75rem;
+  color: #fff;
+
   font-weight: 700;
-  color: var(--dourado-escuro);
-  display: block;
-  margin-bottom: 6px;
 }
 
-.upsell-card button {
-  width: 100%;
-  padding: 6px;
-  border: none;
-  border-radius: 8px;
-  background: var(--brasa);
-  color: var(--branco);
-  font-size: 0.72rem;
-  font-weight: 700;
-  cursor: pointer;
-}
+/* ==========================================================
+   RESUMOS
+========================================================== */
 
 .resumo-valores {
-  background: rgba(27, 21, 18, 0.03);
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin: 14px 0;
+  margin-top: 20px;
+
+  background: #fafafa;
+
+  border-radius: 18px;
+
+  padding: 18px;
 }
 
 .linha-resumo {
   display: flex;
+
   justify-content: space-between;
-  font-size: 0.86rem;
-  padding: 5px 0;
-  color: var(--fumaca-clara);
+
+  margin-bottom: 10px;
 }
 
 .linha-resumo.total {
-  border-top: 1px solid var(--borda);
-  margin-top: 4px;
-  padding-top: 10px;
-  font-weight: 700;
-  color: var(--fumaca);
-  font-size: 0.95rem;
+  margin-top: 15px;
+
+  padding-top: 15px;
+
+  border-top: 1px solid #ececec;
+
+  font-size: 1.1rem;
+
+  font-weight: 800;
 }
 
-/* ---------- Etapa entrega ---------- */
+/* ==========================================================
+   ENTREGA
+========================================================== */
 
 .tipo-entrega-container {
   display: flex;
-  gap: 10px;
+
+  gap: 12px;
+
+  margin-bottom: 20px;
 }
 
 .btn-tipo-entrega {
   flex: 1;
-  padding: 14px;
-  border: 2px solid var(--borda);
-  background: var(--branco);
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
+
+  height: 54px;
+
+  border-radius: 14px;
+
+  background: #f3f3f3;
+
+  font-weight: 700;
 }
 
 .btn-tipo-entrega.ativo {
-  background: var(--brasa);
-  border-color: var(--brasa);
-  color: white;
-  box-shadow: var(--sombra-brasa);
+  background: var(--primary);
+
+  color: #fff;
 }
 
 .endereco-confirmado {
-  background: var(--branco);
-  border: 1px solid var(--borda);
-  border-radius: 12px;
-  padding: 14px;
-  margin-top: 14px;
-}
+  background: #f9f9f9;
 
-.endereco-confirmado p {
-  font-size: 0.88rem;
-  margin-bottom: 6px;
+  border-radius: 16px;
+
+  padding: 16px;
+
+  margin-bottom: 18px;
 }
 
 .link-acao {
-  border: none;
-  background: transparent;
-  color: var(--brasa);
+  margin-top: 10px;
+
+  background: none;
+
+  color: var(--primary);
+
   font-weight: 700;
-  font-size: 0.82rem;
-  cursor: pointer;
-  padding: 0;
 }
 
 .form-endereco-manual {
   display: flex;
+
   flex-direction: column;
-  gap: 10px;
-  margin-top: 14px;
+
+  gap: 12px;
 }
 
 .form-endereco-manual input,
 .form-endereco-manual select {
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--borda);
-  font-size: 14px;
-  background: var(--branco);
+  height: 54px;
+
+  border: 2px solid #ececec;
+
+  border-radius: 14px;
+
+  padding: 0 14px;
 }
 
-.aviso-retirada {
-  background: var(--carvao-claro);
-  color: var(--creme);
-  padding: 12px;
-  border-radius: 10px;
-  text-align: center;
-  font-size: 0.88rem;
-  margin-top: 14px;
-}
-
-/* ---------- Etapa pagamento ---------- */
+/* ==========================================================
+   PAGAMENTO
+========================================================== */
 
 .opcoes-pagamento {
   display: flex;
+
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 14px;
+
+  gap: 12px;
+
+  margin: 20px 0;
 }
 
 .opcao-pagamento {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 13px 14px;
-  border-radius: 10px;
-  border: 2px solid var(--borda);
-  background: var(--branco);
-  font-size: 0.88rem;
-  font-weight: 600;
-  cursor: pointer;
+  width: 100%;
+
+  min-height: 60px;
+
+  border-radius: 16px;
+
+  background: #f5f5f5;
+
   text-align: left;
+
+  padding: 0 18px;
+
+  font-weight: 700;
 }
 
 .opcao-pagamento.ativo {
-  border-color: var(--brasa);
-  background: rgba(232, 84, 30, 0.06);
-}
+  background: var(--primary);
 
-.opcao-pagamento:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.opcao-pagamento small {
-  margin-left: auto;
-  color: var(--fumaca-clara);
-  font-weight: 400;
+  color: #fff;
 }
 
 .cpf-toggle {
   display: flex;
+
   align-items: center;
+
   gap: 10px;
-  font-size: 0.85rem;
-  margin-bottom: 8px;
-  cursor: pointer;
+
+  margin: 15px 0;
 }
 
 #cpfNotaInput {
   width: 100%;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--borda);
-  font-size: 14px;
-  margin-bottom: 10px;
+
+  height: 52px;
+
+  border: 2px solid #ececec;
+
+  border-radius: 14px;
+
+  padding: 0 14px;
+
+  margin-bottom: 15px;
 }
 
-/* ---------- Etapa revisão ---------- */
+/* ==========================================================
+   BOTÕES PRINCIPAIS
+========================================================== */
+
+.btn-continuar {
+  width: 100%;
+
+  height: 58px;
+
+  border-radius: 16px;
+
+  margin-top: 20px;
+
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+
+  color: #fff;
+
+  font-size: 1rem;
+
+  font-weight: 800;
+}
+
+.btn-secundario {
+  width: 100%;
+
+  height: 56px;
+
+  border-radius: 16px;
+
+  margin-top: 12px;
+
+  background: #f3f3f3;
+
+  color: #333;
+
+  font-weight: 700;
+}
+
+/* ==========================================================
+   REVISÃO
+========================================================== */
 
 .revisao-bloco {
-  padding: 10px 0;
-  border-bottom: 1px solid var(--borda);
+  background: #fafafa;
+
+  border-radius: 16px;
+
+  padding: 16px;
+
+  margin-bottom: 12px;
 }
 
 .revisao-bloco strong {
   display: block;
-  font-size: 0.76rem;
-  text-transform: uppercase;
-  color: var(--fumaca-clara);
-  margin-bottom: 3px;
-  letter-spacing: 0.02em;
+
+  margin-bottom: 6px;
 }
 
-.revisao-bloco p {
-  font-size: 0.92rem;
+.revisao-total {
+  border: 2px solid var(--primary);
 }
 
-.revisao-total p {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--dourado-escuro);
-}
-
-/* ======================================
-   MODAL CONFIRMAÇÃO FINAL
-====================================== */
-
-#modalConfirmacao .modal-content {
-  background: #1f1f1f;
-  color: #fff;
-}
-
-#modalConfirmacao h2 {
-  color: #ffb300;
-  text-align: center;
-  margin: 10px 0 14px;
-}
+/* ==========================================================
+   CONFIRMAÇÃO
+========================================================== */
 
 .aviso-confirmacao {
   text-align: center;
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 14px;
-  margin-bottom: 16px;
+
+  color: #666;
+
+  margin: 15px 0 20px;
 }
 
 .resumo-confirmacao {
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
-  padding: 14px;
-  margin-bottom: 16px;
-  font-size: 14px;
-  line-height: 1.6;
+  background: #fafafa;
+
+  border-radius: 18px;
+
+  padding: 20px;
+
+  margin-bottom: 20px;
 }
 
-.resumo-confirmacao strong {
-  color: #ffb300;
+#tituloConfirmacao {
+  text-align: center;
+
+  font-size: 1.8rem;
+
+  font-weight: 800;
 }
 
-.btn-fechar-pix {
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  width: 38px;
-  height: 38px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  font-size: 22px;
-  cursor: pointer;
-}
-
-/* ======================================
+/* ==========================================================
    FOOTER
-====================================== */
+========================================================== */
 
 footer {
-  background: var(--carvao);
-  color: var(--creme);
-  text-align: center;
-  padding: 36px 20px;
-  margin-top: 40px;
-}
+  max-width: 1200px;
 
-footer::before {
-  content: "";
-  display: block;
-  height: 4px;
-  width: 60px;
-  background: var(--brasa);
-  border-radius: 2px;
-  margin: 0 auto 20px;
+  margin: 40px auto;
+
+  background: #fff;
+
+  border-radius: 24px;
+
+  padding: 30px;
+
+  text-align: center;
+
+  box-shadow: var(--shadow-sm);
 }
 
 footer h3 {
-  font-family: "Anton", sans-serif;
-  font-weight: 400;
-  text-transform: uppercase;
   margin-bottom: 10px;
-  color: var(--dourado);
 }
 
 footer p {
-  color: #e7dccf;
-  font-size: 0.95rem;
+  color: #666;
+
+  margin-top: 5px;
 }
 
-/* ======================================
+/* ==========================================================
    RESPONSIVO
-====================================== */
+========================================================== */
 
 @media (max-width: 768px) {
-  .loja-card {
-    border-radius: 0;
+  .loja-banner {
+    height: 220px;
+  }
+
+  .loja-info {
+    flex-direction: column;
+
+    gap: 10px;
+
+    margin-top: -70px;
+  }
+
+  .loja-logo {
+    width: 100px;
+    height: 100px;
+  }
+
+  .loja-info-texto {
+    padding-top: 0;
   }
 
   .loja-info-texto h1 {
-    font-size: 1.15rem;
-  }
-
-  .categorias {
-    padding: 12px;
+    font-size: 1.6rem;
   }
 
   .produto-item img {
-    width: 68px;
-    height: 68px;
+    width: 85px;
+    height: 85px;
+  }
+
+  .modal-content {
+    max-width: none;
+
+    width: 100%;
+
+    border-radius: 24px;
+  }
+
+  .barra-sacola {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+
+    padding: 16px;
   }
 }
 
 @media (max-width: 480px) {
-  body {
-    padding-bottom: 84px;
+  #produtosMain {
+    padding: 15px;
   }
 
-  .barra-sacola {
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    padding: 14px;
-    font-size: 0.85rem;
+  .produto-item {
+    padding: 12px;
+  }
+
+  .produto-item img {
+    width: 75px;
+    height: 75px;
+  }
+
+  .btn-add-produto {
+    width: 42px;
+    height: 42px;
+  }
+
+  .barra-sacola-label {
+    font-size: 0.9rem;
+  }
+
+  .barra-sacola-total {
+    font-size: 0.9rem;
   }
 }
 
-/* Botão Voltar para o App */
-.btn-voltar-app {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 10;
-  width: 36px;
-  height: 36px;
-  background: rgba(27, 21, 18, 0.6);
-  backdrop-filter: blur(4px);
-  color: var(--branco);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 1;
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+/* ==========================================================
+   PREMIUM UX PACK
+   ENTREENTREGAS 2026
+========================================================== */
+
+/* ==========================================================
+   GLASS HEADER
+========================================================== */
+
+.categorias {
+  background: rgba(255, 255, 255, 0.82) !important;
+
+  backdrop-filter: blur(20px);
+
+  -webkit-backdrop-filter: blur(20px);
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
 }
 
-.btn-voltar-app:hover {
-  background: var(--brasa);
+/* ==========================================================
+   SCROLLBAR PREMIUM
+========================================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5f5f5;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(var(--primary), var(--primary-dark));
+
+  border-radius: 999px;
+}
+
+/* ==========================================================
+   ANIMAÇÕES
+========================================================== */
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0 rgba(255, 90, 31, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 0 25px rgba(255, 90, 31, 0.35);
+  }
+
+  100% {
+    box-shadow: 0 0 0 rgba(255, 90, 31, 0.2);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* ==========================================================
+   CARDS COM ENTRADA SUAVE
+========================================================== */
+
+.produto-item {
+  animation: fadeUp 0.35s ease;
+}
+
+.produto-item:hover img {
   transform: scale(1.05);
+}
+
+.produto-item img {
+  transition: 0.35s;
+}
+
+/* ==========================================================
+   BADGE PROMOÇÃO
+========================================================== */
+
+.badge-promo {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  padding: 6px 10px;
+
+  border-radius: 999px;
+
+  background: #fff1f0;
+
+  color: #e11d48;
+
+  font-size: 0.75rem;
+
+  font-weight: 800;
+}
+
+.badge-novo {
+  display: inline-flex;
+
+  align-items: center;
+
+  padding: 6px 10px;
+
+  border-radius: 999px;
+
+  background: #e8fff1;
+
+  color: #0c9b4d;
+
+  font-size: 0.75rem;
+
+  font-weight: 800;
+}
+
+/* ==========================================================
+   PRODUTO EM DESTAQUE
+========================================================== */
+
+.produto-destaque {
+  position: relative;
+
+  overflow: hidden;
+
+  border: 2px solid rgba(255, 90, 31, 0.15);
+}
+
+.produto-destaque::before {
+  content: "🔥 DESTAQUE";
+
+  position: absolute;
+
+  top: 12px;
+  right: -30px;
+
+  width: 130px;
+
+  text-align: center;
+
+  padding: 5px;
+
+  background: var(--primary);
+
+  color: #fff;
+
+  font-size: 0.7rem;
+
+  font-weight: 800;
+
+  transform: rotate(35deg);
+
+  z-index: 2;
+}
+
+/* ==========================================================
+   CUPOM PREMIUM
+========================================================== */
+
+.cupom-box {
+  position: relative;
+}
+
+.cupom-box input {
+  background: #fff;
+}
+
+.cupom-box button {
+  transition: 0.25s;
+}
+
+.cupom-box button:hover {
+  transform: translateY(-2px);
+}
+
+.cupom-status {
+  margin-top: 10px;
+
+  font-size: 0.85rem;
+
+  font-weight: 700;
+}
+
+.cupom-sucesso {
+  color: #0c9b4d;
+}
+
+.cupom-erro {
+  color: #ef4444;
+}
+
+/* ==========================================================
+   PIX PREMIUM
+========================================================== */
+
+.pix-card {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+
+  border-radius: 22px;
+
+  padding: 20px;
+
+  color: #fff;
+
+  text-align: center;
+
+  margin-top: 20px;
+}
+
+.pix-card h3 {
+  margin-bottom: 12px;
+}
+
+.pix-qrcode {
+  width: 220px;
+
+  height: 220px;
+
+  margin: auto;
+
+  border-radius: 18px;
+
+  background: #fff;
+
+  padding: 12px;
+}
+
+.pix-copia-cola {
+  margin-top: 15px;
+
+  padding: 14px;
+
+  border-radius: 14px;
+
+  background: rgba(255, 255, 255, 0.15);
+
+  word-break: break-all;
+
+  font-size: 0.8rem;
+}
+
+/* ==========================================================
+   BOTÕES PREMIUM
+========================================================== */
+
+.btn-continuar,
+#adicionarCarrinho {
+  transition: 0.25s;
+}
+
+.btn-continuar:hover,
+#adicionarCarrinho:hover {
+  transform: translateY(-2px);
+
+  box-shadow: 0 18px 40px rgba(255, 90, 31, 0.25);
+}
+
+.btn-continuar:active,
+#adicionarCarrinho:active {
+  transform: scale(0.98);
+}
+
+/* ==========================================================
+   SACOLA VAZIA
+========================================================== */
+
+.sacola-vazia {
+  text-align: center;
+
+  padding: 40px 20px;
+}
+
+.sacola-vazia i {
+  font-size: 60px;
+
+  opacity: 0.4;
+}
+
+.sacola-vazia h3 {
+  margin-top: 15px;
+}
+
+.sacola-vazia p {
+  margin-top: 8px;
+
+  color: #666;
+}
+
+/* ==========================================================
+   LOADING SKELETON
+========================================================== */
+
+.skeleton {
+  border-radius: 14px;
+
+  background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%);
+
+  background-size: 1000px 100%;
+
+  animation: shimmer 2s infinite linear;
+}
+
+.skeleton-produto {
+  height: 120px;
+
+  margin-bottom: 12px;
+}
+
+.skeleton-banner {
+  height: 300px;
+}
+
+.skeleton-text {
+  height: 18px;
+
+  margin-top: 10px;
+}
+
+/* ==========================================================
+   UPSELL PREMIUM
+========================================================== */
+
+.upsell-inline {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+
+  margin-top: 18px;
+}
+
+.upsell-item {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  background: #fff8f3;
+
+  border: 1px solid #ffe0d1;
+
+  border-radius: 18px;
+
+  padding: 14px;
+}
+
+.upsell-item button {
+  background: var(--primary);
+
+  color: #fff;
+
+  border-radius: 12px;
+
+  padding: 10px 14px;
+
+  font-weight: 700;
+}
+
+/* ==========================================================
+   TOTAL DESTACADO
+========================================================== */
+
+.revisao-total,
+.linha-resumo.total {
+  background: rgba(255, 90, 31, 0.05);
+
+  border-radius: 14px;
+
+  padding: 12px;
+}
+
+/* ==========================================================
+   MODAIS MOBILE FULLSCREEN
+========================================================== */
+
+@media (max-width: 768px) {
+  .modal {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-content {
+    max-width: none;
+
+    width: 100%;
+
+    height: auto;
+
+    max-height: 92vh;
+
+    border-radius: 26px 26px 0 0;
+
+    animation: fadeUp 0.25s ease;
+  }
+
+  .btn-fechar-modal {
+    top: 10px;
+    right: 10px;
+  }
+}
+
+/* ==========================================================
+   MICROINTERAÇÕES
+========================================================== */
+
+.btn-add-produto {
+  animation: pulseGlow 3s infinite;
+}
+
+.btn-add-produto:hover {
+  transform: scale(1.08);
+}
+
+.stepper-produto button:hover {
+  transform: scale(1.05);
+}
+
+/* ==========================================================
+   STATUS ONLINE
+========================================================== */
+
+.loja-status.aberto {
+  animation: pulseGlow 3s infinite;
+}
+
+/* ==========================================================
+   EFEITO PREMIUM NO BANNER
+========================================================== */
+
+.loja-banner::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background: radial-gradient(
+    circle at top right,
+    rgba(255, 255, 255, 0.18),
+    transparent 40%
+  );
+
+  z-index: 1;
+}
+
+.loja-banner img {
+  position: relative;
+  z-index: 0;
+}
+
+/* ==========================================================
+   FINAL PREMIUM
+========================================================== */
+
+.loja-card,
+.produto-item,
+.modal-content,
+footer {
+  transition: 0.3s ease;
+}
+
+.produto-item:hover {
+  border-color: rgba(255, 90, 31, 0.2);
+}
+
+.loja-destaques {
+  max-width: 1200px;
+
+  margin: 20px auto;
+
+  padding: 0 20px;
+
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 15px;
+}
+
+.destaque-card {
+  background: #fff;
+
+  padding: 18px;
+
+  border-radius: 20px;
+
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+
+  text-align: center;
+}
+
+.destaque-card strong {
+  display: block;
+
+  margin-bottom: 8px;
+}
+
+.loja-tempo,
+.loja-entrega {
+  background: #f5f5f5;
+
+  padding: 8px 14px;
+
+  border-radius: 999px;
+
+  font-weight: 700;
+}
+
+.loading-produtos {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+.footer-logo h3 {
+  font-size: 1.4rem;
+
+  margin-bottom: 10px;
+}
+
+.footer-info {
+  margin-bottom: 15px;
+}
+
+@media (max-width: 768px) {
+  .loja-destaques {
+    grid-template-columns: 1fr;
+  }
 }
