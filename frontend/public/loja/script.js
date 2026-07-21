@@ -27,7 +27,7 @@ const API_URL = (() => {
     window.location.hostname !== "localhost" &&
     window.location.hostname !== "127.0.0.1"
   ) {
-    return "https://entre-entregas-backend.vercel.app";
+    return "";
   }
   return "http://localhost:5500";
 })();
