@@ -2,11 +2,24 @@
 // CONFIG
 // ======================================
 
-const params = new URLSearchParams(window.location.search);
+// 🔥 NOVA LÓGICA PARA PEGAR O ID DA URL AMIGÁVEL (/loja/123)
+const extrairEmpresaId = () => {
+  const caminhos = window.location.pathname.split("/"); // Divide a URL por barras
+  const indiceLoja = caminhos.indexOf("loja");
 
-const empresaId = params.get("id");
+  // Se encontrou a palavra 'loja' na URL, pega o que vem logo depois dela
+  if (indiceLoja !== -1 && caminhos[indiceLoja + 1]) {
+    return caminhos[indiceLoja + 1];
+  }
 
-console.log("🏪 Empresa ID:", empresaId);
+  // Caso o usuário ainda acesse no formato antigo (?id=XXX) por segurança:
+  return new URLSearchParams(window.location.search).get("id");
+};
+
+const empresaId = extrairEmpresaId();
+const lojaId = empresaId;
+
+console.log("🏪 Empresa ID extraído:", empresaId);
 
 // 🔥 CONFIGURAÇÃO PARA PRODUÇÃO E DESENVOLVIMENTO
 const API_URL = (() => {
@@ -21,15 +34,8 @@ const API_URL = (() => {
 
 const TAXA_SERVICO = 0;
 
-const lojaId = params.get("id");
-
-console.log("Loja:", lojaId);
-
-//const lojaId = new URLSearchParams(window.location.search).get("id");
-
 console.log("📡 API_URL:", API_URL);
-console.log("🏪 Empresa ID:", empresaId);
-
+// ======================================
 // ======================================
 // ESTADO
 // ======================================
