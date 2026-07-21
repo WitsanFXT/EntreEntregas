@@ -1,6 +1,5 @@
 {
   "version": 2,
-
   "builds": [
     {
       "src": "backend/src/app.js",
@@ -11,21 +10,35 @@
       "use": "@vercel/static"
     }
   ],
-
   "routes": [
     {
       "src": "/api/(.*)",
       "dest": "backend/src/app.js"
     },
-
     {
       "src": "/",
-      "status": 302,
-      "headers": {
-        "Location": "/frontend/login/login.html"
-      }
+      "dest": "frontend/index.html"
     },
-
+    {
+      "src": "/login",
+      "dest": "frontend/login/login.html"
+    },
+    {
+      "src": "/loja/(.*)",
+      "dest": "frontend/public/loja/index.html"
+    },
+    {
+      "src": "/marketplace",
+      "dest": "frontend/public/index.html"
+    },
+    {
+      "src": "/dashboard/entregador",
+      "dest": "frontend/dashboard/entregador/index.html"
+    },
+    {
+      "src": "/dashboard/empresa",
+      "dest": "frontend/dashboard/empresa/index.html"
+    },
     {
       "src": "/(.*)",
       "dest": "frontend/$1"
