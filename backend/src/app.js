@@ -137,7 +137,7 @@ app.use("/api/empresa", empresaRoutes);
 app.use("/api/entregador", entregadorRoutes);
 app.use("/api/entregas", entregasRoutes);
 app.use("/api/financeiro", financeiroEmpresaRoutes);
-app.use("/api/financeiro/entregador", financeiroRoutes);
+app.use("/api/financeiro", financeiroRoutes);
 app.use("/api/empresa/pedidos", pedidosRoutes);
 app.use("/api/tabela-precos", tabelaPrecosRoutes);
 app.use("/api/cardapio", cardapioRoutes);

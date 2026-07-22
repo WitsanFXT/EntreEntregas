@@ -864,11 +864,6 @@ async function carregarEntregaAtualInicio() {
 
 
 
-      <input
-        type="text"
-        id="codigoRetirada"
-        placeholder="Código da retirada"
-      >
 
 
 
@@ -924,12 +919,6 @@ data-lng="${principal.empresas.longitude}">
 
 <div class="confirmacao-entrega">
 
-<p>
-Código entrega:
-<strong>
-${principal.codigo_entrega || ""}
-</strong>
-</p>
 
 
 <input
@@ -1025,7 +1014,7 @@ data-lng="${principal.longitude}">
 // AÇÕES DE ENTREGA (aceitar / retirar / finalizar)
 // =========================================================
 
-async function confirmarEntrega(id) {
+/*async function confirmarEntrega(id) {
   try {
     const codigo = document.getElementById("codigoEntrega").value;
 
@@ -1051,10 +1040,11 @@ async function confirmarEntrega(id) {
 
     carregarEntregaAtualInicio();
     carregarMinhasEntregas();
+    carregarFinanceiro();
   } catch (error) {
     console.log(error);
   }
-}
+} */
 
 async function aceitarEntrega(id) {
   try {
@@ -1148,8 +1138,9 @@ async function confirmarEntrega(id) {
 
   toast(data.message, response.ok ? "sucesso" : "erro");
 
-  carregarEntregaAtualInicio();
-  carregarMinhasEntregas();
+  await carregarEntregaAtualInicio();
+  await carregarMinhasEntregas();
+  await carregarFinanceiro();
 }
 
 // =========================================================
@@ -1395,7 +1386,7 @@ function aplicarVisibilidadeGanhos() {
 
   if (valor) {
     valor.innerHTML = ganhosOcultos
-      ? "R$ ••••"
+      ? "R$ •••"
       : `R$ ${ganhoHojeReal.toFixed(2)}`;
   }
 
@@ -1413,7 +1404,9 @@ document.getElementById("btnOcultarGanhos").onclick = () => {
 
 async function carregarFinanceiro() {
   try {
-    const response = await fetch(`${API}/api/financeiro/resumo`, { headers });
+    const response = await fetch(`${API}/api/financeiro/entregador/resumo`, {
+      headers,
+    });
     const data = await response.json();
 
     const hoje = Number(data.hoje || 0);
@@ -1436,7 +1429,9 @@ async function carregarFinanceiro() {
     // a partir do cache local de entregas (melhor esforço — o ideal
     // é o backend expor esses três campos prontos no /resumo).
     const entregasFinalizadasHoje = ultimaLista.filter(
-      (e) => e.status === "finalizada" && passaNoFiltroDataHoje(e),
+      (e) =>
+        ["entregue", "finalizada"].includes(e.status) &&
+        passaNoFiltroDataHoje(e),
     );
 
     const entregasConcluidas =

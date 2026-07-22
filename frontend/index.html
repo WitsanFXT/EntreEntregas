@@ -1,0 +1,2124 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EntreEntregas — A plataforma completa de delivery</title>
+    <meta
+      name="description"
+      content="EntreEntregas: gestão de entregas, pagamentos, financeiro, cardápio e app de entregador em uma única plataforma."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #07070a;
+        --bg-elev: #0e0e13;
+        --bg-card: #151519;
+        --border: #232329;
+        --border-soft: #1c1c22;
+        --text: #f4f4f6;
+        --text-dim: #9a9aa6;
+        --text-faint: #5c5c68;
+
+        --green: #00e676;
+        --red: #ff1744;
+        --purple: #9d3bff;
+        --blue: #2979ff;
+        --pink: #ff2e9f;
+
+        --green-soft: rgba(0, 230, 118, 0.12);
+        --red-soft: rgba(255, 23, 68, 0.12);
+        --purple-soft: rgba(157, 59, 255, 0.12);
+        --blue-soft: rgba(41, 121, 255, 0.12);
+        --pink-soft: rgba(255, 46, 159, 0.12);
+
+        --font-display: "Space Grotesk", sans-serif;
+        --font-body: "Inter", sans-serif;
+        --font-mono: "JetBrains Mono", monospace;
+
+        --container: 1180px;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        * {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+        }
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-body);
+        line-height: 1.5;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      img,
+      svg {
+        display: block;
+        max-width: 100%;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      ul {
+        list-style: none;
+      }
+      button {
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        background: none;
+        color: inherit;
+      }
+
+      .wrap {
+        max-width: var(--container);
+        margin: 0 auto;
+        padding: 0 28px;
+      }
+
+      ::selection {
+        background: var(--purple);
+        color: #fff;
+      }
+
+      /* focus visibility */
+      a:focus-visible,
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--pink);
+        outline-offset: 3px;
+        border-radius: 4px;
+      }
+
+      /* ---------- background texture ---------- */
+      .grain-bg {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background-image:
+          radial-gradient(
+            circle at 15% 10%,
+            rgba(157, 59, 255, 0.1),
+            transparent 40%
+          ),
+          radial-gradient(
+            circle at 85% 0%,
+            rgba(41, 121, 255, 0.08),
+            transparent 45%
+          ),
+          radial-gradient(
+            circle at 50% 100%,
+            rgba(255, 23, 68, 0.06),
+            transparent 50%
+          );
+      }
+
+      /* ---------- NAV ---------- */
+      header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        backdrop-filter: blur(14px);
+        background: rgba(7, 7, 10, 0.72);
+        border-bottom: 1px solid var(--border-soft);
+      }
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 72px;
+      }
+      .logo {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 1.15rem;
+        letter-spacing: 0.01em;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+      }
+      .logo .e2 {
+        position: relative;
+        background: linear-gradient(90deg, var(--red), var(--pink));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .nav-links {
+        display: flex;
+        gap: 34px;
+        align-items: center;
+      }
+      .nav-links a {
+        font-size: 0.92rem;
+        color: var(--text-dim);
+        transition: color 0.2s ease;
+        position: relative;
+      }
+      .nav-links a:hover {
+        color: var(--text);
+      }
+      .nav-cta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 13px 26px;
+        border-radius: 9px;
+        font-weight: 600;
+        font-size: 0.92rem;
+        font-family: var(--font-body);
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease,
+          filter 0.2s ease;
+        white-space: nowrap;
+      }
+      .btn-primary {
+        background: linear-gradient(90deg, var(--red), var(--pink));
+        color: #fff;
+        box-shadow: 0 8px 24px -8px rgba(255, 23, 68, 0.55);
+      }
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px -8px rgba(255, 46, 159, 0.6);
+      }
+      .btn-primary:active {
+        transform: translateY(0);
+      }
+      .btn-ghost {
+        border: 1px solid var(--border);
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .btn-ghost:hover {
+        border-color: var(--text-dim);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .btn-sm {
+        padding: 10px 18px;
+        font-size: 0.85rem;
+      }
+
+      .burger {
+        display: none;
+        flex-direction: column;
+        gap: 5px;
+        width: 26px;
+      }
+      .burger span {
+        height: 2px;
+        background: var(--text);
+        width: 100%;
+        border-radius: 2px;
+        transition: 0.25s;
+      }
+
+      /* ---------- HERO ---------- */
+      .hero {
+        position: relative;
+        padding: 172px 0 120px;
+        z-index: 1;
+      }
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--green);
+        background: var(--green-soft);
+        border: 1px solid rgba(0, 230, 118, 0.3);
+        padding: 7px 14px;
+        border-radius: 100px;
+        margin-bottom: 34px;
+      }
+      .eyebrow .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 8px var(--green);
+        animation: pulse-dot 1.6s ease-in-out infinite;
+      }
+      @keyframes pulse-dot {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.35;
+        }
+      }
+
+      .hero-lockup {
+        font-family: var(--font-display);
+        font-weight: 700;
+        line-height: 0.92;
+        letter-spacing: -0.02em;
+      }
+      .hero-lockup .line1 {
+        display: block;
+        font-size: clamp(3rem, 8vw, 6.4rem);
+        color: var(--text);
+      }
+      .hero-lockup .line2-wrap {
+        position: relative;
+        display: inline-block;
+        overflow: visible;
+        margin-top: 2px;
+      }
+      .hero-lockup .line2 {
+        display: block;
+        font-size: clamp(3rem, 8vw, 6.4rem);
+        background: linear-gradient(
+          90deg,
+          var(--blue),
+          var(--purple) 45%,
+          var(--pink) 75%,
+          var(--red)
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        position: relative;
+        z-index: 2;
+      }
+      /* speed streaks */
+      .speed-lines {
+        position: absolute;
+        top: 50%;
+        left: 100%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+        z-index: 1;
+        padding-left: 18px;
+      }
+      .speed-lines i {
+        display: block;
+        height: 4px;
+        border-radius: 4px;
+        background: linear-gradient(90deg, currentColor, transparent);
+        animation: dash 1.4s ease-in-out infinite;
+      }
+      .speed-lines i:nth-child(1) {
+        width: 70px;
+        color: var(--blue);
+        animation-delay: 0s;
+      }
+      .speed-lines i:nth-child(2) {
+        width: 46px;
+        color: var(--purple);
+        animation-delay: 0.12s;
+      }
+      .speed-lines i:nth-child(3) {
+        width: 88px;
+        color: var(--pink);
+        animation-delay: 0.24s;
+      }
+      .speed-lines i:nth-child(4) {
+        width: 34px;
+        color: var(--red);
+        animation-delay: 0.36s;
+      }
+      @keyframes dash {
+        0% {
+          transform: translateX(0);
+          opacity: 0.9;
+        }
+        50% {
+          transform: translateX(14px);
+          opacity: 0.35;
+        }
+        100% {
+          transform: translateX(0);
+          opacity: 0.9;
+        }
+      }
+
+      .hero-sub {
+        max-width: 560px;
+        margin-top: 34px;
+        font-size: 1.12rem;
+        color: var(--text-dim);
+      }
+      .hero-sub b {
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      .hero-ctas {
+        display: flex;
+        gap: 16px;
+        margin-top: 42px;
+        flex-wrap: wrap;
+      }
+
+      .hero-bottom-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 40px;
+        margin-top: 96px;
+        flex-wrap: wrap;
+      }
+
+      .mini-stats {
+        display: flex;
+        gap: 44px;
+        flex-wrap: wrap;
+      }
+      .mini-stat b {
+        display: block;
+        font-family: var(--font-display);
+        font-size: 1.9rem;
+        font-weight: 700;
+      }
+      .mini-stat span {
+        font-size: 0.82rem;
+        color: var(--text-faint);
+      }
+      .mini-stat.c-blue b {
+        color: var(--blue);
+      }
+      .mini-stat.c-green b {
+        color: var(--green);
+      }
+      .mini-stat.c-pink b {
+        color: var(--pink);
+      }
+
+      /* floating dash card */
+      .float-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        width: 270px;
+        box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.6);
+      }
+      .float-card .fc-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      .float-card .fc-head span {
+        font-size: 0.78rem;
+        color: var(--text-faint);
+        font-family: var(--font-mono);
+      }
+      .float-card .fc-badge {
+        font-size: 0.68rem;
+        font-family: var(--font-mono);
+        padding: 3px 9px;
+        border-radius: 100px;
+        background: var(--green-soft);
+        color: var(--green);
+        border: 1px solid rgba(0, 230, 118, 0.3);
+      }
+      .fc-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 9px 0;
+        border-top: 1px solid var(--border-soft);
+      }
+      .fc-row:first-of-type {
+        border-top: none;
+      }
+      .fc-row .lbl {
+        font-size: 0.82rem;
+        color: var(--text-dim);
+      }
+      .fc-row .val {
+        font-family: var(--font-mono);
+        font-size: 0.82rem;
+        font-weight: 500;
+      }
+      .fc-row .val.up {
+        color: var(--green);
+      }
+
+      /* ---------- MARQUEE ---------- */
+      .marquee-section {
+        border-top: 1px solid var(--border-soft);
+        border-bottom: 1px solid var(--border-soft);
+        padding: 26px 0;
+        background: var(--bg-elev);
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+      }
+      .marquee-label {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-faint);
+        text-align: center;
+        margin-bottom: 18px;
+      }
+      .marquee-track {
+        display: flex;
+        gap: 60px;
+        width: max-content;
+        animation: scroll-x 26s linear infinite;
+      }
+      @keyframes scroll-x {
+        from {
+          transform: translateX(0);
+        }
+        to {
+          transform: translateX(-50%);
+        }
+      }
+      .marquee-track span {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 1.15rem;
+        color: var(--text-faint);
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .marquee-track span::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--text-faint);
+      }
+
+      /* ---------- SECTION shared ---------- */
+      section {
+        position: relative;
+        z-index: 1;
+      }
+      .section-pad {
+        padding: 120px 0;
+      }
+      .section-head {
+        max-width: 640px;
+        margin-bottom: 64px;
+      }
+      .section-head .tag {
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+        display: inline-block;
+        padding: 5px 0;
+        border-bottom: 2px solid var(--purple);
+        color: var(--purple);
+      }
+      .section-head h2 {
+        font-family: var(--font-display);
+        font-size: clamp(2rem, 3.6vw, 2.9rem);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        line-height: 1.12;
+      }
+      .section-head p {
+        margin-top: 18px;
+        color: var(--text-dim);
+        font-size: 1.05rem;
+      }
+
+      .reveal {
+        opacity: 0;
+        transform: translateY(26px);
+        transition:
+          opacity 0.7s ease,
+          transform 0.7s ease;
+      }
+      .reveal.in {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* ---------- PROBLEMA/SOLUÇÃO ---------- */
+      .ps-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        background: var(--border);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        overflow: hidden;
+      }
+      .ps-col {
+        background: var(--bg-elev);
+        padding: 44px;
+      }
+      .ps-col h3 {
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 20px;
+      }
+      .ps-col.problema h3 {
+        color: var(--red);
+      }
+      .ps-col.solucao h3 {
+        color: var(--green);
+      }
+      .ps-col li {
+        display: flex;
+        gap: 12px;
+        padding: 12px 0;
+        border-top: 1px solid var(--border-soft);
+        color: var(--text-dim);
+        font-size: 0.98rem;
+      }
+      .ps-col li:first-of-type {
+        border-top: none;
+      }
+      .ps-col.problema li::before {
+        content: "✕";
+        color: var(--red);
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .ps-col.solucao li::before {
+        content: "✓";
+        color: var(--green);
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      /* ---------- FEATURES GRID ---------- */
+      .feat-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
+      .feat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 30px;
+        transition:
+          transform 0.25s ease,
+          border-color 0.25s ease,
+          box-shadow 0.25s ease;
+      }
+      .feat-card:hover {
+        transform: translateY(-4px);
+      }
+      .feat-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 22px;
+      }
+      .feat-card h3 {
+        font-family: var(--font-display);
+        font-size: 1.14rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      .feat-card p {
+        color: var(--text-dim);
+        font-size: 0.92rem;
+      }
+      .feat-card .cat {
+        display: inline-block;
+        margin-top: 16px;
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        padding: 4px 10px;
+        border-radius: 100px;
+      }
+
+      .c-blue {
+        color: var(--blue);
+      }
+      .c-green {
+        color: var(--green);
+      }
+      .c-purple {
+        color: var(--purple);
+      }
+      .c-pink {
+        color: var(--pink);
+      }
+      .c-red {
+        color: var(--red);
+      }
+
+      .bg-blue {
+        background: var(--blue-soft);
+        border-color: rgba(41, 121, 255, 0.35) !important;
+      }
+      .bg-green {
+        background: var(--green-soft);
+        border-color: rgba(0, 230, 118, 0.35) !important;
+      }
+      .bg-purple {
+        background: var(--purple-soft);
+        border-color: rgba(157, 59, 255, 0.35) !important;
+      }
+      .bg-pink {
+        background: var(--pink-soft);
+        border-color: rgba(255, 46, 159, 0.35) !important;
+      }
+      .bg-red {
+        background: var(--red-soft);
+        border-color: rgba(255, 23, 68, 0.35) !important;
+      }
+
+      .feat-card.h-blue:hover {
+        border-color: var(--blue);
+        box-shadow: 0 16px 40px -20px rgba(41, 121, 255, 0.45);
+      }
+      .feat-card.h-green:hover {
+        border-color: var(--green);
+        box-shadow: 0 16px 40px -20px rgba(0, 230, 118, 0.45);
+      }
+      .feat-card.h-purple:hover {
+        border-color: var(--purple);
+        box-shadow: 0 16px 40px -20px rgba(157, 59, 255, 0.45);
+      }
+      .feat-card.h-pink:hover {
+        border-color: var(--pink);
+        box-shadow: 0 16px 40px -20px rgba(255, 46, 159, 0.45);
+      }
+      .feat-card.h-red:hover {
+        border-color: var(--red);
+        box-shadow: 0 16px 40px -20px rgba(255, 23, 68, 0.45);
+      }
+
+      /* ---------- FLUXO ---------- */
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0;
+        position: relative;
+      }
+      .flow::before {
+        content: "";
+        position: absolute;
+        top: 23px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          var(--blue),
+          var(--purple),
+          var(--pink),
+          var(--red),
+          var(--green)
+        );
+        opacity: 0.5;
+        z-index: 0;
+      }
+      .flow-step {
+        position: relative;
+        z-index: 1;
+        padding: 0 14px;
+        text-align: left;
+      }
+      .flow-num {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: var(--bg);
+        border: 2px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-mono);
+        font-weight: 600;
+        font-size: 0.92rem;
+        margin-bottom: 22px;
+      }
+      .flow-step:nth-child(1) .flow-num {
+        border-color: var(--blue);
+        color: var(--blue);
+      }
+      .flow-step:nth-child(2) .flow-num {
+        border-color: var(--purple);
+        color: var(--purple);
+      }
+      .flow-step:nth-child(3) .flow-num {
+        border-color: var(--pink);
+        color: var(--pink);
+      }
+      .flow-step:nth-child(4) .flow-num {
+        border-color: var(--red);
+        color: var(--red);
+      }
+      .flow-step:nth-child(5) .flow-num {
+        border-color: var(--green);
+        color: var(--green);
+      }
+      .flow-step h4 {
+        font-family: var(--font-display);
+        font-size: 1.02rem;
+        margin-bottom: 8px;
+      }
+      .flow-step p {
+        font-size: 0.85rem;
+        color: var(--text-dim);
+      }
+
+      /* ---------- PAINÉIS / TABS ---------- */
+      .tabs-wrap {
+        background: var(--bg-elev);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 10px;
+      }
+      .tabs-nav {
+        display: flex;
+        gap: 6px;
+        padding: 8px;
+        flex-wrap: wrap;
+      }
+      .tab-btn {
+        padding: 12px 20px;
+        border-radius: 11px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-dim);
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .tab-btn .sw {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--text-faint);
+      }
+      .tab-btn.active {
+        background: var(--bg-card);
+        color: var(--text);
+      }
+      .tab-btn.active .sw {
+        background: var(--tab-color, var(--pink));
+      }
+      .tab-btn:hover:not(.active) {
+        color: var(--text);
+      }
+
+      .tab-panel {
+        display: none;
+        padding: 36px 30px 30px;
+      }
+      .tab-panel.active {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 44px;
+        align-items: center;
+      }
+      .tab-panel h3 {
+        font-family: var(--font-display);
+        font-size: 1.7rem;
+        margin-bottom: 16px;
+      }
+      .tab-panel p {
+        color: var(--text-dim);
+        margin-bottom: 22px;
+      }
+      .tab-panel ul li {
+        display: flex;
+        gap: 10px;
+        padding: 8px 0;
+        font-size: 0.92rem;
+        color: var(--text-dim);
+      }
+      .tab-panel ul li::before {
+        content: "—";
+        flex-shrink: 0;
+      }
+
+      .mock {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        min-height: 280px;
+      }
+      .mock-top {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 18px;
+      }
+      .mock-top i {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--border);
+      }
+      .mock-line {
+        height: 10px;
+        border-radius: 5px;
+        background: var(--border-soft);
+        margin-bottom: 10px;
+      }
+      .mock-line.w60 {
+        width: 60%;
+      }
+      .mock-line.w40 {
+        width: 40%;
+      }
+      .mock-line.w80 {
+        width: 80%;
+      }
+      .mock-card-sm {
+        border: 1px solid var(--border-soft);
+        border-radius: 10px;
+        padding: 12px;
+        margin-top: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      /* ---------- FINANCEIRO ---------- */
+      .fin-block {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 60px;
+        align-items: center;
+      }
+      .fin-table {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+      }
+      .fin-table-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--border);
+      }
+      .fin-table-head span {
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: var(--text-faint);
+      }
+      .fin-row {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr 1fr;
+        padding: 14px 22px;
+        border-bottom: 1px solid var(--border-soft);
+        font-size: 0.85rem;
+      }
+      .fin-row.head {
+        color: var(--text-faint);
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .fin-row span:nth-child(2) {
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+      }
+      .fin-row span:nth-child(3) {
+        text-align: right;
+        font-family: var(--font-mono);
+        font-weight: 600;
+      }
+      .fin-row span:nth-child(3).pos {
+        color: var(--green);
+      }
+      .fin-download {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 22px;
+        background: var(--bg-elev);
+      }
+
+      .list-check li {
+        display: flex;
+        gap: 12px;
+        padding: 13px 0;
+        border-top: 1px solid var(--border-soft);
+        font-size: 0.96rem;
+        color: var(--text-dim);
+      }
+      .list-check li:first-child {
+        border-top: none;
+      }
+      .list-check li b {
+        color: var(--text);
+      }
+      .list-check .ic {
+        width: 26px;
+        height: 26px;
+        flex-shrink: 0;
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--green-soft);
+        color: var(--green);
+        font-size: 0.75rem;
+        font-weight: 700;
+      }
+
+      /* ---------- DISTRIBUIÇÃO JUSTA banner ---------- */
+      .banner {
+        border-radius: 22px;
+        padding: 64px 56px;
+        background:
+          radial-gradient(
+            circle at 15% 20%,
+            rgba(157, 59, 255, 0.35),
+            transparent 55%
+          ),
+          radial-gradient(
+            circle at 90% 80%,
+            rgba(0, 230, 118, 0.25),
+            transparent 50%
+          ),
+          var(--bg-elev);
+        border: 1px solid var(--border);
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 50px;
+        align-items: center;
+      }
+      .banner h2 {
+        font-family: var(--font-display);
+        font-size: clamp(1.8rem, 3vw, 2.5rem);
+        line-height: 1.15;
+        margin-bottom: 18px;
+      }
+      .banner p {
+        color: var(--text-dim);
+        font-size: 1.02rem;
+        max-width: 480px;
+      }
+      .banner-visual {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .rider-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px 16px;
+      }
+      .rider-row .avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .rider-row .bar-bg {
+        flex: 1;
+        height: 8px;
+        border-radius: 6px;
+        background: var(--border-soft);
+        overflow: hidden;
+      }
+      .rider-row .bar-fill {
+        height: 100%;
+        border-radius: 6px;
+      }
+      .rider-row .pct {
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: var(--text-dim);
+        width: 38px;
+        text-align: right;
+      }
+
+      /* ---------- CTA FINAL ---------- */
+      .cta-final {
+        text-align: center;
+        padding: 100px 0;
+        position: relative;
+      }
+      .cta-final h2 {
+        font-family: var(--font-display);
+        font-size: clamp(2.2rem, 5vw, 3.6rem);
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        line-height: 1.1;
+        max-width: 760px;
+        margin: 0 auto 22px;
+      }
+      .cta-final .grad {
+        background: linear-gradient(
+          90deg,
+          var(--blue),
+          var(--purple),
+          var(--pink),
+          var(--red)
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .cta-final p {
+        color: var(--text-dim);
+        font-size: 1.08rem;
+        max-width: 520px;
+        margin: 0 auto 40px;
+      }
+      .cta-final .hero-ctas {
+        justify-content: center;
+      }
+
+      /* ---------- FOOTER ---------- */
+      footer {
+        border-top: 1px solid var(--border-soft);
+        padding: 60px 0 34px;
+      }
+      .footer-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 40px;
+        flex-wrap: wrap;
+        padding-bottom: 46px;
+      }
+      .footer-brand p {
+        color: var(--text-faint);
+        font-size: 0.9rem;
+        max-width: 280px;
+        margin-top: 14px;
+      }
+      .footer-cols {
+        display: flex;
+        gap: 70px;
+        flex-wrap: wrap;
+      }
+      .footer-col h5 {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-faint);
+        margin-bottom: 16px;
+      }
+      .footer-col a {
+        display: block;
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        padding: 6px 0;
+        transition: color 0.2s;
+      }
+      .footer-col a:hover {
+        color: var(--text);
+      }
+      .footer-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 26px;
+        border-top: 1px solid var(--border-soft);
+        font-size: 0.82rem;
+        color: var(--text-faint);
+        flex-wrap: wrap;
+        gap: 14px;
+      }
+      .footer-bottom .dots {
+        display: flex;
+        gap: 8px;
+      }
+      .footer-bottom .dots i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .footer-bottom .dots i:nth-child(1) {
+        background: var(--blue);
+      }
+      .footer-bottom .dots i:nth-child(2) {
+        background: var(--purple);
+      }
+      .footer-bottom .dots i:nth-child(3) {
+        background: var(--pink);
+      }
+      .footer-bottom .dots i:nth-child(4) {
+        background: var(--red);
+      }
+      .footer-bottom .dots i:nth-child(5) {
+        background: var(--green);
+      }
+
+      /* ---------- RESPONSIVE ---------- */
+      @media (max-width: 980px) {
+        .nav-links,
+        .nav-cta .btn-ghost {
+          display: none;
+        }
+        .burger {
+          display: flex;
+        }
+        .feat-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .ps-grid {
+          grid-template-columns: 1fr;
+        }
+        .flow {
+          grid-template-columns: 1fr;
+          gap: 34px;
+        }
+        .flow::before {
+          display: none;
+        }
+        .tab-panel.active {
+          grid-template-columns: 1fr;
+        }
+        .fin-block {
+          grid-template-columns: 1fr;
+          gap: 36px;
+        }
+        .banner {
+          grid-template-columns: 1fr;
+          padding: 44px 30px;
+        }
+        .hero-bottom-row {
+          align-items: flex-start;
+        }
+      }
+      @media (max-width: 640px) {
+        .feat-grid {
+          grid-template-columns: 1fr;
+        }
+        .footer-cols {
+          gap: 36px;
+        }
+        .speed-lines {
+          display: none;
+        }
+        .hero {
+          padding-top: 150px;
+        }
+      }
+
+      /* mobile nav drawer */
+      .mobile-nav {
+        position: fixed;
+        inset: 72px 0 0 0;
+        background: var(--bg);
+        z-index: 99;
+        padding: 30px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        transform: translateY(-8px);
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.25s ease,
+          transform 0.25s ease;
+      }
+      .mobile-nav.open {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+      .mobile-nav a {
+        padding: 16px 4px;
+        border-bottom: 1px solid var(--border-soft);
+        font-size: 1.05rem;
+        font-weight: 500;
+      }
+      .mobile-nav .btn {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grain-bg" aria-hidden="true"></div>
+
+    <header>
+      <nav class="nav wrap">
+        <a href="#top" class="logo">ENTRE<span class="e2">ENTREGAS</span></a>
+        <ul class="nav-links">
+          <li><a href="#funcionalidades">Funcionalidades</a></li>
+          <li><a href="#como-funciona">Como funciona</a></li>
+          <li><a href="#paineis">Painéis</a></li>
+          <li><a href="#financeiro">Financeiro</a></li>
+        </ul>
+        <div class="nav-cta">
+          <a href="#" class="btn btn-ghost btn-sm">Entrar</a>
+          <a href="#cta-final" class="btn btn-primary btn-sm">Comece agora</a>
+          <button
+            class="burger"
+            id="burgerBtn"
+            aria-label="Abrir menu"
+            aria-expanded="false"
+          >
+            <span></span><span></span><span></span>
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <div class="mobile-nav" id="mobileNav">
+      <a href="#funcionalidades">Funcionalidades</a>
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#paineis">Painéis</a>
+      <a href="#financeiro">Financeiro</a>
+      <a href="#" class="btn btn-primary">Comece agora</a>
+    </div>
+
+    <main id="top">
+      <!-- HERO -->
+      <section class="hero wrap">
+        <span class="eyebrow"
+          ><span class="dot"></span> Plataforma completa de delivery</span
+        >
+
+        <h1 class="hero-lockup">
+          <span class="line1">ENTRE.</span>
+          <span class="line2-wrap">
+            <span class="line2">ENTREGUE.</span>
+            <span class="speed-lines" aria-hidden="true"
+              ><i></i><i></i><i></i><i></i
+            ></span>
+          </span>
+        </h1>
+
+        <p class="hero-sub">
+          O sistema que organiza <b>toda a operação de entrega</b> do seu
+          negócio: pedidos, entregadores, pagamentos e financeiro — em um só
+          lugar, do jeito que o dia a dia da sua loja realmente precisa.
+        </p>
+
+        <div class="hero-ctas">
+          <a href="#cta-final" class="btn btn-primary">Comece agora →</a>
+          <a href="#como-funciona" class="btn btn-ghost">Ver como funciona</a>
+        </div>
+
+        <div class="hero-bottom-row">
+          <div class="mini-stats">
+            <div class="mini-stat c-blue">
+              <b>100%</b><span>operação em um painel só</span>
+            </div>
+            <div class="mini-stat c-green">
+              <b>Auto</b><span>repasse ao entregador</span>
+            </div>
+            <div class="mini-stat c-pink">
+              <b>Live</b><span>rastreamento em tempo real</span>
+            </div>
+          </div>
+
+          <div class="float-card reveal">
+            <div class="fc-head">
+              <span>PAINEL · HOJE</span>
+              <span class="fc-badge">● entregas ativas</span>
+            </div>
+            <div class="fc-row">
+              <span class="lbl">Pedidos em rota</span
+              ><span class="val">12</span>
+            </div>
+            <div class="fc-row">
+              <span class="lbl">Tempo médio</span
+              ><span class="val">24 min</span>
+            </div>
+            <div class="fc-row">
+              <span class="lbl">Repasse do dia</span
+              ><span class="val up">↑ liberado</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- MARQUEE -->
+      <div class="marquee-section">
+        <p class="marquee-label">
+          Integrações prontas para conectar sua operação
+        </p>
+        <div class="marquee-track" aria-hidden="true">
+          <span>iFood</span><span>Pix</span><span>Cartão de crédito</span
+          ><span>Stripe</span><span>Pagar.me</span><span>Boleto</span>
+          <span>iFood</span><span>Pix</span><span>Cartão de crédito</span
+          ><span>Stripe</span><span>Pagar.me</span><span>Boleto</span>
+        </div>
+      </div>
+
+      <!-- PROBLEMA / SOLUÇÃO -->
+      <section class="section-pad wrap">
+        <div class="section-head reveal">
+          <span class="tag">O cenário hoje</span>
+          <h2>Gerenciar entrega virou um quebra-cabeça de vários apps</h2>
+          <p>
+            Planilha para o financeiro, grupo de WhatsApp para os entregadores,
+            um app para receber pedido, outro para rastrear. O EntreEntregas
+            junta tudo isso em um único fluxo.
+          </p>
+        </div>
+
+        <div class="ps-grid reveal">
+          <div class="ps-col problema">
+            <h3>Sem o EntreEntregas</h3>
+            <ul>
+              <li>Entregadores escalados manualmente, sem critério</li>
+              <li>Pagamento de comissão calculado à mão</li>
+              <li>Sem histórico organizado de repasses</li>
+              <li>Cardápio desatualizado em três lugares diferentes</li>
+              <li>Cliente sem visibilidade de onde está o pedido</li>
+            </ul>
+          </div>
+          <div class="ps-col solucao">
+            <h3>Com o EntreEntregas</h3>
+            <ul>
+              <li>Distribuição de corridas automática e balanceada</li>
+              <li>Repasse e comissão calculados pelo sistema</li>
+              <li>Extrato financeiro completo, exportável a qualquer hora</li>
+              <li>Um cardápio único, refletido no site e no painel</li>
+              <li>Rastreamento em tempo real do pedido ao cliente</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- FUNCIONALIDADES -->
+      <section id="funcionalidades" class="section-pad wrap">
+        <div class="section-head reveal">
+          <span class="tag">Funcionalidades</span>
+          <h2>Tudo que a operação de entrega precisa, em um sistema só</h2>
+          <p>
+            Cada área da plataforma tem sua cor — assim fica fácil enxergar onde
+            cada parte da sua operação vive.
+          </p>
+        </div>
+
+        <div class="feat-grid">
+          <div class="feat-card reveal h-blue">
+            <div class="feat-icon bg-blue">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                class="c-blue"
+              >
+                <rect x="1" y="7" width="14" height="10" rx="1.5" />
+                <path d="M15 10h4l3 3v4h-7z" />
+                <circle cx="6" cy="19" r="2" />
+                <circle cx="18" cy="19" r="2" />
+              </svg>
+            </div>
+            <h3>Gestão de entregas</h3>
+            <p>
+              Painel central para acompanhar todos os pedidos em andamento,
+              status de rota e histórico completo.
+            </p>
+            <span class="cat bg-blue c-blue">Operação</span>
+          </div>
+
+          <div class="feat-card reveal h-purple">
+            <div class="feat-icon bg-purple">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                class="c-purple"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"
+                />
+              </svg>
+            </div>
+            <h3>Rastreamento em tempo real</h3>
+            <p>
+              Cliente e loja acompanham a corrida ao vivo, do aceite do
+              entregador até a entrega concluída.
+            </p>
+            <span class="cat bg-purple c-purple">Tecnologia</span>
+          </div>
+
+          <div class="feat-card reveal h-green">
+            <div class="feat-icon bg-green">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                class="c-green"
+              >
+                <rect x="2" y="6" width="20" height="14" rx="2" />
+                <path d="M2 10h20" />
+                <circle cx="6" cy="15" r="1" />
+              </svg>
+            </div>
+            <h3>Pagamentos para entregadores</h3>
+            <p>
+              Repasse automático por corrida, com regras de comissão
+              configuráveis pela sua loja.
+            </p>
+            <span class="cat bg-green c-green">Financeiro</span>
+          </div>
+
+          <div class="feat-card reveal h-green">
+            <div class="feat-icon bg-green">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                class="c-green"
+              >
+                <path d="M4 4h16v16H4z" />
+                <path d="M4 9h16M9 9v11" />
+              </svg>
+            </div>
+            <h3>Área financeira com extrato</h3>
+            <p>
+              Tudo que passou no sistema, organizado por período, com exportação
+              em tabela para download.
+            </p>
+            <span class="cat bg-green c-green">Financeiro</span>
+          </div>
+
+          <div class="feat-card reveal h-pink">
+            <div class="feat-icon bg-pink">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                class="c-pink"
+              >
+                <path
+                  d="M4 19V5a2 2 0 0 1 2-2h8l6 6v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"
+                />
+                <path d="M14 3v6h6" />
+                <path d="M8 13h8M8 17h5" />
+              </svg>
+            </div>
+            <h3>Cardápio personalizado</h3>
+            <p>
+              Monte o cardápio da sua empresa e mantenha ele igual em todos os
+              canais de pedido.
+            </p>
+            <span class="cat bg-pink c-pink">Vendas</span>
+          </div>
+
+          <div class="feat-card reveal h-pink">
+            <div class="feat-icon bg-pink">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                class="c-pink"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M3 9h18M9 21V9" />
+              </svg>
+            </div>
+            <h3>Site de pedidos próprio</h3>
+            <p>
+              Página para o cliente pedir direto do seu cardápio, com sua marca
+              — sem taxa de marketplace.
+            </p>
+            <span class="cat bg-pink c-pink">Vendas</span>
+          </div>
+
+          <div class="feat-card reveal h-red">
+            <div class="feat-icon bg-red">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                class="c-red"
+              >
+                <rect x="6" y="2" width="12" height="20" rx="2" />
+                <path d="M10 18h4" />
+              </svg>
+            </div>
+            <h3>App próprio do entregador</h3>
+            <p>
+              Corridas, rotas e repasses num app dedicado — sem misturar com
+              outras plataformas.
+            </p>
+            <span class="cat bg-red c-red">Entregador</span>
+          </div>
+
+          <div class="feat-card reveal h-purple">
+            <div class="feat-icon bg-purple">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                class="c-purple"
+              >
+                <path d="M9 12l2 2 4-4" />
+                <circle cx="12" cy="12" r="10" />
+              </svg>
+            </div>
+            <h3>Integração com iFood e gateways</h3>
+            <p>
+              Centralize pedidos vindos do iFood e conecte os principais meios
+              de pagamento do mercado.
+            </p>
+            <span class="cat bg-purple c-purple">Tecnologia</span>
+          </div>
+
+          <div class="feat-card reveal h-blue">
+            <div class="feat-icon bg-blue">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                class="c-blue"
+              >
+                <path d="M12 20V10M18 20V4M6 20v-4" />
+              </svg>
+            </div>
+            <h3>Distribuição justa de corridas</h3>
+            <p>
+              Algoritmo que equilibra a fila entre entregadores disponíveis, sem
+              favorecimento.
+            </p>
+            <span class="cat bg-blue c-blue">Operação</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- COMO FUNCIONA -->
+      <section id="como-funciona" class="section-pad wrap">
+        <div class="section-head reveal">
+          <span class="tag">O fluxo</span>
+          <h2>Do pedido à entrega, em cinco passos claros</h2>
+          <p>
+            Um fluxo organizado do início ao fim — pensado pra reduzir erro
+            manual e acelerar cada etapa.
+          </p>
+        </div>
+
+        <div class="flow reveal">
+          <div class="flow-step">
+            <div class="flow-num">01</div>
+            <h4>Pedido entra</h4>
+            <p>Pelo site próprio, iFood ou lançado manualmente na loja.</p>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">02</div>
+            <h4>Sistema distribui</h4>
+            <p>
+              A corrida é oferecida de forma justa aos entregadores disponíveis.
+            </p>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">03</div>
+            <h4>Entregador aceita</h4>
+            <p>
+              Rota, endereço e detalhes do pedido chegam no app do entregador.
+            </p>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">04</div>
+            <h4>Cliente acompanha</h4>
+            <p>Rastreamento em tempo real até a chegada do pedido.</p>
+          </div>
+          <div class="flow-step">
+            <div class="flow-num">05</div>
+            <h4>Repasse é liberado</h4>
+            <p>Comissão calculada e lançada automaticamente no extrato.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAINÉIS -->
+      <section id="paineis" class="section-pad wrap">
+        <div class="section-head reveal">
+          <span class="tag">Três frentes, um sistema</span>
+          <h2>Um painel pra cada quem — conectados entre si</h2>
+          <p>
+            Loja, entregador e cliente enxergam exatamente o que precisam, sem
+            se atrapalhar.
+          </p>
+        </div>
+
+        <div class="tabs-wrap reveal">
+          <div class="tabs-nav" role="tablist">
+            <button
+              class="tab-btn active"
+              style="--tab-color: var(--blue)"
+              data-tab="loja"
+              role="tab"
+              aria-selected="true"
+            >
+              <span class="sw"></span>Painel da loja
+            </button>
+            <button
+              class="tab-btn"
+              style="--tab-color: var(--red)"
+              data-tab="entregador"
+              role="tab"
+              aria-selected="false"
+            >
+              <span class="sw"></span>App do entregador
+            </button>
+            <button
+              class="tab-btn"
+              style="--tab-color: var(--pink)"
+              data-tab="site"
+              role="tab"
+              aria-selected="false"
+            >
+              <span class="sw"></span>Site de pedidos
+            </button>
+          </div>
+
+          <div class="tab-panel active" data-panel="loja">
+            <div>
+              <h3>Visão completa da operação</h3>
+              <p>
+                Do primeiro pedido do dia ao fechamento do caixa: acompanhe
+                pedidos, entregadores em rota e financeiro sem sair de uma tela.
+              </p>
+              <ul>
+                <li>Pedidos em tempo real, por status</li>
+                <li>Cardápio e preços centralizados</li>
+                <li>Extrato e repasses sempre à vista</li>
+              </ul>
+            </div>
+            <div class="mock">
+              <div class="mock-top"><i></i><i></i><i></i></div>
+              <div class="mock-line w80"></div>
+              <div class="mock-line w60"></div>
+              <div class="mock-line w40"></div>
+              <div class="mock-card-sm">
+                <span style="font-size: 0.82rem; color: var(--text-dim)"
+                  >Pedido #2291</span
+                ><span
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 0.78rem;
+                    color: var(--blue);
+                  "
+                  >em rota</span
+                >
+              </div>
+              <div class="mock-card-sm">
+                <span style="font-size: 0.82rem; color: var(--text-dim)"
+                  >Pedido #2290</span
+                ><span
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 0.78rem;
+                    color: var(--green);
+                  "
+                  >entregue</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-panel="entregador">
+            <div>
+              <h3>Feito pra rua, não pra escritório</h3>
+              <p>
+                Interface direta: corrida oferecida, rota até o cliente e o
+                repasse caindo — sem depender de app de terceiro.
+              </p>
+              <ul>
+                <li>Corridas oferecidas por proximidade e fila justa</li>
+                <li>Navegação até endereço de entrega</li>
+                <li>Ganhos do dia sempre visíveis</li>
+              </ul>
+            </div>
+            <div class="mock">
+              <div class="mock-top"><i></i><i></i><i></i></div>
+              <div class="mock-line w60"></div>
+              <div class="mock-card-sm">
+                <span style="font-size: 0.82rem; color: var(--text-dim)"
+                  >Nova corrida</span
+                ><span
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 0.78rem;
+                    color: var(--red);
+                  "
+                  >2.4 km</span
+                >
+              </div>
+              <div class="mock-card-sm">
+                <span style="font-size: 0.82rem; color: var(--text-dim)"
+                  >Ganhos hoje</span
+                ><span
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 0.78rem;
+                    color: var(--green);
+                  "
+                  >liberado</span
+                >
+              </div>
+              <div class="mock-line w40" style="margin-top: 14px"></div>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-panel="site">
+            <div>
+              <h3>Sua marca, seu cardápio, seus pedidos</h3>
+              <p>
+                Uma página de pedidos com a cara da sua loja, sem taxa de
+                marketplace, pronta pra usar em ações de marketing próprias.
+              </p>
+              <ul>
+                <li>Cardápio sempre sincronizado com o painel</li>
+                <li>Checkout direto, sem intermediário</li>
+                <li>Pedido manual também pode ser lançado pela loja</li>
+              </ul>
+            </div>
+            <div class="mock">
+              <div class="mock-top"><i></i><i></i><i></i></div>
+              <div class="mock-line w80"></div>
+              <div class="mock-card-sm">
+                <span style="font-size: 0.82rem; color: var(--text-dim)"
+                  >Combo do dia</span
+                ><span
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 0.78rem;
+                    color: var(--pink);
+                  "
+                  >R$ 39,90</span
+                >
+              </div>
+              <div class="mock-card-sm">
+                <span style="font-size: 0.82rem; color: var(--text-dim)"
+                  >Adicionar ao pedido</span
+                ><span
+                  style="
+                    font-family: var(--font-mono);
+                    font-size: 0.78rem;
+                    color: var(--text-dim);
+                  "
+                  >＋</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FINANCEIRO -->
+      <section id="financeiro" class="section-pad wrap">
+        <div class="fin-block">
+          <div class="reveal">
+            <span
+              class="tag"
+              style="border-color: var(--green); color: var(--green)"
+              >Área financeira</span
+            >
+            <h2
+              style="
+                font-family: var(--font-display);
+                font-size: clamp(1.9rem, 3vw, 2.5rem);
+                margin: 16px 0 22px;
+                line-height: 1.15;
+              "
+            >
+              Todo real que passou pelo sistema, com extrato pronto pra baixar
+            </h2>
+            <ul class="list-check">
+              <li>
+                <span class="ic">✓</span
+                ><span
+                  ><b>Extrato completo</b> por dia, entregador ou forma de
+                  pagamento.</span
+                >
+              </li>
+              <li>
+                <span class="ic">✓</span
+                ><span
+                  ><b>Exportação em tabela</b>, pronta para abrir em
+                  planilha.</span
+                >
+              </li>
+              <li>
+                <span class="ic">✓</span
+                ><span
+                  ><b>Repasses automáticos</b> calculados junto com a comissão
+                  da loja.</span
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div class="reveal fin-table">
+            <div class="fin-table-head">
+              <span>EXTRATO · JULHO 2026</span>
+              <button class="btn btn-ghost btn-sm">Exportar ↓</button>
+            </div>
+            <div class="fin-row head">
+              <span>Descrição</span><span>Data</span><span>Valor</span>
+            </div>
+            <div class="fin-row">
+              <span>Repasse — entregador #14</span><span>21/07</span
+              ><span class="pos">+ R$ 182,40</span>
+            </div>
+            <div class="fin-row">
+              <span>Pedido site próprio #8831</span><span>21/07</span
+              ><span class="pos">+ R$ 64,90</span>
+            </div>
+            <div class="fin-row">
+              <span>Comissão iFood #8829</span><span>20/07</span
+              ><span class="pos">+ R$ 47,10</span>
+            </div>
+            <div class="fin-download">
+              <span style="font-size: 0.82rem; color: var(--text-faint)"
+                >arquivo .xlsx / .csv</span
+              >
+              <span
+                style="
+                  font-family: var(--font-mono);
+                  font-size: 0.8rem;
+                  color: var(--green);
+                "
+                >pronto para download</span
+              >
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DISTRIBUIÇÃO JUSTA -->
+      <section class="section-pad wrap">
+        <div class="banner reveal">
+          <div>
+            <h2>
+              Distribuição de corridas <span class="c-green">justa</span>, de
+              verdade.
+            </h2>
+            <p>
+              O sistema equilibra a fila entre os entregadores disponíveis,
+              evitando concentração de corridas e mantendo o time engajado.
+            </p>
+            <a
+              href="#cta-final"
+              class="btn btn-primary"
+              style="margin-top: 26px"
+              >Comece agora →</a
+            >
+          </div>
+          <div class="banner-visual">
+            <div class="rider-row">
+              <div class="avatar" style="background: var(--blue)"></div>
+              <div class="bar-bg">
+                <div
+                  class="bar-fill"
+                  style="width: 82%; background: var(--blue)"
+                ></div>
+              </div>
+              <span class="pct">82%</span>
+            </div>
+            <div class="rider-row">
+              <div class="avatar" style="background: var(--purple)"></div>
+              <div class="bar-bg">
+                <div
+                  class="bar-fill"
+                  style="width: 76%; background: var(--purple)"
+                ></div>
+              </div>
+              <span class="pct">76%</span>
+            </div>
+            <div class="rider-row">
+              <div class="avatar" style="background: var(--pink)"></div>
+              <div class="bar-bg">
+                <div
+                  class="bar-fill"
+                  style="width: 79%; background: var(--pink)"
+                ></div>
+              </div>
+              <span class="pct">79%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA FINAL -->
+      <section id="cta-final" class="cta-final wrap">
+        <h2>Coloque sua entrega pra <span class="grad">rodar</span> hoje.</h2>
+        <p>
+          Gestão, pagamentos, financeiro e cardápio — sua operação de delivery
+          inteira, organizada em um sistema só.
+        </p>
+        <div class="hero-ctas">
+          <a href="#" class="btn btn-primary">Comece agora →</a>
+          <a href="#" class="btn btn-ghost">Falar com a equipe</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <div class="footer-top">
+          <div class="footer-brand">
+            <a href="#top" class="logo"
+              >ENTRE<span class="e2">ENTREGAS</span></a
+            >
+            <p>
+              Plataforma completa de gestão de entregas: operação, pagamentos,
+              financeiro e cardápio em um só lugar.
+            </p>
+          </div>
+          <div class="footer-cols">
+            <div class="footer-col">
+              <h5>Plataforma</h5>
+              <a href="#funcionalidades">Funcionalidades</a>
+              <a href="#como-funciona">Como funciona</a>
+              <a href="#paineis">Painéis</a>
+              <a href="#financeiro">Financeiro</a>
+            </div>
+            <div class="footer-col">
+              <h5>Público</h5>
+              <a href="#">Lojistas e comerciantes</a>
+              <a href="#">Entregadores</a>
+              <a href="#">Mototáxi &amp; transporte</a>
+            </div>
+            <div class="footer-col">
+              <h5>Contato</h5>
+              <a href="#">Fale com a equipe</a>
+              <a href="#">Suporte</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>© 2026 EntreEntregas. Todos os direitos reservados.</span>
+          <div class="dots" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // mobile nav
+      const burger = document.getElementById("burgerBtn");
+      const mobileNav = document.getElementById("mobileNav");
+      burger.addEventListener("click", () => {
+        const open = mobileNav.classList.toggle("open");
+        burger.setAttribute("aria-expanded", open);
+      });
+      mobileNav.querySelectorAll("a").forEach((a) =>
+        a.addEventListener("click", () => {
+          mobileNav.classList.remove("open");
+          burger.setAttribute("aria-expanded", false);
+        }),
+      );
+
+      // scroll reveal
+      const revealEls = document.querySelectorAll(".reveal");
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("in");
+              io.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.12 },
+      );
+      revealEls.forEach((el) => io.observe(el));
+
+      // tabs
+      const tabBtns = document.querySelectorAll(".tab-btn");
+      const tabPanels = document.querySelectorAll(".tab-panel");
+      tabBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          tabBtns.forEach((b) => {
+            b.classList.remove("active");
+            b.setAttribute("aria-selected", "false");
+          });
+          tabPanels.forEach((p) => p.classList.remove("active"));
+          btn.classList.add("active");
+          btn.setAttribute("aria-selected", "true");
+          document
+            .querySelector('.tab-panel[data-panel="' + btn.dataset.tab + '"]')
+            .classList.add("active");
+        });
+      });
+
+      // header shadow on scroll
+      const header = document.querySelector("header");
+      window.addEventListener("scroll", () => {
+        header.style.borderBottomColor =
+          window.scrollY > 20 ? "rgba(255,255,255,.08)" : "var(--border-soft)";
+      });
+    </script>
+  </body>
+</html>

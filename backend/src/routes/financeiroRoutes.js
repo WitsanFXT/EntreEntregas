@@ -8,15 +8,7 @@ const permissao = require("../middleware/permissao");
 
 const { resumo, extrato } = require("../controllers/financeiroController");
 
-router.get(
-  "/resumo",
-
-  auth,
-
-  permissao("entregador"),
-
-  resumo,
-);
+router.get("/entregador/resumo", auth, permissao("entregador"), resumo);
 
 router.get(
   "/extrato",

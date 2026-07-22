@@ -382,6 +382,12 @@ exports.confirmarEntrega = async (req, res) => {
 
     const valorEntrega = Number(entrega.valor || 0);
 
+    console.log("========== ENTREGA ==========");
+    console.log("Entrega ID:", entrega.id);
+    console.log("Entregador ID:", entrega.entregador_id);
+    console.log("Valor:", valorEntrega);
+    console.log("=============================");
+
     const { error: updateError } = await supabase
       .from("entregas")
       .update({
@@ -407,6 +413,8 @@ exports.confirmarEntrega = async (req, res) => {
         descricao: `Entrega ${entrega.bairro}`,
       });
 
+    console.log("ERRO EXTRATO:", erroExtrato);
+
     if (erroExtrato) {
       console.log(
         "Erro ao inserir extrato (entrega já finalizada):",
@@ -430,6 +438,8 @@ exports.confirmarEntrega = async (req, res) => {
         saldo: Number(entregador?.saldo || 0) + valorEntrega,
       })
       .eq("id", entrega.entregador_id);
+
+    console.log("ERRO SALDO:", erroSaldo);
 
     if (erroSaldo) {
       console.log("Erro ao atualizar saldo:", erroSaldo);

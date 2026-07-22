@@ -1653,3 +1653,15 @@ button {
 .painel-operacional.recolhido {
   transform: translateY(75%);
 }
+
+#codigoEntrega {
+  background: linear-gradient(135deg, #2c2b2a86, #000000cb);
+  box-shadow: 0 4px 10px rgba(30, 41, 59, 0.28);
+  border: 1px solid var(--cor-borda);
+  color: var(--cor-texto);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.78rem;
+  align-items: center;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}

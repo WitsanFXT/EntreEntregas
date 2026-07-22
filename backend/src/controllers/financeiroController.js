@@ -1,229 +1,130 @@
-const supabase =
-require("../config/supabase");
-
-
+const supabase = require("../config/supabase");
 
 // =====================================
 // RESUMO FINANCEIRO
 // =====================================
 
-exports.resumo = async(req,res)=>{
+exports.resumo = async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
 
-try{
+    const { data: entregador } = await supabase
 
-const usuarioId =
-req.usuario.id;
+      .from("entregadores")
 
+      .select("*")
 
+      .eq("usuario_id", usuarioId)
 
-const { data:entregador } =
-await supabase
+      .single();
 
-.from("entregadores")
+    if (!entregador) {
+      return res.status(404).json({
+        message: "Entregador não encontrado",
+      });
+    }
 
-.select("*")
+    const hoje = new Date();
 
-.eq(
-"usuario_id",
-usuarioId
-)
+    hoje.setHours(0, 0, 0, 0);
 
-.single();
+    const semana = new Date();
 
+    semana.setDate(semana.getDate() - 7);
 
+    const mes = new Date();
 
-if(!entregador){
+    mes.setDate(mes.getDate() - 30);
 
-return res.status(404).json({
+    // HOJE
 
-message:"Entregador não encontrado"
+    const { data: ganhosHoje } = await supabase
 
-});
+      .from("extrato_entregadores")
 
-}
+      .select("valor")
 
+      .eq("entregador_id", entregador.id)
 
+      .gte("created_at", hoje.toISOString());
 
-const hoje =
-new Date();
+    // SEMANA
 
-hoje.setHours(0,0,0,0);
+    const { data: ganhosSemana } = await supabase
 
+      .from("extrato_entregadores")
 
+      .select("valor")
 
-const semana =
-new Date();
+      .eq("entregador_id", entregador.id)
 
-semana.setDate(
-semana.getDate() - 7
-);
+      .gte("created_at", semana.toISOString());
 
+    // MES
 
+    const { data: ganhosMes } = await supabase
 
-const mes =
-new Date();
+      .from("extrato_entregadores")
 
-mes.setDate(
-mes.getDate() - 30
-);
+      .select("valor")
 
+      .eq("entregador_id", entregador.id)
 
+      .gte("created_at", mes.toISOString());
 
-// HOJE
+    const soma = (arr) =>
+      arr.reduce(
+        (total, item) => total + Number(item.valor),
 
-const { data:ganhosHoje } =
-await supabase
+        0,
+      );
 
-.from("extrato_entregadores")
+    return res.json({
+      hoje: soma(ganhosHoje || []),
 
-.select("valor")
+      semana: soma(ganhosSemana || []),
 
-.eq(
-"entregador_id",
-entregador.id
-)
+      mes: soma(ganhosMes || []),
 
-.gte(
-"created_at",
-hoje.toISOString()
-);
+      saldo: Number(entregador.saldo || 0),
+    });
+  } catch (error) {
+    console.log("ERRO RESUMO:", error);
 
-
-
-// SEMANA
-
-const { data:ganhosSemana } =
-await supabase
-
-.from("extrato_entregadores")
-
-.select("valor")
-
-.eq(
-"entregador_id",
-entregador.id
-)
-
-.gte(
-"created_at",
-semana.toISOString()
-);
-
-
-
-// MES
-
-const { data:ganhosMes } =
-await supabase
-
-.from("extrato_entregadores")
-
-.select("valor")
-
-.eq(
-"entregador_id",
-entregador.id
-)
-
-.gte(
-"created_at",
-mes.toISOString()
-);
-
-
-
-const soma = arr =>
-
-arr.reduce(
-
-(total,item)=>
-
-total + Number(item.valor),
-
-0
-
-);
-
-
-
-return res.json({
-
-hoje:
-soma(ganhosHoje || []),
-
-semana:
-soma(ganhosSemana || []),
-
-mes:
-soma(ganhosMes || []),
-
-saldo:
-Number(entregador.saldo || 0)
-
-});
-
-
-
-}catch(error){
-
-console.log(error);
-
-return res.status(500).json({
-
-message:"Erro interno"
-
-});
-
-}
-
+    return res.status(500).json({
+      message: "Erro interno",
+      error: error.message,
+      stack: error.stack,
+    });
+  }
 };
-
-
 
 // =====================================
 // EXTRATO
 // =====================================
 
-exports.extrato = async(req,res)=>{
+exports.extrato = async (req, res) => {
+  try {
+    const usuarioId = req.usuario.id;
 
-try{
+    const { data: entregador } = await supabase
 
-const usuarioId =
-req.usuario.id;
+      .from("entregadores")
 
+      .select("id")
 
+      .eq("usuario_id", usuarioId)
 
-const { data:entregador } =
-await supabase
+      .single();
 
-.from("entregadores")
+    const { inicio, fim, periodo } = req.query;
 
-.select("id")
+    let query = supabase
 
-.eq(
-"usuario_id",
-usuarioId
-)
+      .from("extrato_entregadores")
 
-.single();
-
-
-
-const {
-inicio,
-fim,
-periodo
-}=req.query;
-
-
-
-let query =
-
-supabase
-
-.from("extrato_entregadores")
-
-.select(`
+      .select(
+        `
 id,
 valor,
 descricao,
@@ -231,107 +132,51 @@ bairro,
 cliente_nome,
 tipo,
 created_at
-`)
+`,
+      )
 
-.eq(
-"entregador_id",
-entregador.id
-)
+      .eq("entregador_id", entregador.id)
 
-.order(
-"created_at",
-{
-ascending:false
-}
-);
+      .order("created_at", {
+        ascending: false,
+      });
 
+    const agora = new Date();
 
-const agora = new Date();
+    if (periodo === "hoje") {
+      agora.setHours(0, 0, 0, 0);
 
+      query = query.gte("created_at", agora.toISOString());
+    }
 
-if(periodo==="hoje"){
+    if (periodo === "30") {
+      const data30 = new Date();
 
-agora.setHours(0,0,0,0);
+      data30.setDate(data30.getDate() - 30);
 
-query =
-query.gte(
-"created_at",
-agora.toISOString()
-);
+      query = query.gte("created_at", data30.toISOString());
+    }
 
-}
+    if (inicio) {
+      query = query.gte("created_at", inicio);
+    }
 
+    if (fim) {
+      query = query.lte("created_at", fim);
+    }
 
+    const { data, error } = await query;
 
-if(periodo==="30"){
+    if (error) {
+      return res.status(400).json(error);
+    }
 
-const data30 =
-new Date();
+    return res.json(data);
+  } catch (error) {
+    console.log(error);
 
-data30.setDate(
-data30.getDate()-30
-);
-
-
-query =
-query.gte(
-"created_at",
-data30.toISOString()
-);
-
-}
-
-if(inicio){
-
-query =
-query.gte(
-"created_at",
-inicio
-);
-
-}
-
-
-
-if(fim){
-
-query =
-query.lte(
-"created_at",
-fim
-);
-
-}
-
-
-
-const { data,error } =
-await query;
-
-
-
-if(error){
-
-return res.status(400).json(error);
-
-}
-
-
-
-return res.json(data);
-
-
-
-}catch(error){
-
-console.log(error);
-
-return res.status(500).json({
-
-message:"Erro interno"
-
-});
-
-}
-
+    return res.status(500).json({
+      message: "Erro interno",
+    });
+  }
 };

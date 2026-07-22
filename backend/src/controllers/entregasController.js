@@ -333,6 +333,19 @@ exports.finalizarEntrega = async (req, res) => {
       return res.status(400).json({ message: "Erro ao finalizar entrega." });
     }
 
+    // 🔥 Atualiza o pedido vinculado a essa entrega
+    const { error: erroPedido } = await supabase
+      .from("pedidos")
+      .update({
+        status: "entregue",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("entrega_id", entregaId);
+
+    if (erroPedido) {
+      console.log("Erro ao atualizar status do pedido:", erroPedido);
+    }
+
     const { error: erroExtrato } = await supabase
       .from("extrato_entregadores")
       .insert({
