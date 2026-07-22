@@ -19,8 +19,9 @@ const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
 
 const headers = {
   Authorization: `Bearer ${token}`,
-};
 
+  "Content-Type": "application/json",
+};
 // =========================================================
 // SUPABASE REALTIME (substitui o Socket.IO)
 // =========================================================
@@ -729,6 +730,42 @@ function criarCardEntrega(entrega) {
 // ENTREGA ATUAL (tela Início) — a corrida em andamento agora
 // =========================================================
 
+async function confirmarRetirada(id) {
+  try {
+    const codigo = document.getElementById("codigoRetirada").value;
+
+    const response = await fetch(
+      `${API}/api/entregador/entrega/${id}/confirmar-retirada`,
+      {
+        method: "POST",
+
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          codigo,
+        }),
+      },
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      toast(data.message, "erro");
+      return;
+    }
+
+    toast("Pedido retirado", "sucesso");
+
+    carregarListaEntregas();
+    carregarEntregaAtualInicio();
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 async function carregarEntregaAtualInicio() {
   try {
     const response = await fetch(`${API}/api/entregas/minhas`, { headers });
@@ -738,9 +775,8 @@ async function carregarEntregaAtualInicio() {
       ? resposta
       : resposta.entregas || [];
     const ativas = entregas.filter(
-      (e) => e.status === "aceita" || e.status === "retirada",
+      (e) => e.status === "aceita" || e.status === "em_rota",
     );
-
     quantidadeEntregasAtivas = ativas.length;
 
     const container = document.getElementById("cardEntregaAtualInicio");
@@ -777,83 +813,189 @@ async function carregarEntregaAtualInicio() {
 
   <div class="entrega-atual-topo">
       <span class="entrega-atual-status">
-          ${emColeta ? "🟡 Aguardando coleta" : "🟢 Em rota"}
+          ${
+            principal.status === "aceita"
+              ? "🟡 Aguardando coleta"
+              : "🟢 Em rota"
+          }
       </span>
   </div>
 
+
   <div class="destino-atual">
+
     <span class="tipo-destino">
-      ${emColeta ? "📦 Coleta" : "🏠 Entrega"}
+      ${principal.status === "aceita" ? "📦 Coleta" : "🏠 Entrega"}
     </span>
+
 
     <h3>${nomeDestino}</h3>
 
+
     ${montarBlocoEndereco(enderecoDestino)}
+
   </div>
+
 
   <p class="entrega-atual-valor">
       💰 R$ ${Number(principal.valor || 0).toFixed(2)}
   </p>
 
+
+
   <div class="entrega-atual-botoes">
+
 
     ${
       principal.status === "aceita"
         ? `
-          <div class="acoes-principais">
-            <button
-              class="btn-retirar"
-              data-acao="retirar"
-              data-id="${principal.id}">
-              📦 Retirei pedido
-            </button>
-          </div>
+<div class="acoes-principais">
 
-          <div class="acoes-navegacao">
-            ${
-              principal.empresas?.latitude && principal.empresas?.longitude
-                ? `
-                  <button
-                    class="btn-mapa"
-                    data-acao="navegar"
-                    data-lat="${principal.empresas.latitude}"
-                    data-lng="${principal.empresas.longitude}">
-                    📦 Ir para coleta
-                  </button>
-                `
-                : ""
-            }
-          </div>
-        `
-        : `
-          <div class="acoes-principais">
-            <button
-              class="btn-finalizar"
-              data-acao="finalizar"
-              data-id="${principal.id}">
-              ✅ Finalizar
-            </button>
-          </div>
 
-          <div class="acoes-navegacao">
-            ${
-              principal.latitude && principal.longitude
-                ? `
-                  <button
-                    class="btn-mapa"
-                    data-acao="navegar"
-                    data-lat="${principal.latitude}"
-                    data-lng="${principal.longitude}">
-                    🏠 Ir para entrega
-                  </button>
-                `
-                : ""
-            }
-          </div>
-        `
-    }
+  <div class="confirmacao-retirada">
+
+
+      <p>
+        Código retirada:
+        <strong>
+          ${principal.codigo_retirada || ""}
+        </strong>
+      </p>
+
+
+
+      <input
+        type="text"
+        id="codigoRetirada"
+        placeholder="Código da retirada"
+      >
+
+
+
+      <button
+        class="btn-retirar"
+        data-acao="retirar"
+        data-id="${principal.id}">
+
+        📦 Confirmar retirada
+
+      </button>
+
 
   </div>
+
+
+</div>
+
+
+
+<div class="acoes-navegacao">
+
+${
+  principal.empresas?.latitude && principal.empresas?.longitude
+    ? `
+
+<button
+
+class="btn-mapa"
+
+data-acao="navegar"
+
+data-lat="${principal.empresas.latitude}"
+
+data-lng="${principal.empresas.longitude}">
+
+📦 Ir para coleta
+
+</button>
+
+`
+    : ""
+}
+
+
+</div>
+
+`
+        : `
+
+<div class="acoes-principais">
+
+
+<div class="confirmacao-entrega">
+
+<p>
+Código entrega:
+<strong>
+${principal.codigo_entrega || ""}
+</strong>
+</p>
+
+
+<input
+type="text"
+id="codigoEntrega"
+placeholder="Código do cliente"
+/>
+
+
+<button
+class="btn-finalizar"
+data-acao="confirmar"
+data-id="${principal.id}">
+✅ Confirmar entrega
+</button>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+<div class="acoes-navegacao">
+
+
+${
+  principal.latitude && principal.longitude
+    ? `
+
+<button
+
+class="btn-mapa"
+
+data-acao="navegar"
+
+data-lat="${principal.latitude}"
+
+data-lng="${principal.longitude}">
+
+
+🏠 Ir para entrega
+
+
+</button>
+
+
+`
+    : ""
+}
+
+
+</div>
+
+
+
+`
+    }
+
+
+  </div>
+
 
 </div>
 `;
@@ -863,8 +1005,8 @@ async function carregarEntregaAtualInicio() {
     container.querySelectorAll("[data-acao='retirar']").forEach((btn) => {
       btn.onclick = () => retirarEntrega(btn.dataset.id);
     });
-    container.querySelectorAll("[data-acao='finalizar']").forEach((btn) => {
-      btn.onclick = () => finalizarEntrega(btn.dataset.id);
+    container.querySelectorAll("[data-acao='confirmar']").forEach((btn) => {
+      btn.onclick = () => confirmarEntrega(btn.dataset.id);
     });
     container.querySelectorAll("[data-acao='navegar']").forEach((btn) => {
       btn.onclick = () => {
@@ -885,38 +1027,30 @@ async function carregarEntregaAtualInicio() {
 
 async function confirmarEntrega(id) {
   try {
-    const codigo = document.getElementById(`codigo-${id}`).value;
+    const codigo = document.getElementById("codigoEntrega").value;
 
     const response = await fetch(
       `${API}/api/entregador/${id}/confirmar-entrega`,
       {
         method: "POST",
-        headers,
+
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+
         body: JSON.stringify({
-          codigo,
+          codigo: codigo,
         }),
       },
     );
 
     const data = await response.json();
 
-    mostrarToast(data.message);
+    toast(data.message, response.ok ? "sucesso" : "erro");
 
-    carregarMinhasEntregas();
-
-    if (!response.ok) {
-      toast(data.message || "Essa entrega não está mais disponível.", "erro");
-      fecharModalEntrega();
-      carregarListaEntregas();
-      carregarEntregaAtualInicio();
-      return;
-    }
-
-    toast(data.message || "Entrega aceita", "sucesso");
-
-    fecharModalEntrega();
-    carregarListaEntregas();
     carregarEntregaAtualInicio();
+    carregarMinhasEntregas();
   } catch (error) {
     console.log(error);
   }
@@ -924,9 +1058,11 @@ async function confirmarEntrega(id) {
 
 async function aceitarEntrega(id) {
   try {
-    const response = await fetch(`${API}/api/entregador/${id}/aceitar`, {
-      method: "POST",
-      headers,
+    const response = await fetch(`/api/entregas/${id}/aceitar`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     const data = await response.json();
@@ -946,6 +1082,18 @@ async function aceitarEntrega(id) {
   }
 }
 
+async function carregarMinhasEntregas() {
+  try {
+    const response = await api.get("/entregas/minhas");
+
+    console.log("Minhas entregas:", response.data);
+
+    renderizarEntregas(response.data);
+  } catch (error) {
+    console.log("Erro ao carregar entregas:", error);
+  }
+}
+
 async function retirarEntrega(id) {
   try {
     const response = await fetch(`${API}/api/entregas/${id}/retirar`, {
@@ -953,6 +1101,12 @@ async function retirarEntrega(id) {
       headers,
     });
     const data = await response.json();
+
+    if (data.codigo_entrega) {
+      alert(
+        `Código da entrega: ${data.codigo_entrega}\n\nMostre este código ao cliente.`,
+      );
+    }
 
     toast(
       data.message || (response.ok ? "Pedido retirado" : "Erro ao retirar"),
@@ -966,26 +1120,36 @@ async function retirarEntrega(id) {
   }
 }
 
-async function finalizarEntrega(id) {
-  try {
-    const response = await fetch(`${API}/api/entregas/${id}/finalizar`, {
-      method: "PUT",
-      headers,
-    });
-    const data = await response.json();
+async function confirmarEntrega(id) {
+  const input = document.getElementById("codigoEntrega");
 
-    toast(
-      data.message ||
-        (response.ok ? "Entrega finalizada" : "Erro ao finalizar"),
-      response.ok ? "sucesso" : "erro",
-    );
-
-    carregarListaEntregas();
-    carregarEntregaAtualInicio();
-    carregarFinanceiro();
-  } catch (error) {
-    console.log(error);
+  if (!input) {
+    console.log("Campo codigoEntrega não encontrado");
+    return;
   }
+
+  const codigo = input.value;
+
+  const response = await fetch(
+    `${API}/api/entregador/entrega/${id}/confirmar-entrega`,
+    {
+      method: "POST",
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        codigo,
+      }),
+    },
+  );
+
+  const data = await response.json();
+
+  toast(data.message, response.ok ? "sucesso" : "erro");
+
+  carregarEntregaAtualInicio();
+  carregarMinhasEntregas();
 }
 
 // =========================================================

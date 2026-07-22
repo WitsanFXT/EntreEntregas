@@ -2,170 +2,126 @@ const express = require("express");
 
 const router = express.Router();
 
+const auth = require("../middleware/auth");
 
-const auth =
-require("../middleware/auth");
+const permissao = require("../middleware/permissao");
 
-
-const permissao =
-require("../middleware/permissao");
-
-
+// ============================================
+// CONTROLLER DE ENTREGAS
+// src/controllers/entregasController.js
+// ============================================
 
 const {
-
-criarEntrega,
-listarEntregasEmpresa,
-listarEntregasEntregador,
-listarMinhasEntregas,
-dashboardEntregador,
-aceitarEntrega,
-recusarEntrega,
-retirarEntrega,
-finalizarEntrega
-
+  criarEntrega,
+  listarEntregasEmpresa,
+  listarEntregasEntregador,
+  listarMinhasEntregas,
+  dashboardEntregador,
+  aceitarEntrega,
+  recusarEntrega,
+  retirarEntrega,
+  finalizarEntrega,
 } = require("../controllers/entregasController");
 
+// ============================================
+// CONTROLLER ENTREGADOR
+// src/controllers/entregadorController.js
+// ============================================
 
+const { confirmarEntrega } = require("../controllers/entregadorController");
 
-
-
-
-
-
-// ==================================
+// =====================================================
 // EMPRESA CRIA ENTREGA
 // POST /api/entregas
-// ==================================
+// =====================================================
 
-router.post(
+router.post("/", auth, permissao("empresa"), criarEntrega);
 
-"/",
-
-auth,
-
-permissao("empresa"),
-
-criarEntrega
-
-);
-
-
-
-
-
-
-// ==================================
-// EMPRESA LISTA ENTREGAS
+// =====================================================
+// EMPRESA LISTA SUAS ENTREGAS
 // GET /api/entregas/empresa
-// ==================================
+// =====================================================
 
-router.get(
+router.get("/empresa", auth, permissao("empresa"), listarEntregasEmpresa);
 
-"/empresa",
-
-auth,
-
-permissao("empresa"),
-
-listarEntregasEmpresa
-
-);
-
-
-
-
-
-
-
-// ==================================
-// ENTREGADOR BUSCA DISPONÍVEIS
+// =====================================================
+// ENTREGADOR BUSCA ENTREGAS DISPONÍVEIS
 // GET /api/entregas/disponiveis
-// ==================================
+// =====================================================
 
 router.get(
-
-"/disponiveis",
-
-auth,
-
-permissao("entregador"),
-
-listarEntregasEntregador
-
+  "/disponiveis",
+  auth,
+  permissao("entregador"),
+  listarEntregasEntregador,
 );
 
-
-
-
-
-
-
- 
-// ==================================
+// =====================================================
 // ENTREGADOR ACEITA ENTREGA
 // PUT /api/entregas/:id/aceitar
-// ==================================
+// =====================================================
 
-router.put(
+router.put("/:id/aceitar", auth, permissao("entregador"), aceitarEntrega);
 
-"/:id/aceitar",
+// =====================================================
+// ENTREGADOR RETIRA PEDIDO NA EMPRESA
+//
+// Fluxo:
+// aceita
+// ↓
+// cozinha entrega pedido
+// ↓
+// muda para em_rota
+//
+// O código NÃO é digitado pelo entregador.
+// Ele apenas informa presencialmente.
+// =====================================================
 
-auth,
+router.put("/:id/retirar", auth, permissao("entregador"), retirarEntrega);
 
-permissao("entregador"),
+// =====================================================
+// CLIENTE CONFIRMA ENTREGA
+//
+// Fluxo:
+// em_rota
+// ↓
+// cliente informa código
+// ↓
+// entregue
+//
+// Código digitado aqui.
+// =====================================================
 
-aceitarEntrega
-
+router.post(
+  "/:id/confirmar-entrega",
+  auth,
+  permissao("entregador"),
+  confirmarEntrega,
 );
 
+// =====================================================
+// FINALIZAR ENTREGA
+// (administrativo/manual)
+// =====================================================
 
+router.put("/:id/finalizar", auth, permissao("entregador"), finalizarEntrega);
 
-router.put(
+// =====================================================
+// RECUSAR ENTREGA
+// =====================================================
 
-"/:id/retirar",
+router.put("/:id/recusar", auth, permissao("entregador"), recusarEntrega);
 
-auth,
+// =====================================================
+// MINHAS ENTREGAS
+// =====================================================
 
-permissao("entregador"),
+router.get("/minhas", auth, permissao("entregador"), listarMinhasEntregas);
 
-retirarEntrega
+// =====================================================
+// DASHBOARD ENTREGADOR
+// =====================================================
 
-);
-
-router.put(
-
-"/:id/finalizar",
-
-auth,
-
-permissao("entregador"),
-
-finalizarEntrega
-
-);
-
-router.put(
-"/:id/recusar",
-auth,
-permissao("entregador"),
-recusarEntrega
-);
-
-router.get(
-    "/minhas",
-    auth,
-    permissao("entregador"),
-    listarMinhasEntregas
-);
-
-router.get(
-"/dashboard",
-auth,
-permissao("entregador"),
-dashboardEntregador
-);
-
-
+router.get("/dashboard", auth, permissao("entregador"), dashboardEntregador);
 
 module.exports = router;

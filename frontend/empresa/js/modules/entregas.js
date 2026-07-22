@@ -32,28 +32,6 @@ function criarCardEntrega(entrega) {
   bairro.textContent = `🏙️ ${entrega.bairro || "-"}${entrega.cidade ? " · " + entrega.cidade : ""}`;
   item.appendChild(bairro);
 
-  if (entrega.codigo_retirada || entrega.codigo_entrega) {
-    const codigos = document.createElement("div");
-
-    codigos.className = "entrega-codigos";
-
-    codigos.innerHTML = `
-    ${
-      entrega.codigo_retirada
-        ? `<p><strong>Retirada:</strong> ${entrega.codigo_retirada}</p>`
-        : ""
-    }
-
-    ${
-      entrega.codigo_entrega
-        ? `<p><strong>Entrega:</strong> ${entrega.codigo_entrega}</p>`
-        : ""
-    }
-  `;
-
-    item.appendChild(codigos);
-  }
-
   if (entrega.status === "sem_entregador") {
     const footer = document.createElement("div");
     footer.className = "entrega-footer";

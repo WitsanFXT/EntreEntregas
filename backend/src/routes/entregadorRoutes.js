@@ -9,18 +9,16 @@ const permissao = require("../middleware/permissao");
 const entregadorController = require("../controllers/entregadorController");
 
 const {
-  confirmarRetirada,
-  confirmarEntrega,
-  iniciarRota,
-} = require("../controllers/entregadorController");
-
-const {
   online,
   offline,
   localizacao,
   me,
   minhasEntregas,
   aceitarEntrega,
+  confirmarRetirada,
+  confirmarEntrega,
+  iniciarRota,
+  tokenRealtime,
 } = require("../controllers/entregadorController");
 
 router.post("/:id/aceitar", auth, permissao("entregador"), aceitarEntrega);
@@ -76,6 +74,6 @@ router.get("/me", auth, permissao("entregador"), me);
 
 router.get("/minhas-entregas", auth, permissao("entregador"), minhasEntregas);
 
-router.get("/token-realtime", auth, entregadorController.tokenRealtime);
+router.get("/token-realtime", auth, permissao("entregador"), tokenRealtime);
 
 module.exports = router;
