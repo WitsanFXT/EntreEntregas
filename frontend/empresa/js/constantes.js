@@ -1,21 +1,12 @@
 const STATUS_LABELS = {
-  pendente: "Pendente",
-  aceita: "Aceita",
-  aceito: "Aceita",
-  retirada: "Retirada",
-  em_rota: "Em rota",
-  a_caminho: "A caminho",
-  entregue: "Entregue",
-  finalizada: "Entregue",
-  concluida: "Entregue",
-  concluido: "Entregue",
-  cancelada: "Cancelada",
-  cancelado: "Cancelado",
-  sem_entregador: "Sem entregador",
   aguardando: "Aguardando",
   confirmado: "Confirmado",
-  em_preparo: "Em preparo",
-  saiu_para_entrega: "Saiu p/ entrega",
+  em_preparo: "Preparando",
+  pronto_retirada: "Pronto para retirada",
+  aceita: "Aceita",
+  retirada: "Retirada",
+  em_rota: "Em rota",
+  entregue: "Entregue",
 };
 
 const ORIGEM_LABELS = {
@@ -28,15 +19,17 @@ const STATUS_SEQUENCIA = [
   "aguardando",
   "confirmado",
   "em_preparo",
-  "saiu_para_entrega",
+  "pronto_retirada",
+  "aceita",
+  "retirada",
+  "em_rota",
   "entregue",
 ];
 
 const STATUS_PROXIMA_ACAO = {
   aguardando: "Confirmar",
   confirmado: "Em preparo",
-  em_preparo: "Saiu p/ entrega",
-  saiu_para_entrega: "Marcar entregue",
+  em_preparo: "Pronto p/ retirada",
 };
 
 window.STATUS_LABELS = STATUS_LABELS;

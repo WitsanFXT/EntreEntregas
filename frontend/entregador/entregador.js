@@ -703,6 +703,25 @@ function criarCardEntrega(entrega) {
     botaoAceitar.onclick = () => aceitarEntrega(entrega.id);
   }
 
+  if (entrega.status === "retirada") {
+    const bloco = document.createElement("div");
+
+    bloco.innerHTML = `
+    <input
+      id="codigo-${entrega.id}"
+      placeholder="Código do cliente"
+    >
+
+    <button
+      onclick="confirmarEntrega('${entrega.id}')"
+    >
+      Confirmar entrega
+    </button>
+  `;
+
+    div.appendChild(bloco);
+  }
+
   return div;
 }
 
@@ -864,14 +883,26 @@ async function carregarEntregaAtualInicio() {
 // AÇÕES DE ENTREGA (aceitar / retirar / finalizar)
 // =========================================================
 
-async function aceitarEntrega(id) {
-  console.log("ACEITANDO ENTREGA:", id);
+async function confirmarEntrega(id) {
   try {
-    const response = await fetch(`${API}/api/entregas/${id}/aceitar`, {
-      method: "PUT",
-      headers,
-    });
+    const codigo = document.getElementById(`codigo-${id}`).value;
+
+    const response = await fetch(
+      `${API}/api/entregador/${id}/confirmar-entrega`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          codigo,
+        }),
+      },
+    );
+
     const data = await response.json();
+
+    mostrarToast(data.message);
+
+    carregarMinhasEntregas();
 
     if (!response.ok) {
       toast(data.message || "Essa entrega não está mais disponível.", "erro");
@@ -888,6 +919,30 @@ async function aceitarEntrega(id) {
     carregarEntregaAtualInicio();
   } catch (error) {
     console.log(error);
+  }
+}
+
+async function aceitarEntrega(id) {
+  try {
+    const response = await fetch(`${API}/api/entregador/${id}/aceitar`, {
+      method: "POST",
+      headers,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      toast(data.message || "Erro ao aceitar entrega", "erro");
+      return;
+    }
+
+    toast("Entrega aceita com sucesso", "sucesso");
+
+    carregarListaEntregas();
+    carregarEntregaAtualInicio();
+  } catch (error) {
+    console.log(error);
+    toast("Erro ao aceitar entrega", "erro");
   }
 }
 

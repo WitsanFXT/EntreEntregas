@@ -550,6 +550,9 @@ exports.recusarEntrega = async (req, res) => {
       .eq("entregador_id", entregador.id)
       .single();
 
+    console.log("ENTREGA BANCO:", entregaAtual);
+    console.log("JWT:", req.usuario);
+
     if (!entregaAtual) {
       return res.status(400).json({
         message: "Essa entrega não está atribuída a você.",

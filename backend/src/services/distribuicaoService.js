@@ -83,9 +83,7 @@ async function distribuirEntrega(entregaId) {
       .from("entregas")
       .update({
         entregador_id: entregadorEscolhido.id,
-
         status: "pendente",
-
         atribuido_em: new Date(),
       })
       .eq("id", entregaId);

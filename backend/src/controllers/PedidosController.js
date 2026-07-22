@@ -51,8 +51,6 @@ async function criarEntregaParaPedido(empresa, pedido, dadosEntrega) {
     .update({ entrega_id: entrega.id })
     .eq("id", pedido.id);
 
-  await distribuirEntrega(entrega.id);
-
   return entrega;
 }
 
@@ -116,7 +114,7 @@ exports.criarPedido = async (req, res) => {
         latitude,
         longitude,
 
-        status: "aguardando",
+        status: origem === "manual" ? "confirmado" : "aguardando",
       })
       .select()
       .single();
@@ -140,7 +138,7 @@ exports.criarPedido = async (req, res) => {
 
     return res.status(201).json({
       message: entrega
-        ? "Pedido criado e entrega enviada pro motoboy."
+        ? "Pedido criado com entrega vinculada."
         : "Pedido criado.",
       pedido,
       entrega,
@@ -197,7 +195,9 @@ const STATUS_VALIDOS = [
   "aguardando",
   "confirmado",
   "em_preparo",
-  "saiu_para_entrega",
+  "pronto_retirada",
+  "retirada",
+  "em_rota",
   "entregue",
   "cancelado",
 ];
@@ -224,6 +224,36 @@ exports.atualizarStatusPedido = async (req, res) => {
       .eq("empresa_id", empresa.id)
       .select()
       .single();
+
+    // Pedido pronto → chamar entregadores
+
+    console.log("STATUS RECEBIDO:", status);
+    console.log("PEDIDO:", req.params.id);
+    if (status === "pronto_retirada") {
+      const { data: pedidoCompleto } = await supabase
+        .from("pedidos")
+        .select("entrega_id")
+        .eq("id", req.params.id)
+        .single();
+
+      const codigoRetirada = Math.floor(1000 + Math.random() * 9000).toString();
+
+      const codigoEntrega = Math.floor(1000 + Math.random() * 9000).toString();
+
+      console.log("ENTREGA:", pedidoCompleto);
+
+      if (pedidoCompleto?.entrega_id) {
+        await supabase
+          .from("entregas")
+          .update({
+            codigo_retirada: codigoRetirada,
+            codigo_entrega: codigoEntrega,
+          })
+          .eq("id", pedidoCompleto.entrega_id);
+
+        await distribuirEntrega(pedidoCompleto.entrega_id);
+      }
+    }
 
     if (error || !data) {
       console.log(error);
@@ -301,7 +331,7 @@ exports.dashboardKpis = async (req, res) => {
       .from("entregas")
       .select("id", { count: "exact", head: true })
       .eq("empresa_id", empresa.id)
-      .in("status", ["aceita", "retirada"]);
+      .in("status", ["retirada", "em_rota"]);
 
     return res.json({
       faturamentoHoje,

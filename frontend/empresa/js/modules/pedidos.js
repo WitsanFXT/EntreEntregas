@@ -75,6 +75,7 @@ async function atualizarStatusPedido(pedido, novoStatus) {
     mostrarToast(
       data.message || "Status atualizado",
       response.ok ? "sucesso" : "erro",
+      console.log(data),
     );
 
     if (response.ok) {
