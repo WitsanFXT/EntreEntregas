@@ -1074,11 +1074,15 @@ async function aceitarEntrega(id) {
 
 async function carregarMinhasEntregas() {
   try {
-    const response = await api.get("/entregas/minhas");
+    const response = await fetch(`${API}/api/entregador/minhas-entregas`, {
+      headers,
+    });
 
-    console.log("Minhas entregas:", response.data);
+    const data = await response.json();
 
-    renderizarEntregas(response.data);
+    console.log("Minhas entregas:", data);
+
+    renderizarEntregas(data);
   } catch (error) {
     console.log("Erro ao carregar entregas:", error);
   }
