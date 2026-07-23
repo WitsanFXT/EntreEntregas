@@ -324,9 +324,9 @@ exports.finalizarEntrega = async (req, res) => {
       .from("entregas")
       .update({
         status: "entregue",
-        entregue_em: new Date().toISOString(),
+        finalizada_em: new Date().toISOString(),
       })
-      .eq("id", entregaId);
+      .eq("id", id);
 
     if (updateError) {
       console.log("Erro ao finalizar entrega:", updateError);
@@ -340,7 +340,7 @@ exports.finalizarEntrega = async (req, res) => {
         status: "entregue",
         updated_at: new Date().toISOString(),
       })
-      .eq("entrega_id", entregaId);
+      .eq("entrega_id", id);
 
     if (erroPedido) {
       console.log("Erro ao atualizar status do pedido:", erroPedido);

@@ -254,6 +254,19 @@ exports.aceitarEntrega = async (req, res) => {
       return res.status(400).json({ message: "Erro ao aceitar entrega." });
     }
 
+    // 🔥 Sincroniza status do pedido
+    const { error: erroPedidoAceita } = await supabase
+      .from("pedidos")
+      .update({ status: "retirada", updated_at: new Date().toISOString() })
+      .eq("entrega_id", id);
+
+    if (erroPedidoAceita) {
+      console.log(
+        "Erro ao atualizar status do pedido (aceitar):",
+        erroPedidoAceita,
+      );
+    }
+
     return res.json({
       message: "Entrega aceita.",
       entrega: atualizada,
@@ -319,6 +332,19 @@ exports.confirmarRetirada = async (req, res) => {
     if (updateError) {
       console.log("Erro ao confirmar retirada:", updateError);
       return res.status(400).json({ message: "Erro ao confirmar retirada." });
+    }
+
+    // 🔥 Sincroniza status do pedido
+    const { error: erroPedidoRetirada } = await supabase
+      .from("pedidos")
+      .update({ status: "em_rota", updated_at: new Date().toISOString() })
+      .eq("entrega_id", id);
+
+    if (erroPedidoRetirada) {
+      console.log(
+        "Erro ao atualizar status do pedido (retirada):",
+        erroPedidoRetirada,
+      );
     }
 
     return res.json({
@@ -399,6 +425,19 @@ exports.confirmarEntrega = async (req, res) => {
     if (updateError) {
       console.log("Erro ao finalizar entrega:", updateError);
       return res.status(400).json({ message: "Erro ao finalizar entrega." });
+    }
+
+    // 🔥 Sincroniza status do pedido
+    const { error: erroPedidoEntrega } = await supabase
+      .from("pedidos")
+      .update({ status: "entregue", updated_at: new Date().toISOString() })
+      .eq("entrega_id", id);
+
+    if (erroPedidoEntrega) {
+      console.log(
+        "Erro ao atualizar status do pedido (entrega):",
+        erroPedidoEntrega,
+      );
     }
 
     const { error: erroExtrato } = await supabase
